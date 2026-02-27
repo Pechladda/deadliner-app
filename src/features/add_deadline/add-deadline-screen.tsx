@@ -2,28 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton } from "@/src/components/AppButton";
-import { AppText } from "@/src/components/AppText";
-import { IconButton } from "@/src/components/IconButton";
-import { Input } from "@/src/components/Input";
-import { TabParamList } from "@/src/core/navigation/AppNavigator";
-import { TabRoutes } from "@/src/core/navigation/routeNames";
+import { AppButton, AppText, IconButton, Input } from "@/src/components";
+import { TabRoutes } from "@/src/core/navigation";
+import { computeColorStatus, getRemainingMs } from "@/src/core/utils";
 import {
-  computeColorStatus,
-  getRemainingMs,
-} from "@/src/core/utils/deadlineUtils";
-import { useDeadlineStore } from "@/src/store/deadlineStore";
+  useAddDeadlineNavigation,
+  useAddDeadlineRoute,
+} from "@/src/features/add_deadline/hooks/use-add-deadline-screen";
+import { PickerMode } from "@/src/features/add_deadline/types";
+import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
-
-const BROWN_TEXT = "#3e2723";
-
-type PickerMode = "date" | "time";
 
 type DateTimeFieldProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -70,12 +62,8 @@ function formatTimeDisplay(date: Date): string {
 }
 
 export function AddDeadlineScreen() {
-  const route =
-    useRoute<RouteProp<TabParamList, typeof TabRoutes.AddDeadline>>();
-  const navigation =
-    useNavigation<
-      BottomTabNavigationProp<TabParamList, typeof TabRoutes.AddDeadline>
-    >();
+  const route = useAddDeadlineRoute();
+  const navigation = useAddDeadlineNavigation();
 
   const deadlines = useDeadlineStore((state) => state.deadlines);
   const addDeadline = useDeadlineStore((state) => state.addDeadline);

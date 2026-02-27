@@ -11,7 +11,7 @@ import {
 import { create } from "zustand";
 
 import { db } from "@/src/firebase";
-import { Deadline } from "@/src/models/Deadline";
+import { Deadline } from "@/src/models/deadline";
 
 const DEADLINES_COLLECTION = "deadlines";
 

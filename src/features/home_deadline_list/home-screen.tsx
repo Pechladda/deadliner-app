@@ -1,33 +1,17 @@
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import {
-  CompositeNavigationProp,
-  useNavigation,
-} from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect } from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText } from "@/src/components/AppText";
-import { IconButton } from "@/src/components/IconButton";
-import {
-  RootStackParamList,
-  TabParamList,
-} from "@/src/core/navigation/AppNavigator";
-import { StackRoutes, TabRoutes } from "@/src/core/navigation/routeNames";
-import { formatDueLabel } from "@/src/core/utils/deadlineUtils";
+import { AppText, IconButton } from "@/src/components";
+import { StackRoutes, TabRoutes } from "@/src/core/navigation";
+import { formatDueLabel } from "@/src/core/utils";
+import { useHomeNavigation } from "@/src/features/home_deadline_list/hooks/use-home-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
-import { useDeadlineStore } from "@/src/store/deadlineStore";
+import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
 
 export function HomeScreen() {
-  const navigation =
-    useNavigation<
-      CompositeNavigationProp<
-        BottomTabNavigationProp<TabParamList, typeof TabRoutes.Home>,
-        NativeStackNavigationProp<RootStackParamList>
-      >
-    >();
+  const navigation = useHomeNavigation();
   const deadlines = useDeadlineStore((state) => state.deadlines);
   const loadDeadlines = useDeadlineStore((state) => state.loadDeadlines);
 

@@ -1,3 +1,3 @@
-export { DeadlineCard } from "./DeadlineCard";
-export { UrgencyBadge } from "./UrgencyBadge";
+export { DeadlineCard } from "./deadline-card";
+export { UrgencyBadge } from "./urgency-badge";
 

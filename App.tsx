@@ -1,7 +1,7 @@
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { AppNavigator } from "@/src/core/navigation/AppNavigator";
+import { AppNavigator } from "@/src/core/navigation";
 
 export default function App() {
   return (

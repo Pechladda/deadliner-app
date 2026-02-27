@@ -6,14 +6,14 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import { AddDeadlineScreen } from "@/src/features/add_deadline/AddDeadlineScreen";
-import { DeadlineDetailScreen } from "@/src/features/deadline_detail/DeadlineDetailScreen";
-import { HomeScreen } from "@/src/features/home_deadline_list/HomeScreen";
-import { LoginScreen } from "@/src/features/login/LoginScreen";
-import { SettingsScreen } from "@/src/features/settings/SettingsScreen";
+import { AddDeadlineScreen } from "@/src/features/add_deadline";
+import { DeadlineDetailScreen } from "@/src/features/deadline_detail";
+import { HomeScreen } from "@/src/features/home_deadline_list";
+import { LoginScreen } from "@/src/features/login";
+import { SettingsScreen } from "@/src/features/settings";
 import { colors } from "@/src/theme";
 
-import { StackRoutes, TabRoutes } from "./routeNames";
+import { StackRoutes, TabRoutes } from "./route-names";
 
 export type TabParamList = {
   [TabRoutes.Home]: undefined;

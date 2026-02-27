@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { colors, radius, spacing, typography } from "@/src/theme";
 
-import { AppText } from "./AppText";
+import { AppText } from "./app-text";
 
 type AppButtonProps = {
   label: string;

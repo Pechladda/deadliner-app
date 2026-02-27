@@ -1,13 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText } from "@/src/components/AppText";
-import { IconButton } from "@/src/components/IconButton";
-import { TabParamList } from "@/src/core/navigation/AppNavigator";
-import { TabRoutes } from "@/src/core/navigation/routeNames";
+import { AppText, IconButton } from "@/src/components";
+import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, spacing } from "@/src/theme";
 
 type SettingsRowProps = {
@@ -34,10 +30,7 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
 }
 
 export function SettingsScreen() {
-  const navigation =
-    useNavigation<
-      BottomTabNavigationProp<TabParamList, typeof TabRoutes.Settings>
-    >();
+  const navigation = useSettingsNavigation();
 
   const onPressSetting = (label: string) => {
     Alert.alert(label, "Coming soon");

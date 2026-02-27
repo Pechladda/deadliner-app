@@ -2,7 +2,7 @@ import { StyleSheet, TextInput, TextInputProps, View } from "react-native";
 
 import { colors, radius, spacing, typography } from "@/src/theme";
 
-import { AppText } from "./AppText";
+import { AppText } from "./app-text";
 
 type InputProps = TextInputProps & {
   label?: string;

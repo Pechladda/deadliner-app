@@ -1,26 +1,22 @@
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton } from "@/src/components/AppButton";
-import { AppText } from "@/src/components/AppText";
-import { Card } from "@/src/components/Card";
-import { IconButton } from "@/src/components/IconButton";
-import { RootStackParamList } from "@/src/core/navigation/AppNavigator";
-import { StackRoutes, TabRoutes } from "@/src/core/navigation/routeNames";
+import { AppButton, AppText, Card, IconButton } from "@/src/components";
+import { StackRoutes, TabRoutes } from "@/src/core/navigation";
+import { formatCountdownLong, formatDueLabel } from "@/src/core/utils";
 import {
-  formatCountdownLong,
-  formatDueLabel,
-} from "@/src/core/utils/deadlineUtils";
+  useDeadlineDetailNavigation,
+  useDeadlineDetailRoute,
+} from "@/src/features/deadline_detail/hooks/use-deadline-detail-screen";
+import {
+  ActionRowProps,
+  CountdownCardProps,
+  MissingStateProps,
+} from "@/src/features/deadline_detail/types";
 import { UrgencyBadge } from "@/src/features/shared/components";
-import { useDeadlineStore } from "@/src/store/deadlineStore";
+import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
-
-type MissingStateProps = {
-  onPressBack: () => void;
-};
 
 function MissingState({ onPressBack }: MissingStateProps) {
   return (
@@ -40,12 +36,6 @@ function MissingState({ onPressBack }: MissingStateProps) {
   );
 }
 
-type CountdownCardProps = {
-  dueAt: string;
-  isUrgent: boolean;
-  now: Date;
-};
-
 function CountdownCard({ dueAt, isUrgent, now }: CountdownCardProps) {
   return (
     <Card style={styles.countdownCard}>
@@ -59,11 +49,6 @@ function CountdownCard({ dueAt, isUrgent, now }: CountdownCardProps) {
     </Card>
   );
 }
-
-type ActionRowProps = {
-  onEdit: () => void;
-  onDelete: () => void;
-};
 
 function ActionRow({ onEdit, onDelete }: ActionRowProps) {
   return (
@@ -90,12 +75,8 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
 }
 
 export function DeadlineDetailScreen() {
-  const route =
-    useRoute<
-      RouteProp<RootStackParamList, typeof StackRoutes.DeadlineDetail>
-    >();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useDeadlineDetailRoute();
+  const navigation = useDeadlineDetailNavigation();
   const deadlineId = route.params?.id;
   const setSelectedId = useDeadlineStore((state) => state.setSelectedId);
   const deadline = useDeadlineStore((state) => {

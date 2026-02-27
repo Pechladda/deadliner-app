@@ -1,10 +1,7 @@
-import { AppButton } from "@/src/components/AppButton";
-import { AppText } from "@/src/components/AppText";
-import { RootStackParamList } from "@/src/core/navigation/AppNavigator";
-import { StackRoutes } from "@/src/core/navigation/routeNames";
+import { AppButton, AppText } from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation";
+import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { colors, spacing } from "@/src/theme";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Line } from "react-native-svg";
@@ -88,8 +85,7 @@ function ClockLogo() {
 }
 
 export function LoginScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useLoginNavigation();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
