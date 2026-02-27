@@ -1,14 +1,13 @@
 export { DeadlineDetailScreen } from "./deadline-detail-screen";
 export {
     useDeadlineDetailNavigation,
-    useDeadlineDetailRoute,
+    useDeadlineDetailRoute
 } from "./hooks/use-deadline-detail-screen";
 export type {
     ActionRowProps,
     CountdownCardProps,
     DeadlineDetailNav,
     DeadlineDetailRoute,
-    MissingStateProps,
+    MissingStateProps
 } from "./types";
-
 
