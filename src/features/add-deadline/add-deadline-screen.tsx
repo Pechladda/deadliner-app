@@ -309,7 +309,7 @@ export function AddDeadlineScreen() {
         <DateTimePicker
           value={pickerValue}
           mode={androidPickerMode}
-          display="default"
+          display="spinner"
           onChange={handlePickerChange}
           locale="en-US-u-ca-gregory"
           is24Hour
