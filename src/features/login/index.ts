@@ -1,4 +1,5 @@
-export { useLoginNavigation } from "./hooks/use-login-navigation";
 export { LoginScreen } from "./login-screen";
-export type { LoginNavigationProp } from "./types";
+export { useLoginNavigation } from "./hooks/use-login-navigation";
+export type { LoginNav } from "./types";
+
 

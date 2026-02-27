@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 
-import type { HomeNavigationProp } from "../types";
+import type { HomeNav } from "../types";
 
 export function useHomeNavigation() {
-  return useNavigation<HomeNavigationProp>();
+  return useNavigation<HomeNav>();
 }

@@ -6,9 +6,9 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import { AddDeadlineScreen } from "@/src/features/add_deadline";
-import { DeadlineDetailScreen } from "@/src/features/deadline_detail";
-import { HomeScreen } from "@/src/features/home_deadline_list";
+import { AddDeadlineScreen } from "@/src/features/add-deadline";
+import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
+import { HomeScreen } from "@/src/features/home-deadline-list";
 import { LoginScreen } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
 import { colors } from "@/src/theme";

@@ -12,8 +12,8 @@ import { computeColorStatus, getRemainingMs } from "@/src/core/utils";
 import {
   useAddDeadlineNavigation,
   useAddDeadlineRoute,
-} from "@/src/features/add_deadline/hooks/use-add-deadline-screen";
-import { PickerMode } from "@/src/features/add_deadline/types";
+} from "@/src/features/add-deadline/hooks/use-add-deadline-screen";
+import { PickerMode } from "@/src/features/add-deadline/types";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
 

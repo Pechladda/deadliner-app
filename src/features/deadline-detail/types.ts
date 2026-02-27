@@ -19,10 +19,9 @@ export type ActionRowProps = {
   onDelete: () => void;
 };
 
-export type DeadlineDetailRouteProp = RouteProp<
+export type DeadlineDetailRoute = RouteProp<
   RootStackParamList,
   typeof StackRoutes.DeadlineDetail
 >;
 
-export type DeadlineDetailNavigationProp =
-  NativeStackNavigationProp<RootStackParamList>;
+export type DeadlineDetailNav = NativeStackNavigationProp<RootStackParamList>;

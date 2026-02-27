@@ -1,7 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 
-import type { LoginNavigationProp } from "../types";
+import type { LoginNav } from "../types";
 
 export function useLoginNavigation() {
-  return useNavigation<LoginNavigationProp>();
+  return useNavigation<LoginNav>();
 }

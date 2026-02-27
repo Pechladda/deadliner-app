@@ -8,12 +8,12 @@ import { formatCountdownLong, formatDueLabel } from "@/src/core/utils";
 import {
   useDeadlineDetailNavigation,
   useDeadlineDetailRoute,
-} from "@/src/features/deadline_detail/hooks/use-deadline-detail-screen";
+} from "@/src/features/deadline-detail/hooks/use-deadline-detail-screen";
 import {
   ActionRowProps,
   CountdownCardProps,
   MissingStateProps,
-} from "@/src/features/deadline_detail/types";
+} from "@/src/features/deadline-detail/types";
 import { UrgencyBadge } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";

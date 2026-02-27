@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList, TabParamList } from "@/src/core/navigation";
 import { TabRoutes } from "@/src/core/navigation";
 
-export type HomeNavigationProp = CompositeNavigationProp<
+export type HomeNav = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, typeof TabRoutes.Home>,
   NativeStackNavigationProp<RootStackParamList>
 >;

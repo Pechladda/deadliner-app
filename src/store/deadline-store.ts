@@ -1,19 +1,19 @@
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  updateDoc,
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    orderBy,
+    query,
+    updateDoc,
 } from "firebase/firestore";
 import { create } from "zustand";
 
 import { db } from "@/src/firebase";
 import { Deadline } from "@/src/models/deadline";
 
-const DEADLINES_COLLECTION = "deadlines";
+const deadlinesCollection = "deadlines";
 
 export function computeUrgencyColor(dueAt: string): "red" | "yellow" | "green" {
   const dueMs = new Date(dueAt).getTime();
@@ -67,7 +67,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
   loadDeadlines: async () => {
     try {
       // Firestore is the source of truth for deadlines.
-      const deadlinesRef = collection(db, DEADLINES_COLLECTION);
+      const deadlinesRef = collection(db, deadlinesCollection);
       const deadlinesQuery = query(deadlinesRef, orderBy("dueAt", "asc"));
       const snapshot = await getDocs(deadlinesQuery);
 
@@ -113,7 +113,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
         const colorStatus =
           input.colorStatus ?? computeUrgencyColor(input.dueAt);
 
-        await addDoc(collection(db, DEADLINES_COLLECTION), {
+        await addDoc(collection(db, deadlinesCollection), {
           courseName: input.courseName,
           assignmentName: input.assignmentName,
           dueDate: input.dueDate,
@@ -143,7 +143,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
           payload.colorStatus = computeUrgencyColor(input.dueAt);
         }
 
-        await updateDoc(doc(db, DEADLINES_COLLECTION, id), payload);
+        await updateDoc(doc(db, deadlinesCollection, id), payload);
         await get().loadDeadlines();
       } catch {
         // Ignore network/persistence errors to avoid crashing UI.
@@ -153,7 +153,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
   deleteDeadline: (id) => {
     void (async () => {
       try {
-        await deleteDoc(doc(db, DEADLINES_COLLECTION, id));
+        await deleteDoc(doc(db, deadlinesCollection, id));
 
         set((state) => ({
           deadlines: state.deadlines.filter((deadline) => deadline.id !== id),

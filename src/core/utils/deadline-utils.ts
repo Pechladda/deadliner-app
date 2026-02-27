@@ -1,6 +1,6 @@
-const MS_PER_MINUTE = 60 * 1000;
-const MS_PER_HOUR = 60 * MS_PER_MINUTE;
-const MS_PER_DAY = 24 * MS_PER_HOUR;
+const msPerMinute = 60 * 1000;
+const msPerHour = 60 * msPerMinute;
+const msPerDay = 24 * msPerHour;
 
 function parseOffsetMs(timeZoneName: string): number {
   const match = timeZoneName.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?$/i);
@@ -12,7 +12,7 @@ function parseOffsetMs(timeZoneName: string): number {
   const hours = Number(match[2]);
   const minutes = Number(match[3] ?? "0");
 
-  return sign * (hours * 60 + minutes) * MS_PER_MINUTE;
+  return sign * (hours * 60 + minutes) * msPerMinute;
 }
 
 function getTimezoneOffsetMs(atUtcMs: number, timezone: string): number {
@@ -88,11 +88,11 @@ export function getUrgencyPriority(
 ): "high" | "medium" | "low" {
   const remainingMs = getRemainingMs(iso, now);
 
-  if (remainingMs <= MS_PER_DAY) {
+  if (remainingMs <= msPerDay) {
     return "high";
   }
 
-  if (remainingMs <= 3 * MS_PER_DAY) {
+  if (remainingMs <= 3 * msPerDay) {
     return "medium";
   }
 
@@ -124,7 +124,7 @@ export function formatRemaining(dueAtISO: string, now = new Date()): string {
     return "Overdue";
   }
 
-  const totalHours = Math.floor(diffMs / MS_PER_HOUR);
+  const totalHours = Math.floor(diffMs / msPerHour);
   const days = Math.floor(totalHours / 24);
   const hours = totalHours % 24;
 
@@ -134,11 +134,11 @@ export function formatRemaining(dueAtISO: string, now = new Date()): string {
 export function computeColorStatus(
   remainingMs: number,
 ): "green" | "yellow" | "red" {
-  if (remainingMs < MS_PER_DAY) {
+  if (remainingMs < msPerDay) {
     return "red";
   }
 
-  if (remainingMs < 3 * MS_PER_DAY) {
+  if (remainingMs < 3 * msPerDay) {
     return "yellow";
   }
 
@@ -165,7 +165,7 @@ export function formatCountdownShort(iso: string, now = new Date()): string {
     return "Overdue";
   }
 
-  const totalMinutes = Math.floor(diffMs / MS_PER_MINUTE);
+  const totalMinutes = Math.floor(diffMs / msPerMinute);
   const days = Math.floor(totalMinutes / (24 * 60));
   const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
   const minutes = totalMinutes % 60;

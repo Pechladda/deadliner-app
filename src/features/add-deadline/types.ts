@@ -6,12 +6,12 @@ import { TabRoutes } from "@/src/core/navigation";
 
 export type PickerMode = "date" | "time";
 
-export type AddDeadlineNavigationProp = BottomTabNavigationProp<
+export type AddDeadlineNav = BottomTabNavigationProp<
   TabParamList,
   typeof TabRoutes.AddDeadline
 >;
 
-export type AddDeadlineRouteProp = RouteProp<
+export type AddDeadlineRoute = RouteProp<
   TabParamList,
   typeof TabRoutes.AddDeadline
 >;
