@@ -148,19 +148,20 @@ export function AddDeadlineScreen() {
     const pickerMode =
       Platform.OS === "ios" ? iosPickerMode : androidPickerMode;
 
-    if (Platform.OS === "android") {
-      setAndroidPickerMode(null);
-    }
-
-    if (!value || event.type === "dismissed" || !pickerMode) {
+    if (event.type === "dismissed" || !pickerMode) {
+      if (Platform.OS === "android") setAndroidPickerMode(null);
       return;
     }
 
+    if (Platform.OS === "android" && event.type === "set") {
+      setAndroidPickerMode(null);
+    }
+
+    if (!value) return;
+
     if (pickerMode === "date") {
       applyDate(value);
-      if (Platform.OS === "ios") {
-        setIosPickerMode(null);
-      }
+      if (Platform.OS === "ios") setIosPickerMode(null);
       return;
     }
 
