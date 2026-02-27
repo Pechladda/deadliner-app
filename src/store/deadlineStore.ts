@@ -1,9 +1,19 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+} from "firebase/firestore";
 import { create } from "zustand";
 
+import { db } from "@/src/firebase";
 import { Deadline } from "@/src/models/Deadline";
 
-const DEADLINES_STORAGE_KEY = "deadliner:deadlines";
+const DEADLINES_COLLECTION = "deadlines";
 
 export function computeUrgencyColor(dueAt: string): "red" | "yellow" | "green" {
   const dueMs = new Date(dueAt).getTime();
@@ -23,17 +33,6 @@ export function computeUrgencyColor(dueAt: string): "red" | "yellow" | "green" {
   }
 
   return "green";
-}
-
-async function saveDeadlinesToStorage(deadlines: Deadline[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(
-      DEADLINES_STORAGE_KEY,
-      JSON.stringify(deadlines),
-    );
-  } catch {
-    // keep app usable even if persistence fails
-  }
 }
 
 function sortByDueAt(deadlines: Deadline[]): Deadline[] {
@@ -67,65 +66,104 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
   selectedDeadlineId: null,
   loadDeadlines: async () => {
     try {
-      const raw = await AsyncStorage.getItem(DEADLINES_STORAGE_KEY);
-      if (!raw) {
+      // Firestore is the source of truth for deadlines.
+      const deadlinesRef = collection(db, DEADLINES_COLLECTION);
+      const deadlinesQuery = query(deadlinesRef, orderBy("dueAt", "asc"));
+      const snapshot = await getDocs(deadlinesQuery);
+
+      if (snapshot.empty) {
         set({ deadlines: [] });
         return;
       }
 
-      const parsed = JSON.parse(raw) as Deadline[];
-      const normalized = Array.isArray(parsed) ? sortByDueAt(parsed) : [];
-      set({ deadlines: normalized });
+      const loadedDeadlines: Deadline[] = snapshot.docs.map((snapshotDoc) => {
+        const data = snapshotDoc.data();
+        const dueAt = String(data.dueAt ?? "");
+        const colorStatus =
+          data.colorStatus === "red" ||
+          data.colorStatus === "yellow" ||
+          data.colorStatus === "green"
+            ? data.colorStatus
+            : computeUrgencyColor(dueAt);
+
+        return {
+          id: snapshotDoc.id,
+          courseName: String(data.courseName ?? ""),
+          assignmentName: String(data.assignmentName ?? ""),
+          dueDate: String(data.dueDate ?? ""),
+          dueTime: String(data.dueTime ?? ""),
+          dueAt,
+          colorStatus,
+          createdAt: String(data.createdAt ?? ""),
+          updatedAt: String(data.updatedAt ?? ""),
+        };
+      });
+
+      // Keep local sort as a safety net if remote ordering changes.
+      set({ deadlines: sortByDueAt(loadedDeadlines) });
     } catch {
+      // Fail gracefully so UI remains usable.
       set({ deadlines: [] });
     }
   },
   addDeadline: (input) => {
-    const nowIso = new Date().toISOString();
-    const created: Deadline = {
-      ...input,
-      id: String(Date.now()),
-      createdAt: nowIso,
-      updatedAt: input.updatedAt ?? nowIso,
-      colorStatus: computeUrgencyColor(input.dueAt),
-    };
+    void (async () => {
+      try {
+        const nowIso = new Date().toISOString();
+        const colorStatus =
+          input.colorStatus ?? computeUrgencyColor(input.dueAt);
 
-    const nextDeadlines = sortByDueAt([...get().deadlines, created]);
-    set({ deadlines: nextDeadlines });
-    void saveDeadlinesToStorage(nextDeadlines);
+        await addDoc(collection(db, DEADLINES_COLLECTION), {
+          courseName: input.courseName,
+          assignmentName: input.assignmentName,
+          dueDate: input.dueDate,
+          dueTime: input.dueTime,
+          dueAt: input.dueAt,
+          colorStatus,
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        });
+
+        await get().loadDeadlines();
+      } catch {
+        // Ignore network/persistence errors to avoid crashing UI.
+      }
+    })();
   },
   updateDeadline: (id, input) => {
-    const nextDeadlines = sortByDueAt(
-      get().deadlines.map((deadline) => {
-        if (deadline.id !== id) {
-          return deadline;
+    void (async () => {
+      try {
+        const nowIso = new Date().toISOString();
+        const payload: Partial<Deadline> = {
+          ...input,
+          updatedAt: nowIso,
+        };
+
+        if (input.dueAt) {
+          payload.colorStatus = computeUrgencyColor(input.dueAt);
         }
 
-        const nextDueAt = input.dueAt ?? deadline.dueAt;
-
-        return {
-          ...deadline,
-          ...input,
-          dueAt: nextDueAt,
-          colorStatus: computeUrgencyColor(nextDueAt),
-          updatedAt: new Date().toISOString(),
-        };
-      }),
-    );
-
-    set({ deadlines: nextDeadlines });
-    void saveDeadlinesToStorage(nextDeadlines);
+        await updateDoc(doc(db, DEADLINES_COLLECTION, id), payload);
+        await get().loadDeadlines();
+      } catch {
+        // Ignore network/persistence errors to avoid crashing UI.
+      }
+    })();
   },
   deleteDeadline: (id) => {
-    const nextDeadlines = get().deadlines.filter(
-      (deadline) => deadline.id !== id,
-    );
-    void saveDeadlinesToStorage(nextDeadlines);
-    set((state) => ({
-      deadlines: nextDeadlines,
-      selectedDeadlineId:
-        state.selectedDeadlineId === id ? null : state.selectedDeadlineId,
-    }));
+    void (async () => {
+      try {
+        await deleteDoc(doc(db, DEADLINES_COLLECTION, id));
+
+        set((state) => ({
+          deadlines: state.deadlines.filter((deadline) => deadline.id !== id),
+          selectedDeadlineId:
+            state.selectedDeadlineId === id ? null : state.selectedDeadlineId,
+        }));
+      } catch {
+        // Ignore network/persistence errors to avoid crashing UI.
+      }
+    })();
   },
   setSelectedId: (id) => set({ selectedDeadlineId: id }),
   selectDeadline: (id) => set({ selectedDeadlineId: id }),
