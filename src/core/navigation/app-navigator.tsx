@@ -14,9 +14,11 @@ import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
 import { LoginScreen } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
-import { AboutAppScreen } from "@/src/features/settings/screens/about-app-screen";
-import { HistoryScreen } from "@/src/features/settings/screens/history-screen";
-import { ProfileScreen } from "@/src/features/settings/screens/profile-screen";
+import {
+  AboutAppScreen,
+  HistoryScreen,
+  ProfileScreen,
+} from "@/src/features/settings/screens";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors } from "@/src/theme";
