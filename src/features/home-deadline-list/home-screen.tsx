@@ -1,8 +1,8 @@
-import { useEffect } from "react";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, IconButton } from "@/src/components";
+import { AppText, IconButton, Toast } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
 import { formatDueLabel, t } from "@/src/core/utils";
 import { useHomeNavigation } from "@/src/features/home-deadline-list/hooks/use-home-navigation";
@@ -14,13 +14,37 @@ export function HomeScreen() {
   const navigation = useHomeNavigation();
   const deadlines = useDeadlineStore((state) => state.deadlines);
   const loadDeadlines = useDeadlineStore((state) => state.loadDeadlines);
+  const completeDeadline = useDeadlineStore((state) => state.completeDeadline);
+  const [showToast, setShowToast] = useState(false);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadDeadlines();
   }, [loadDeadlines]);
 
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
   const onPressAdd = () => {
     navigation.navigate(TabRoutes.AddDeadline);
+  };
+
+  const onDone = (id: string) => {
+    completeDeadline(id);
+    setShowToast(true);
+
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
+    toastTimerRef.current = setTimeout(() => {
+      setShowToast(false);
+    }, 1800);
   };
 
   return (
@@ -44,24 +68,22 @@ export function HomeScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() => {
-                navigation.navigate(StackRoutes.DeadlineDetail, {
-                  id: item.id,
-                });
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
-            >
-              <View style={styles.cardWrapper}>
-                <DeadlineCard
-                  assignmentName={item.assignmentName}
-                  courseName={item.courseName}
-                  dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)}`}
-                  urgencyColor={item.colorStatus}
-                />
-              </View>
-            </Pressable>
+            <View style={styles.cardWrapper}>
+              <DeadlineCard
+                assignmentName={item.assignmentName}
+                courseName={item.courseName}
+                dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)}`}
+                urgencyColor={item.colorStatus}
+                actionLabel={t("done")}
+                onPressAction={() => onDone(item.id)}
+                onPressCard={() => {
+                  navigation.navigate(StackRoutes.DeadlineDetail, {
+                    id: item.id,
+                  });
+                }}
+                cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
+              />
+            </View>
           )}
           ListEmptyComponent={
             <AppText variant="caption" style={styles.emptyText}>
@@ -69,6 +91,8 @@ export function HomeScreen() {
             </AppText>
           }
         />
+
+        <Toast message={t("movedToHistory")} visible={showToast} />
       </View>
     </SafeAreaView>
   );

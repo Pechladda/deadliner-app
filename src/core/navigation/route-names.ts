@@ -10,6 +10,7 @@ export const StackRoutes = {
   DeadlineDetail: "DeadlineDetail",
   AboutApp: "AboutApp",
   Profile: "Profile",
+  History: "History",
 } as const;
 
 export type TabRouteName = (typeof TabRoutes)[keyof typeof TabRoutes];

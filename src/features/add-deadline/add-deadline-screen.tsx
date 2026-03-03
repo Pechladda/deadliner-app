@@ -14,6 +14,7 @@ import {
   useAddDeadlineRoute,
 } from "@/src/features/add-deadline/hooks/use-add-deadline-screen";
 import { PickerMode } from "@/src/features/add-deadline/types";
+import { ReminderOption } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
 
@@ -80,6 +81,52 @@ function getDateDisplayForOS(
   return "clock";
 }
 
+type ReminderSelectionProps = {
+  value: ReminderOption | null;
+  onChange: (value: ReminderOption | null) => void;
+};
+
+function ReminderSelection({ value, onChange }: ReminderSelectionProps) {
+  const reminderOptions: { value: ReminderOption | null; label: string }[] = [
+    { value: null, label: t("reminderNone") },
+    { value: "5m", label: t("reminder5m") },
+    { value: "30m", label: t("reminder30m") },
+    { value: "1h", label: t("reminder1h") },
+    { value: "1d", label: t("reminder1d") },
+  ];
+
+  return (
+    <View style={styles.reminderWrap}>
+      <AppText variant="body" style={styles.inputLabelText}>
+        {t("reminder")}
+      </AppText>
+
+      <View style={styles.reminderOptionsRow}>
+        {reminderOptions.map((option) => {
+          const isActive = option.value === value;
+
+          return (
+            <Pressable
+              key={option.value ?? "none"}
+              onPress={() => onChange(option.value)}
+              style={[
+                styles.reminderOption,
+                isActive && styles.reminderOptionActive,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={option.label}
+            >
+              <AppText variant="caption" style={styles.reminderOptionText}>
+                {option.label}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export function AddDeadlineScreen() {
   const route = useAddDeadlineRoute();
   const navigation = useAddDeadlineNavigation();
@@ -96,6 +143,7 @@ export function AddDeadlineScreen() {
   const [androidPickerMode, setAndroidPickerMode] = useState<PickerMode | null>(
     null,
   );
+  const [reminder, setReminder] = useState<ReminderOption | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const resetForm = () => {
@@ -106,6 +154,7 @@ export function AddDeadlineScreen() {
     setHasPickedTime(false);
     setIosPickerMode(null);
     setAndroidPickerMode(null);
+    setReminder(null);
     setErrorMessage(null);
   };
 
@@ -134,6 +183,7 @@ export function AddDeadlineScreen() {
     setSelectedDate(safeDate);
     setHasPickedDate(true);
     setHasPickedTime(true);
+    setReminder(target.reminder ?? null);
     setErrorMessage(null);
   }, [deadlines, editId]);
 
@@ -234,6 +284,7 @@ export function AddDeadlineScreen() {
       dueDate: dueAt.slice(0, 10),
       dueTime: dueAt.slice(11, 16),
       dueAt,
+      reminder,
       colorStatus: urgencyColor,
       updatedAt: nowIso,
     };
@@ -303,6 +354,8 @@ export function AddDeadlineScreen() {
               onPress={() => openPicker("time")}
             />
           </View>
+
+          <ReminderSelection value={reminder} onChange={setReminder} />
 
           {errorMessage ? (
             <AppText color="danger" style={styles.errorText}>
@@ -394,6 +447,28 @@ const styles = StyleSheet.create({
   fieldGroup: {
     flex: 1,
     gap: spacing.l,
+  },
+  reminderWrap: {
+    gap: spacing.s,
+  },
+  reminderOptionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.s,
+  },
+  reminderOption: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+    backgroundColor: colors.surface,
+  },
+  reminderOptionActive: {
+    borderColor: colors.textPrimary,
+  },
+  reminderOptionText: {
+    color: colors.textPrimary,
   },
   dateTimeField: {
     minHeight: 48,

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Switch, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, IconButton } from "@/src/components";
@@ -8,6 +8,7 @@ import { StackRoutes } from "@/src/core/navigation";
 import { getLanguage, setLanguage, t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { useAuthStore } from "@/src/store/auth-store";
+import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
 
 type SettingsRowProps = {
@@ -37,10 +38,15 @@ export function SettingsScreen() {
   const navigation = useSettingsNavigation();
   const [language, setLanguageState] = useState(getLanguage());
   const logout = useAuthStore((state) => state.logout);
-
-  const onPressSetting = (label: string) => {
-    Alert.alert(label, t("comingSoon"));
-  };
+  const notificationsEnabled = useDeadlineStore(
+    (state) => state.notificationsEnabled,
+  );
+  const hasNotificationPermission = useDeadlineStore(
+    (state) => state.hasNotificationPermission,
+  );
+  const setNotificationsEnabled = useDeadlineStore(
+    (state) => state.setNotificationsEnabled,
+  );
 
   const onChangeLanguage = (nextLanguage: "th" | "en") => {
     setLanguage(nextLanguage);
@@ -49,6 +55,14 @@ export function SettingsScreen() {
 
   const onLogout = () => {
     void logout();
+  };
+
+  const onToggleNotifications = (enabled: boolean) => {
+    void setNotificationsEnabled(enabled);
+  };
+
+  const onOpenSystemSettings = () => {
+    void Linking.openSettings();
   };
 
   return (
@@ -71,15 +85,49 @@ export function SettingsScreen() {
             onPress={() => navigation.navigate(StackRoutes.Profile)}
           />
           <SettingsRow
-            label={t("notifications")}
-            icon="notifications-outline"
-            onPress={() => onPressSetting(t("notifications"))}
-          />
-          <SettingsRow
             label={t("aboutApp")}
             icon="help-circle-outline"
             onPress={() => navigation.navigate(StackRoutes.AboutApp)}
           />
+          <SettingsRow
+            label={t("history")}
+            icon="time-outline"
+            onPress={() => navigation.navigate(StackRoutes.History)}
+          />
+
+          <View style={styles.toggleRow}>
+            <View style={styles.rowLeft}>
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <AppText>{t("enableNotifications")}</AppText>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={onToggleNotifications}
+              accessibilityLabel={t("enableNotifications")}
+            />
+          </View>
+
+          {notificationsEnabled && !hasNotificationPermission ? (
+            <View style={styles.notificationsHintCard}>
+              <AppText variant="body">
+                {t("notificationsDisabledTitle")}
+              </AppText>
+              <AppText variant="caption">
+                {t("notificationsDisabledHint")}
+              </AppText>
+              <View style={styles.settingsButtonWrap}>
+                <AppButton
+                  label={t("openSettings")}
+                  onPress={onOpenSystemSettings}
+                  variant="outline"
+                />
+              </View>
+            </View>
+          ) : null}
 
           <View style={styles.languageRow}>
             <AppText>{t("language")}</AppText>
@@ -163,6 +211,29 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.m,
+  },
+  toggleRow: {
+    minHeight: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.m,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  notificationsHintCard: {
+    marginHorizontal: spacing.l,
+    marginVertical: spacing.m,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: spacing.m,
+    gap: spacing.s,
+    backgroundColor: colors.surface,
+  },
+  settingsButtonWrap: {
+    marginTop: spacing.s,
   },
   languageButtons: {
     flexDirection: "row",

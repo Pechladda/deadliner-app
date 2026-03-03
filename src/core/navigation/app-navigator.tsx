@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
-    NavigationContainer,
-    NavigatorScreenParams,
+  NavigationContainer,
+  NavigatorScreenParams,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
@@ -15,8 +15,10 @@ import { HomeScreen } from "@/src/features/home-deadline-list";
 import { LoginScreen } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
 import { AboutAppScreen } from "@/src/features/settings/screens/about-app-screen";
+import { HistoryScreen } from "@/src/features/settings/screens/history-screen";
 import { ProfileScreen } from "@/src/features/settings/screens/profile-screen";
 import { useAuthStore } from "@/src/store/auth-store";
+import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors } from "@/src/theme";
 
 import { StackRoutes, TabRoutes } from "./route-names";
@@ -35,6 +37,7 @@ export type RootStackParamList = {
   [StackRoutes.DeadlineDetail]: { id: string };
   [StackRoutes.AboutApp]: undefined;
   [StackRoutes.Profile]: undefined;
+  [StackRoutes.History]: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -93,6 +96,9 @@ export function AppNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const hydrateAuth = useAuthStore((state) => state.hydrateAuth);
+  const hydrateNotificationsSetting = useDeadlineStore(
+    (state) => state.hydrateNotificationsSetting,
+  );
 
   useEffect(() => {
     return subscribeLanguageChange(() => {
@@ -103,6 +109,10 @@ export function AppNavigator() {
   useEffect(() => {
     void hydrateAuth();
   }, [hydrateAuth]);
+
+  useEffect(() => {
+    void hydrateNotificationsSetting();
+  }, [hydrateNotificationsSetting]);
 
   if (!isHydrated) {
     return (
@@ -136,6 +146,10 @@ export function AppNavigator() {
             <Stack.Screen
               name={StackRoutes.Profile}
               component={ProfileScreen}
+            />
+            <Stack.Screen
+              name={StackRoutes.History}
+              component={HistoryScreen}
             />
           </>
         )}
