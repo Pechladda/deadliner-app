@@ -7,6 +7,7 @@ import { AppButton, AppText, IconButton } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation";
 import { getLanguage, setLanguage, t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
+import { useAuthStore } from "@/src/store/auth-store";
 import { colors, spacing } from "@/src/theme";
 
 type SettingsRowProps = {
@@ -35,6 +36,7 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
 export function SettingsScreen() {
   const navigation = useSettingsNavigation();
   const [language, setLanguageState] = useState(getLanguage());
+  const logout = useAuthStore((state) => state.logout);
 
   const onPressSetting = (label: string) => {
     Alert.alert(label, t("comingSoon"));
@@ -46,10 +48,7 @@ export function SettingsScreen() {
   };
 
   const onLogout = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: StackRoutes.Login }],
-    });
+    void logout();
   };
 
   return (

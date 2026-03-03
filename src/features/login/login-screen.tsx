@@ -1,19 +1,18 @@
 import { AppText } from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation";
 import { t } from "@/src/core/utils";
-import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
+import { useAuthStore } from "@/src/store/auth-store";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Easing,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
+    Animated,
+    Easing,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Line } from "react-native-svg";
@@ -109,7 +108,7 @@ function ClockLogo() {
 }
 
 export function LoginScreen() {
-  const navigation = useLoginNavigation();
+  const login = useAuthStore((state) => state.login);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -376,7 +375,7 @@ export function LoginScreen() {
       return;
     }
 
-    navigation.replace(StackRoutes.MainTabs);
+    void login();
   };
 
   const usernameHelperStyle = {

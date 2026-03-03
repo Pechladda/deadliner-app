@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
-  NavigationContainer,
-  NavigatorScreenParams,
+    NavigationContainer,
+    NavigatorScreenParams,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { getLanguage, subscribeLanguageChange, t } from "@/src/core/utils";
 import { AddDeadlineScreen } from "@/src/features/add-deadline";
@@ -15,6 +16,7 @@ import { LoginScreen } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
 import { AboutAppScreen } from "@/src/features/settings/screens/about-app-screen";
 import { ProfileScreen } from "@/src/features/settings/screens/profile-screen";
+import { useAuthStore } from "@/src/store/auth-store";
 import { colors } from "@/src/theme";
 
 import { StackRoutes, TabRoutes } from "./route-names";
@@ -88,6 +90,9 @@ function MainTabs() {
 
 export function AppNavigator() {
   const [, setLocaleVersion] = useState(getLanguage());
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const hydrateAuth = useAuthStore((state) => state.hydrateAuth);
 
   useEffect(() => {
     return subscribeLanguageChange(() => {
@@ -95,21 +100,55 @@ export function AppNavigator() {
     });
   }, []);
 
+  useEffect(() => {
+    void hydrateAuth();
+  }, [hydrateAuth]);
+
+  if (!isHydrated) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator color={colors.textPrimary} />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={StackRoutes.Login}
+        initialRouteName={
+          isAuthenticated ? StackRoutes.MainTabs : StackRoutes.Login
+        }
         screenOptions={{ headerShown: false }}
       >
-        <Stack.Screen name={StackRoutes.Login} component={LoginScreen} />
-        <Stack.Screen name={StackRoutes.MainTabs} component={MainTabs} />
-        <Stack.Screen
-          name={StackRoutes.DeadlineDetail}
-          component={DeadlineDetailScreen}
-        />
-        <Stack.Screen name={StackRoutes.AboutApp} component={AboutAppScreen} />
-        <Stack.Screen name={StackRoutes.Profile} component={ProfileScreen} />
+        {!isAuthenticated ? (
+          <Stack.Screen name={StackRoutes.Login} component={LoginScreen} />
+        ) : (
+          <>
+            <Stack.Screen name={StackRoutes.MainTabs} component={MainTabs} />
+            <Stack.Screen
+              name={StackRoutes.DeadlineDetail}
+              component={DeadlineDetailScreen}
+            />
+            <Stack.Screen
+              name={StackRoutes.AboutApp}
+              component={AboutAppScreen}
+            />
+            <Stack.Screen
+              name={StackRoutes.Profile}
+              component={ProfileScreen}
+            />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+});
