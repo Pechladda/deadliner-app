@@ -10,7 +10,7 @@ export type MissingStateProps = {
 
 export type CountdownCardProps = {
   dueAt: string;
-  isUrgent: boolean;
+  status: "green" | "yellow" | "red";
   now: Date;
 };
 

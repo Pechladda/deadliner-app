@@ -1,9 +1,11 @@
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import type { CompositeNavigationProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import type { TabParamList } from "@/src/core/navigation";
+import type { RootStackParamList, TabParamList } from "@/src/core/navigation";
 import { TabRoutes } from "@/src/core/navigation";
 
-export type SettingsNav = BottomTabNavigationProp<
-  TabParamList,
-  typeof TabRoutes.Settings
+export type SettingsNav = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, typeof TabRoutes.Settings>,
+  NativeStackNavigationProp<RootStackParamList>
 >;

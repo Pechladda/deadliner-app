@@ -1,4 +1,11 @@
-import { StyleSheet, TextInput, TextInputProps, View } from "react-native";
+import {
+  StyleProp,
+  StyleSheet,
+  TextInput,
+  TextInputProps,
+  TextStyle,
+  View,
+} from "react-native";
 
 import { colors, radius, spacing, typography } from "@/src/theme";
 
@@ -6,14 +13,26 @@ import { AppText } from "./app-text";
 
 type InputProps = TextInputProps & {
   label?: string;
+  labelStyle?: StyleProp<TextStyle>;
+  inputStyle?: StyleProp<TextStyle>;
 };
 
-export function Input({ label, style, ...props }: InputProps) {
+export function Input({
+  label,
+  style,
+  labelStyle,
+  inputStyle,
+  ...props
+}: InputProps) {
   return (
     <View style={styles.wrapper}>
-      {label ? <AppText variant="caption">{label}</AppText> : null}
+      {label ? (
+        <AppText variant="caption" style={labelStyle}>
+          {label}
+        </AppText>
+      ) : null}
       <TextInput
-        style={[styles.input, style]}
+        style={[styles.input, inputStyle, style]}
         placeholderTextColor={colors.textSecondary}
         {...props}
       />

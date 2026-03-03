@@ -5,17 +5,23 @@ import { colors, radius, spacing } from "@/src/theme";
 
 type UrgencyBadgeProps = {
   timeLeft: string;
-  isUrgent: boolean;
+  status: "green" | "yellow" | "red";
 };
 
-export function UrgencyBadge({ timeLeft, isUrgent }: UrgencyBadgeProps) {
+const statusColorMap: Record<UrgencyBadgeProps["status"], string> = {
+  green: colors.priorityGreen,
+  yellow: colors.priorityYellow,
+  red: colors.priorityRed,
+};
+
+export function UrgencyBadge({ timeLeft, status }: UrgencyBadgeProps) {
   return (
     <View style={styles.container}>
       <View style={styles.badge}>
         <Ionicons
           name="alarm-outline"
           size={16}
-          color={colors.priorityRed}
+          color={statusColorMap[status]}
           style={styles.icon}
         />
         <Text style={styles.timeLeft} numberOfLines={1}>
@@ -23,18 +29,16 @@ export function UrgencyBadge({ timeLeft, isUrgent }: UrgencyBadgeProps) {
         </Text>
       </View>
 
-      {isUrgent ? (
-        <View style={styles.urgentPill}>
-          <Text style={styles.urgentText}>URGENT</Text>
-        </View>
-      ) : null}
+      <View
+        style={[styles.statusPill, { backgroundColor: statusColorMap[status] }]}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: spacing.xs,
   },
   badge: {
@@ -50,18 +54,12 @@ const styles = StyleSheet.create({
   },
   timeLeft: {
     color: colors.textPrimary,
-    fontSize: 14,
+    fontSize: 22,
     fontWeight: "600",
   },
-  urgentPill: {
+  statusPill: {
+    width: 10,
+    height: 52,
     borderRadius: 999,
-    backgroundColor: colors.priorityRed,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.xs,
-  },
-  urgentText: {
-    color: colors.buttonText,
-    fontSize: 12,
-    fontWeight: "700",
   },
 });

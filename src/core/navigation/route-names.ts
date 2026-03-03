@@ -8,6 +8,8 @@ export const StackRoutes = {
   Login: "Login",
   MainTabs: "MainTabs",
   DeadlineDetail: "DeadlineDetail",
+  AboutApp: "AboutApp",
+  Profile: "Profile",
 } as const;
 
 export type TabRouteName = (typeof TabRoutes)[keyof typeof TabRoutes];

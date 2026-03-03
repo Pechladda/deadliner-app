@@ -11,6 +11,8 @@ import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
 import { LoginScreen } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
+import { AboutAppScreen } from "@/src/features/settings/screens/about-app-screen";
+import { ProfileScreen } from "@/src/features/settings/screens/profile-screen";
 import { colors } from "@/src/theme";
 
 import { StackRoutes, TabRoutes } from "./route-names";
@@ -27,6 +29,8 @@ export type RootStackParamList = {
   [StackRoutes.Login]: undefined;
   [StackRoutes.MainTabs]: NavigatorScreenParams<TabParamList> | undefined;
   [StackRoutes.DeadlineDetail]: { id: string };
+  [StackRoutes.AboutApp]: undefined;
+  [StackRoutes.Profile]: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -93,6 +97,8 @@ export function AppNavigator() {
           name={StackRoutes.DeadlineDetail}
           component={DeadlineDetailScreen}
         />
+        <Stack.Screen name={StackRoutes.AboutApp} component={AboutAppScreen} />
+        <Stack.Screen name={StackRoutes.Profile} component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

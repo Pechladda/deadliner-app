@@ -20,9 +20,7 @@ export function HomeScreen() {
   }, [loadDeadlines]);
 
   const onPressBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
+    navigation.replace(StackRoutes.Login);
   };
 
   const onPressAdd = () => {
@@ -60,12 +58,14 @@ export function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel={`${item.assignmentName}, due ${formatDueLabel(item.dueAt)}`}
             >
-              <DeadlineCard
-                assignmentName={item.assignmentName}
-                courseName={item.courseName}
-                dueLabel={`Due: ${formatDueLabel(item.dueAt)}`}
-                urgencyColor={item.colorStatus}
-              />
+              <View style={styles.cardWrapper}>
+                <DeadlineCard
+                  assignmentName={item.assignmentName}
+                  courseName={item.courseName}
+                  dueLabel={`Due: ${formatDueLabel(item.dueAt)}`}
+                  urgencyColor={item.colorStatus}
+                />
+              </View>
             </Pressable>
           )}
           ListEmptyComponent={
@@ -91,6 +91,14 @@ const styles = StyleSheet.create({
   listContent: {
     gap: spacing.m,
     paddingBottom: spacing.xl,
+  },
+  cardWrapper: {
+    borderWidth: 1,
+    borderColor: "rgba(199, 199, 199, 0.42)",
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
+    padding: 3,
+    overflow: "hidden",
   },
   emptyText: { textAlign: "center", marginTop: spacing.l },
 });

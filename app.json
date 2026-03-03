@@ -3,9 +3,6 @@
     "name": "deadliner-app",
     "slug": "deadliner-app",
     "version": "1.0.0",
-    "server": {
-      "port": 8082
-    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "deadlinerapp",

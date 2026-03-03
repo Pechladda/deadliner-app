@@ -17,6 +17,9 @@ import { PickerMode } from "@/src/features/add-deadline/types";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
 
+const PICKER_LOCALE =
+  Platform.OS === "ios" ? "en_US" : "en-US-u-ca-gregory-nu-latn";
+
 type DateTimeFieldProps = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
@@ -61,6 +64,20 @@ function formatTimeDisplay(date: Date): string {
   }).format(date);
 }
 
+function getDateDisplayForOS(
+  pickerMode: PickerMode,
+): "default" | "spinner" | "calendar" | "clock" | "inline" {
+  if (Platform.OS === "ios") {
+    return "spinner";
+  }
+
+  if (pickerMode === "date") {
+    return "calendar";
+  }
+
+  return "clock";
+}
+
 export function AddDeadlineScreen() {
   const route = useAddDeadlineRoute();
   const navigation = useAddDeadlineNavigation();
@@ -78,6 +95,17 @@ export function AddDeadlineScreen() {
     null,
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setCourseName("");
+    setAssignmentName("");
+    setSelectedDate(null);
+    setHasPickedDate(false);
+    setHasPickedTime(false);
+    setIosPickerMode(null);
+    setAndroidPickerMode(null);
+    setErrorMessage(null);
+  };
 
   const params = route.params;
   const editId =
@@ -148,12 +176,28 @@ export function AddDeadlineScreen() {
     const pickerMode =
       Platform.OS === "ios" ? iosPickerMode : androidPickerMode;
 
-    if (event.type === "dismissed" || !pickerMode) {
-      if (Platform.OS === "android") setAndroidPickerMode(null);
+    if (!pickerMode) {
       return;
     }
 
-    if (Platform.OS === "android" && event.type === "set") {
+    if (Platform.OS === "ios") {
+      if (!value) return;
+
+      if (pickerMode === "date") {
+        applyDate(value);
+        return;
+      }
+
+      applyTime(value);
+      return;
+    }
+
+    if (event.type === "dismissed") {
+      setAndroidPickerMode(null);
+      return;
+    }
+
+    if (event.type === "set") {
       setAndroidPickerMode(null);
     }
 
@@ -161,7 +205,6 @@ export function AddDeadlineScreen() {
 
     if (pickerMode === "date") {
       applyDate(value);
-      if (Platform.OS === "ios") setIosPickerMode(null);
       return;
     }
 
@@ -176,7 +219,9 @@ export function AddDeadlineScreen() {
       !hasPickedDate ||
       !hasPickedTime
     ) {
-      setErrorMessage("Please fill Subject, Assignment, Date and Time.");
+      setErrorMessage(
+        "Please fill Course name, Assignment name, Date and Time.",
+      );
       return;
     }
 
@@ -199,6 +244,7 @@ export function AddDeadlineScreen() {
       addDeadline(values);
     }
 
+    resetForm();
     navigation.navigate(TabRoutes.Home);
   };
 
@@ -217,7 +263,7 @@ export function AddDeadlineScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel="Go back"
           />
-          <AppText variant="title" style={styles.brownText}>
+          <AppText variant="title" style={styles.screenTitleText}>
             {isEditMode ? "Edit Deadline" : "New Deadline"}
           </AppText>
           <View style={styles.headerSpacer} />
@@ -225,18 +271,22 @@ export function AddDeadlineScreen() {
 
         <View style={styles.form}>
           <Input
-            label="Subject"
+            label="Course name"
             value={courseName}
             onChangeText={setCourseName}
-            placeholder="Subject"
-            accessibilityLabel="Subject input"
+            placeholder="Course name"
+            accessibilityLabel="Course name input"
+            labelStyle={styles.inputLabelText}
+            inputStyle={styles.inputFieldText}
           />
           <Input
-            label="Assignment"
+            label="Assignment name"
             value={assignmentName}
             onChangeText={setAssignmentName}
-            placeholder="Assignment"
-            accessibilityLabel="Assignment input"
+            placeholder="Assignment name"
+            accessibilityLabel="Assignment name input"
+            labelStyle={styles.inputLabelText}
+            inputStyle={styles.inputFieldText}
           />
 
           <View style={styles.row}>
@@ -294,9 +344,9 @@ export function AddDeadlineScreen() {
               <DateTimePicker
                 value={pickerValue}
                 mode={iosPickerMode}
-                display="spinner"
+                display={getDateDisplayForOS(iosPickerMode)}
                 onChange={handlePickerChange}
-                locale="en-US-u-ca-gregory"
+                locale={PICKER_LOCALE}
                 is24Hour
                 themeVariant="light"
               />
@@ -309,9 +359,9 @@ export function AddDeadlineScreen() {
         <DateTimePicker
           value={pickerValue}
           mode={androidPickerMode}
-          display="spinner"
+          display={getDateDisplayForOS(androidPickerMode)}
           onChange={handlePickerChange}
-          locale="en-US-u-ca-gregory"
+          locale={PICKER_LOCALE}
           is24Hour
           themeVariant="light"
         />
@@ -335,15 +385,15 @@ const styles = StyleSheet.create({
   },
   headerSpacer: { width: 36, height: 36 },
   form: {
-    gap: spacing.m,
+    gap: spacing.l,
   },
   row: {
     flexDirection: "row",
-    gap: spacing.s,
+    gap: spacing.l,
   },
   fieldGroup: {
     flex: 1,
-    gap: spacing.s,
+    gap: spacing.l,
   },
   dateTimeField: {
     minHeight: 48,
@@ -362,6 +412,16 @@ const styles = StyleSheet.create({
   brownText: {
     color: colors.textPrimary,
   },
+  screenTitleText: {
+    color: colors.textPrimary,
+    fontSize: 26,
+  },
+  inputLabelText: {
+    fontSize: 18,
+  },
+  inputFieldText: {
+    fontSize: 15,
+  },
   saveButton: {
     marginTop: "auto",
     marginBottom: spacing.xl,
@@ -373,6 +433,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: colors.buttonText,
+    fontSize: 18,
   },
   modalOverlay: {
     flex: 1,

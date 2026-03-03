@@ -50,7 +50,7 @@ export function DeadlineCard({
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
-    alignItems: "stretch",
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radius.l,
     overflow: "hidden",
@@ -61,8 +61,11 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   urgencyBar: {
-    width: 4,
-    alignSelf: "stretch",
+    width: 10,
+    height: 70,
+    borderRadius: 999,
+    marginLeft: spacing.m,
+    marginRight: spacing.m,
   },
   content: {
     flex: 1,
@@ -72,18 +75,18 @@ const styles = StyleSheet.create({
     minHeight: 96,
   },
   assignmentName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.textPrimary,
   },
   courseName: {
     marginTop: spacing.xs,
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textSecondary,
   },
   dueLabel: {
     marginTop: spacing.s,
-    fontSize: 12,
+    fontSize: 14,
     color: colors.textSecondary,
   },
 });

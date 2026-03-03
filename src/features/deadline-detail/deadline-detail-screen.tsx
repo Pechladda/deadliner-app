@@ -1,10 +1,16 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, Card, IconButton } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
-import { formatCountdownLong, formatDueLabel } from "@/src/core/utils";
+import {
+  computeColorStatus,
+  formatCountdownLong,
+  formatDueLabel,
+  getRemainingMs,
+} from "@/src/core/utils";
 import {
   useDeadlineDetailNavigation,
   useDeadlineDetailRoute,
@@ -14,7 +20,6 @@ import {
   CountdownCardProps,
   MissingStateProps,
 } from "@/src/features/deadline-detail/types";
-import { UrgencyBadge } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
 
@@ -36,15 +41,47 @@ function MissingState({ onPressBack }: MissingStateProps) {
   );
 }
 
-function CountdownCard({ dueAt, isUrgent, now }: CountdownCardProps) {
+function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
   return (
     <Card style={styles.countdownCard}>
       <View style={styles.countdownLeft}>
-        <UrgencyBadge
-          timeLeft={formatCountdownLong(dueAt, now)}
-          isUrgent={isUrgent}
-        />
-        <AppText variant="caption">Due {formatDueLabel(dueAt)}</AppText>
+        <View style={styles.countdownRow}>
+          <Ionicons
+            name="alarm-outline"
+            size={18}
+            color={
+              status === "red"
+                ? colors.danger
+                : status === "yellow"
+                  ? colors.warning
+                  : colors.success
+            }
+          />
+          <AppText style={styles.countdownText}>
+            {formatCountdownLong(dueAt, now)}
+          </AppText>
+        </View>
+
+        <View
+          style={[
+            styles.statusPill,
+            status === "red" && styles.pillRed,
+            status === "yellow" && styles.pillYellow,
+            status === "green" && styles.pillGreen,
+          ]}
+        >
+          <AppText style={styles.statusPillText}>
+            {status === "red"
+              ? "URGENT"
+              : status === "yellow"
+                ? "SOON"
+                : "ON TRACK"}
+          </AppText>
+        </View>
+
+        <AppText variant="caption" style={styles.dueText}>
+          Due {formatDueLabel(dueAt)}
+        </AppText>
       </View>
     </Card>
   );
@@ -149,6 +186,9 @@ export function DeadlineDetailScreen() {
     );
   }
 
+  const remainingMs = getRemainingMs(deadline.dueAt, now);
+  const status = computeColorStatus(remainingMs);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.container}>
@@ -165,18 +205,15 @@ export function DeadlineDetailScreen() {
         <AppText variant="heading" style={styles.assignmentTitle}>
           {deadline.assignmentName}
         </AppText>
-        <AppText variant="body" color="textSecondary">
+        <AppText
+          variant="body"
+          color="textSecondary"
+          style={{ textAlign: "center" }}
+        >
           {deadline.courseName}
         </AppText>
 
-        <CountdownCard
-          dueAt={deadline.dueAt}
-          now={now}
-          isUrgent={
-            new Date(deadline.dueAt).getTime() - now.getTime() <
-            24 * 60 * 60 * 1000
-          }
-        />
+        <CountdownCard dueAt={deadline.dueAt} now={now} status={status} />
 
         <ActionRow onEdit={onPressEdit} onDelete={onPressDelete} />
       </View>
@@ -189,8 +226,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.l,
-    paddingTop: spacing.s,
-    gap: spacing.s,
+    paddingTop: spacing.l,
+    gap: spacing.m,
   },
   center: {
     flex: 1,
@@ -211,13 +248,55 @@ const styles = StyleSheet.create({
   assignmentTitle: {
     fontSize: 28,
     fontWeight: "700",
+    textAlign: "center",
   },
   countdownCard: {
     marginTop: spacing.s,
-    alignItems: "flex-start",
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: spacing.s,
   },
   countdownLeft: {
+    gap: spacing.m,
+    alignItems: "center",
+  },
+  countdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: spacing.s,
+  },
+  countdownText: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  statusPill: {
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.s,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusPillText: {
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 1,
+    color: colors.buttonText,
+  },
+  pillRed: {
+    backgroundColor: colors.danger,
+  },
+  pillYellow: {
+    backgroundColor: colors.warning,
+  },
+  pillGreen: {
+    backgroundColor: colors.success,
+  },
+  dueText: {
+    textAlign: "center",
+    fontSize: 16,
+    lineHeight: 24,
   },
   buttonRow: {
     flexDirection: "row",

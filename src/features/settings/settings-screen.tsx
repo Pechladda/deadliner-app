@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, IconButton } from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, spacing } from "@/src/theme";
 
@@ -53,7 +54,7 @@ export function SettingsScreen() {
           <SettingsRow
             label="Profile"
             icon="person-outline"
-            onPress={() => onPressSetting("Profile")}
+            onPress={() => navigation.navigate(StackRoutes.Profile)}
           />
           <SettingsRow
             label="Notifications"
@@ -63,7 +64,7 @@ export function SettingsScreen() {
           <SettingsRow
             label="About App"
             icon="help-circle-outline"
-            onPress={() => onPressSetting("About App")}
+            onPress={() => navigation.navigate(StackRoutes.AboutApp)}
           />
         </View>
       </View>
