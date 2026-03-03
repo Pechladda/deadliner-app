@@ -5,7 +5,9 @@ import {
   NavigatorScreenParams,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useEffect, useState } from "react";
 
+import { getLanguage, subscribeLanguageChange, t } from "@/src/core/utils";
 import { AddDeadlineScreen } from "@/src/features/add-deadline";
 import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
@@ -54,7 +56,7 @@ function MainTabs() {
         name={TabRoutes.Home}
         component={HomeScreen}
         options={{
-          title: "Home",
+          title: t("tabHome"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -64,7 +66,7 @@ function MainTabs() {
         name={TabRoutes.AddDeadline}
         component={AddDeadlineScreen}
         options={{
-          title: "Add",
+          title: t("tabAdd"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-outline" size={size} color={color} />
           ),
@@ -74,7 +76,7 @@ function MainTabs() {
         name={TabRoutes.Settings}
         component={SettingsScreen}
         options={{
-          title: "Settings",
+          title: t("tabSettings"),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
@@ -85,6 +87,14 @@ function MainTabs() {
 }
 
 export function AppNavigator() {
+  const [, setLocaleVersion] = useState(getLanguage());
+
+  useEffect(() => {
+    return subscribeLanguageChange(() => {
+      setLocaleVersion(getLanguage());
+    });
+  }, []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator

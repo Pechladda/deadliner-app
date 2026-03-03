@@ -2,6 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, IconButton } from "@/src/components";
+import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, radius, spacing } from "@/src/theme";
 
@@ -15,29 +16,28 @@ export function AboutAppScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel="Go back"
+            accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">About App</AppText>
+          <AppText variant="title">{t("aboutApp")}</AppText>
           <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.card}>
           <AppText variant="heading" style={styles.centerText}>
-            Deadliner
+            {t("appName")}
           </AppText>
           <AppText
             variant="body"
             color="textSecondary"
             style={styles.centerText}
           >
-            Version 1.0.0
+            {t("version")}
           </AppText>
           <AppText variant="body" style={styles.description}>
-            Deadliner helps students visualize urgency and never miss important
-            deadlines.
+            {t("appDescription")}
           </AppText>
           <AppText variant="caption" style={styles.credit}>
-            Developed by Maymae
+            {t("developedBy")}
           </AppText>
         </View>
       </View>

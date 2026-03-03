@@ -1,5 +1,6 @@
 import { AppText } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation";
+import { t } from "@/src/core/utils";
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -161,12 +162,12 @@ export function LoginScreen() {
   const strengthScore = Object.values(passwordChecks).filter(Boolean).length;
   const strengthLabel =
     strengthScore <= 1
-      ? "Weak"
+      ? t("strengthWeak")
       : strengthScore === 2
-        ? "Fair"
+        ? t("strengthFair")
         : strengthScore <= 4
-          ? "Good"
-          : "Strong";
+          ? t("strengthGood")
+          : t("strengthStrong");
 
   useEffect(() => {
     Animated.timing(strengthAnim, {
@@ -366,12 +367,10 @@ export function LoginScreen() {
     if (!usernameIsValid || !passwordIsValid) {
       const messages: string[] = [];
       if (!usernameIsValid) {
-        messages.push("Username: 4–16 letters or numbers only.");
+        messages.push(t("usernameInvalidMessage"));
       }
       if (!passwordIsValid) {
-        messages.push(
-          "Password: 8+ chars with upper, lower, number & special.",
-        );
+        messages.push(t("passwordInvalidMessage"));
       }
       showErrorPopup(messages);
       return;
@@ -432,7 +431,7 @@ export function LoginScreen() {
             <View style={styles.logoBlock}>
               <ClockLogo />
               <AppText variant="title" style={styles.title}>
-                Deadliner
+                {t("appName")}
               </AppText>
             </View>
 
@@ -457,12 +456,12 @@ export function LoginScreen() {
                   }}
                   onFocus={onUsernameFocus}
                   onBlur={onUsernameBlur}
-                  placeholder="Username"
+                  placeholder={t("usernamePlaceholder")}
                   placeholderTextColor={BRAND_LIGHT}
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="next"
-                  accessibilityLabel="Username input"
+                  accessibilityLabel={t("usernameInput")}
                   style={[
                     styles.input,
                     activeField === "username" && styles.inputFocused,
@@ -477,13 +476,13 @@ export function LoginScreen() {
                       {username.length >= 4 && username.length <= 16
                         ? "✓"
                         : "○"}{" "}
-                      4–16 characters
+                      {t("usernameRuleLength")}
                     </AppText>
                     <AppText style={styles.ruleLine}>
                       {/^[A-Za-z0-9]+$/.test(username) && username.length > 0
                         ? "✓"
                         : "○"}{" "}
-                      letters and numbers only
+                      {t("usernameRuleChars")}
                     </AppText>
                   </View>
                 </Animated.View>
@@ -509,13 +508,13 @@ export function LoginScreen() {
                     }}
                     onFocus={onPasswordFocus}
                     onBlur={onPasswordBlur}
-                    placeholder="Password"
+                    placeholder={t("passwordPlaceholder")}
                     placeholderTextColor={BRAND_LIGHT}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
                     returnKeyType="done"
-                    accessibilityLabel="Password input"
+                    accessibilityLabel={t("passwordInput")}
                     style={[
                       styles.input,
                       styles.passwordInput,
@@ -528,7 +527,7 @@ export function LoginScreen() {
                     style={styles.eyeButton}
                     accessibilityRole="button"
                     accessibilityLabel={
-                      showPassword ? "Hide password" : "Show password"
+                      showPassword ? t("hidePassword") : t("showPassword")
                     }
                   >
                     <Ionicons
@@ -544,19 +543,24 @@ export function LoginScreen() {
                 >
                   <View style={styles.helperInner}>
                     <AppText style={styles.ruleLine}>
-                      {passwordChecks.length ? "✓" : "○"} 8+ characters
+                      {passwordChecks.length ? "✓" : "○"}{" "}
+                      {t("passwordRuleLength")}
                     </AppText>
                     <AppText style={styles.ruleLine}>
-                      {passwordChecks.uppercase ? "✓" : "○"} 1 uppercase
+                      {passwordChecks.uppercase ? "✓" : "○"}{" "}
+                      {t("passwordRuleUppercase")}
                     </AppText>
                     <AppText style={styles.ruleLine}>
-                      {passwordChecks.lowercase ? "✓" : "○"} 1 lowercase
+                      {passwordChecks.lowercase ? "✓" : "○"}{" "}
+                      {t("passwordRuleLowercase")}
                     </AppText>
                     <AppText style={styles.ruleLine}>
-                      {passwordChecks.number ? "✓" : "○"} 1 number
+                      {passwordChecks.number ? "✓" : "○"}{" "}
+                      {t("passwordRuleNumber")}
                     </AppText>
                     <AppText style={styles.ruleLine}>
-                      {passwordChecks.special ? "✓" : "○"} 1 special
+                      {passwordChecks.special ? "✓" : "○"}{" "}
+                      {t("passwordRuleSpecial")}
                     </AppText>
 
                     <View style={styles.strengthRow}>
@@ -583,9 +587,9 @@ export function LoginScreen() {
                   onPressIn={() => animatePress(0.98)}
                   onPressOut={() => animatePress(1)}
                   accessibilityRole="button"
-                  accessibilityLabel="Login"
+                  accessibilityLabel={t("login")}
                 >
-                  <AppText style={styles.loginText}>LOGIN</AppText>
+                  <AppText style={styles.loginText}>{t("loginUpper")}</AppText>
                 </Pressable>
               </Animated.View>
             </View>
@@ -606,7 +610,7 @@ export function LoginScreen() {
             ]}
           >
             <AppText variant="heading" style={styles.popupTitle}>
-              Error
+              {t("error")}
             </AppText>
             {popupMessages.map((message) => (
               <AppText key={message} style={styles.popupMessage}>

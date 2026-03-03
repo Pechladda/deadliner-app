@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, IconButton, Input } from "@/src/components";
+import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, spacing } from "@/src/theme";
 
@@ -20,9 +21,9 @@ export function ProfileScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel="Go back"
+            accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">Profile</AppText>
+          <AppText variant="title">{t("profile")}</AppText>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -31,9 +32,9 @@ export function ProfileScreen() {
         </View>
 
         <View style={styles.formWrap}>
-          <Input label="Name" value={name} onChangeText={setName} />
+          <Input label={t("name")} value={name} onChangeText={setName} />
           <Input
-            label="Email"
+            label={t("email")}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"

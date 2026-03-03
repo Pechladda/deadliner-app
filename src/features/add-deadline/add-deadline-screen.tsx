@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, IconButton, Input } from "@/src/components";
 import { TabRoutes } from "@/src/core/navigation";
-import { computeColorStatus, getRemainingMs } from "@/src/core/utils";
+import { computeColorStatus, getRemainingMs, t } from "@/src/core/utils";
 import {
   useAddDeadlineNavigation,
   useAddDeadlineRoute,
@@ -34,7 +34,9 @@ function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
         onPress={onPress}
         style={styles.dateTimeField}
         accessibilityRole="button"
-        accessibilityLabel={`Open ${label.toLowerCase()} picker`}
+        accessibilityLabel={
+          label === t("date") ? t("openDatePicker") : t("openTimePicker")
+        }
       >
         <Ionicons name={icon} size={16} color={colors.textSecondary} />
         <AppText
@@ -219,9 +221,7 @@ export function AddDeadlineScreen() {
       !hasPickedDate ||
       !hasPickedTime
     ) {
-      setErrorMessage(
-        "Please fill Course name, Assignment name, Date and Time.",
-      );
+      setErrorMessage(t("fillAllFieldsError"));
       return;
     }
 
@@ -250,9 +250,9 @@ export function AddDeadlineScreen() {
 
   const pickerValue = selectedDate ?? new Date();
   const dateValue =
-    selectedDate && hasPickedDate ? formatDateDisplay(selectedDate) : "Date";
+    selectedDate && hasPickedDate ? formatDateDisplay(selectedDate) : t("date");
   const timeValue =
-    selectedDate && hasPickedTime ? formatTimeDisplay(selectedDate) : "Time";
+    selectedDate && hasPickedTime ? formatTimeDisplay(selectedDate) : t("time");
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -261,43 +261,43 @@ export function AddDeadlineScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel="Go back"
+            accessibilityLabel={t("goBack")}
           />
           <AppText variant="title" style={styles.screenTitleText}>
-            {isEditMode ? "Edit Deadline" : "New Deadline"}
+            {isEditMode ? t("editDeadline") : t("newDeadline")}
           </AppText>
           <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.form}>
           <Input
-            label="Course name"
+            label={t("courseName")}
             value={courseName}
             onChangeText={setCourseName}
-            placeholder="Course name"
-            accessibilityLabel="Course name input"
+            placeholder={t("courseName")}
+            accessibilityLabel={t("courseNameInput")}
             labelStyle={styles.inputLabelText}
             inputStyle={styles.inputFieldText}
           />
           <Input
-            label="Assignment name"
+            label={t("assignmentName")}
             value={assignmentName}
             onChangeText={setAssignmentName}
-            placeholder="Assignment name"
-            accessibilityLabel="Assignment name input"
+            placeholder={t("assignmentName")}
+            accessibilityLabel={t("assignmentNameInput")}
             labelStyle={styles.inputLabelText}
             inputStyle={styles.inputFieldText}
           />
 
           <View style={styles.row}>
             <DateTimeField
-              label="Date"
+              label={t("date")}
               icon="calendar-outline"
               value={dateValue}
               onPress={() => openPicker("date")}
             />
             <DateTimeField
-              label="Time"
+              label={t("time")}
               icon="time-outline"
               value={timeValue}
               onPress={() => openPicker("time")}
@@ -315,10 +315,10 @@ export function AddDeadlineScreen() {
           onPress={onSave}
           style={styles.saveButton}
           accessibilityRole="button"
-          accessibilityLabel="Save deadline"
+          accessibilityLabel={t("saveDeadline")}
         >
           <AppText variant="button" style={styles.saveButtonText}>
-            Save
+            {t("save")}
           </AppText>
         </Pressable>
       </View>
@@ -334,10 +334,10 @@ export function AddDeadlineScreen() {
             <View style={styles.modalSheet}>
               <View style={styles.modalHeader}>
                 <AppText variant="heading" style={styles.brownText}>
-                  {iosPickerMode === "date" ? "Pick Date" : "Pick Time"}
+                  {iosPickerMode === "date" ? t("pickDate") : t("pickTime")}
                 </AppText>
                 <AppButton
-                  label="Done"
+                  label={t("done")}
                   onPress={() => setIosPickerMode(null)}
                 />
               </View>

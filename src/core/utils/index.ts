@@ -10,3 +10,10 @@ export {
     sortDeadlinesByDueAt
 } from "./deadline-utils";
 
+export {
+    getLanguage,
+    setLanguage,
+    subscribeLanguageChange,
+    t
+} from "./translations";
+

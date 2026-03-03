@@ -10,6 +10,7 @@ import {
   formatCountdownLong,
   formatDueLabel,
   getRemainingMs,
+  t,
 } from "@/src/core/utils";
 import {
   useDeadlineDetailNavigation,
@@ -29,13 +30,13 @@ function MissingState({ onPressBack }: MissingStateProps) {
       <IconButton
         icon="chevron-back"
         onPress={onPressBack}
-        accessibilityLabel="Go back"
+        accessibilityLabel={t("goBack")}
       />
       <AppText variant="heading" style={styles.missingTitle}>
-        No assignment selected
+        {t("noAssignmentSelected")}
       </AppText>
       <AppText variant="body" color="textSecondary" style={styles.missingText}>
-        Please choose an assignment from Home to see its details.
+        {t("chooseAssignmentHint")}
       </AppText>
     </View>
   );
@@ -72,15 +73,15 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
         >
           <AppText style={styles.statusPillText}>
             {status === "red"
-              ? "URGENT"
+              ? t("urgent")
               : status === "yellow"
-                ? "SOON"
-                : "ON TRACK"}
+                ? t("soon")
+                : t("onTrack")}
           </AppText>
         </View>
 
         <AppText variant="caption" style={styles.dueText}>
-          Due {formatDueLabel(dueAt)}
+          {t("due")} {formatDueLabel(dueAt)}
         </AppText>
       </View>
     </Card>
@@ -92,7 +93,7 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
     <View style={styles.buttonRow}>
       <View style={styles.actionButtonWrap}>
         <AppButton
-          label="Edit"
+          label={t("edit")}
           onPress={onEdit}
           variant="outline"
           iconName="pencil-outline"
@@ -100,7 +101,7 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
       </View>
       <View style={styles.actionButtonWrap}>
         <AppButton
-          label="Delete"
+          label={t("delete")}
           onPress={onDelete}
           variant="outline"
           iconName="trash-outline"
@@ -150,27 +151,23 @@ export function DeadlineDetailScreen() {
       return;
     }
 
-    Alert.alert(
-      "Delete deadline",
-      "Are you sure you want to delete this assignment?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+    Alert.alert(t("deleteDeadlineTitle"), t("deleteDeadlineConfirm"), [
+      {
+        text: t("cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: () => {
+          deleteDeadline(deadline.id);
+          setSelectedId(null);
+          navigation.replace(StackRoutes.MainTabs, {
+            screen: TabRoutes.Home,
+          });
         },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteDeadline(deadline.id);
-            setSelectedId(null);
-            navigation.replace(StackRoutes.MainTabs, {
-              screen: TabRoutes.Home,
-            });
-          },
-        },
-      ],
-    );
+      },
+    ]);
   };
 
   const onPressFallbackBack = () => {
@@ -196,9 +193,9 @@ export function DeadlineDetailScreen() {
           <IconButton
             icon="chevron-back"
             onPress={onPressFallbackBack}
-            accessibilityLabel="Go back"
+            accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">Assignment Detail</AppText>
+          <AppText variant="title">{t("assignmentDetail")}</AppText>
           <View style={styles.headerSpacer} />
         </View>
 

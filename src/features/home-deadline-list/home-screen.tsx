@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, IconButton } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
-import { formatDueLabel } from "@/src/core/utils";
+import { formatDueLabel, t } from "@/src/core/utils";
 import { useHomeNavigation } from "@/src/features/home-deadline-list/hooks/use-home-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
@@ -19,10 +19,6 @@ export function HomeScreen() {
     loadDeadlines();
   }, [loadDeadlines]);
 
-  const onPressBack = () => {
-    navigation.replace(StackRoutes.Login);
-  };
-
   const onPressAdd = () => {
     navigation.navigate(TabRoutes.AddDeadline);
   };
@@ -31,17 +27,16 @@ export function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.container}>
         <View style={styles.headerRow}>
-          <IconButton
-            icon="chevron-back"
-            onPress={onPressBack}
-            accessibilityLabel="Go back"
-          />
-          <AppText variant="title">My Deadlines</AppText>
-          <IconButton
-            icon="add"
-            onPress={onPressAdd}
-            accessibilityLabel="Create new deadline"
-          />
+          <AppText variant="title" style={styles.headerTitle}>
+            {t("myDeadlines")}
+          </AppText>
+          <View style={styles.addButton}>
+            <IconButton
+              icon="add"
+              onPress={onPressAdd}
+              accessibilityLabel={t("createNewDeadline")}
+            />
+          </View>
         </View>
 
         <FlatList
@@ -56,13 +51,13 @@ export function HomeScreen() {
                 });
               }}
               accessibilityRole="button"
-              accessibilityLabel={`${item.assignmentName}, due ${formatDueLabel(item.dueAt)}`}
+              accessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
             >
               <View style={styles.cardWrapper}>
                 <DeadlineCard
                   assignmentName={item.assignmentName}
                   courseName={item.courseName}
-                  dueLabel={`Due: ${formatDueLabel(item.dueAt)}`}
+                  dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)}`}
                   urgencyColor={item.colorStatus}
                 />
               </View>
@@ -70,7 +65,7 @@ export function HomeScreen() {
           )}
           ListEmptyComponent={
             <AppText variant="caption" style={styles.emptyText}>
-              No deadlines yet.
+              {t("noDeadlinesYet")}
             </AppText>
           }
         />
@@ -85,8 +80,16 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    position: "relative",
     marginBottom: spacing.l,
+  },
+  headerTitle: {
+    textAlign: "center",
+  },
+  addButton: {
+    position: "absolute",
+    right: 0,
   },
   listContent: {
     gap: spacing.m,
