@@ -11,8 +11,7 @@ export {
 } from "./deadline-utils";
 
 export {
-    getLanguage,
-    setLanguage,
+    getLanguage, initLanguage, setLanguage,
     subscribeLanguageChange,
     t
 } from "./translations";

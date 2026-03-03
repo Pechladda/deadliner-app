@@ -5,8 +5,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, IconButton } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation";
-import { getLanguage, setLanguage, t } from "@/src/core/utils";
+import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
+import { useLanguage } from "@/src/providers/language-provider";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, spacing } from "@/src/theme";
@@ -36,7 +37,10 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
 
 export function SettingsScreen() {
   const navigation = useSettingsNavigation();
-  const [language, setLanguageState] = useState(getLanguage());
+  const { language, setAppLanguage } = useLanguage();
+  const [pendingLanguage, setPendingLanguage] = useState<"en" | "th" | null>(
+    null,
+  );
   const logout = useAuthStore((state) => state.logout);
   const notificationsEnabled = useDeadlineStore(
     (state) => state.notificationsEnabled,
@@ -49,8 +53,10 @@ export function SettingsScreen() {
   );
 
   const onChangeLanguage = (nextLanguage: "th" | "en") => {
-    setLanguage(nextLanguage);
-    setLanguageState(nextLanguage);
+    setPendingLanguage(nextLanguage);
+    void setAppLanguage(nextLanguage).finally(() => {
+      setPendingLanguage(null);
+    });
   };
 
   const onLogout = () => {
@@ -136,7 +142,8 @@ export function SettingsScreen() {
                 onPress={() => onChangeLanguage("en")}
                 style={[
                   styles.languageButton,
-                  language === "en" && styles.languageButtonActive,
+                  (pendingLanguage === "en" || language === "en") &&
+                    styles.languageButtonActive,
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t("english")}
@@ -147,7 +154,8 @@ export function SettingsScreen() {
                 onPress={() => onChangeLanguage("th")}
                 style={[
                   styles.languageButton,
-                  language === "th" && styles.languageButtonActive,
+                  (pendingLanguage === "th" || language === "th") &&
+                    styles.languageButtonActive,
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t("thai")}

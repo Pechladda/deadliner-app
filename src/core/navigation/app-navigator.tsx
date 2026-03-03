@@ -5,10 +5,10 @@ import {
   NavigatorScreenParams,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { getLanguage, subscribeLanguageChange, t } from "@/src/core/utils";
+import { t } from "@/src/core/utils";
 import { AddDeadlineScreen } from "@/src/features/add-deadline";
 import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
@@ -92,19 +92,12 @@ function MainTabs() {
 }
 
 export function AppNavigator() {
-  const [, setLocaleVersion] = useState(getLanguage());
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const hydrateAuth = useAuthStore((state) => state.hydrateAuth);
   const hydrateNotificationsSetting = useDeadlineStore(
     (state) => state.hydrateNotificationsSetting,
   );
-
-  useEffect(() => {
-    return subscribeLanguageChange(() => {
-      setLocaleVersion(getLanguage());
-    });
-  }, []);
 
   useEffect(() => {
     void hydrateAuth();
