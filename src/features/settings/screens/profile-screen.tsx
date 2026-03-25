@@ -3,7 +3,7 @@ import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, IconButton, Input } from "@/src/components";
+import { AppText, Card, IconButton, Input } from "@/src/components";
 import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, spacing } from "@/src/theme";
@@ -31,16 +31,20 @@ export function ProfileScreen() {
           <Ionicons name="person" size={40} color={colors.textSecondary} />
         </View>
 
-        <View style={styles.formWrap}>
-          <Input label={t("name")} value={name} onChangeText={setName} />
-          <Input
-            label={t("email")}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+        <Card style={styles.formCard}>
+          <AppText variant="cardTitle">{t("profile")}</AppText>
+
+          <View style={styles.formWrap}>
+            <Input label={t("name")} value={name} onChangeText={setName} />
+            <Input
+              label={t("email")}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+        </Card>
       </View>
     </SafeAreaView>
   );
@@ -51,13 +55,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.l,
-    paddingTop: spacing.s,
+    paddingTop: spacing.m,
     gap: spacing.l,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: spacing.s,
   },
   headerSpacer: { width: 36, height: 36 },
   avatar: {
@@ -66,11 +71,15 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderSoft,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceWarm,
   },
-
+  formCard: {
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceWarm,
+    gap: spacing.l,
+  },
   formWrap: { gap: spacing.m },
 });

@@ -2,7 +2,14 @@ import { Text, TextProps, TextStyle } from "react-native";
 
 import { colors, typography } from "@/src/theme";
 
-type Variant = "title" | "heading" | "body" | "caption" | "button";
+type Variant =
+  | "title"
+  | "heading"
+  | "sectionTitle"
+  | "cardTitle"
+  | "body"
+  | "caption"
+  | "button";
 
 type AppTextProps = TextProps & {
   variant?: Variant;
@@ -11,22 +18,38 @@ type AppTextProps = TextProps & {
 
 const variantStyles: Record<Variant, TextStyle> = {
   title: {
-    fontSize: typography.size.xl,
+    fontSize: typography.size.xxl,
+    lineHeight: typography.lineHeight.title,
     fontWeight: typography.weight.heavy,
     color: colors.textPrimary,
   },
   heading: {
-    fontSize: typography.size.l,
+    fontSize: typography.size.section,
+    lineHeight: typography.lineHeight.relaxed,
     fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+  },
+  sectionTitle: {
+    fontSize: typography.size.section,
+    lineHeight: typography.lineHeight.relaxed,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+  },
+  cardTitle: {
+    fontSize: typography.size.l,
+    lineHeight: typography.lineHeight.normal,
+    fontWeight: typography.weight.semibold,
     color: colors.textPrimary,
   },
   body: {
     fontSize: typography.size.m,
+    lineHeight: typography.lineHeight.normal,
     fontWeight: typography.weight.regular,
     color: colors.textPrimary,
   },
   caption: {
     fontSize: typography.size.s,
+    lineHeight: typography.lineHeight.compact,
     fontWeight: typography.weight.medium,
     color: colors.textSecondary,
   },

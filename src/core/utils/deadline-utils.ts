@@ -145,6 +145,24 @@ export function computeColorStatus(
   return "green";
 }
 
+export function getUrgencyMessage(
+  remainingMs: number,
+): "overdue" | "needsToday" | "dueSoon" | "safeForNow" {
+  if (remainingMs <= 0) {
+    return "overdue";
+  }
+
+  if (remainingMs <= msPerDay) {
+    return "needsToday";
+  }
+
+  if (remainingMs <= 3 * msPerDay) {
+    return "dueSoon";
+  }
+
+  return "safeForNow";
+}
+
 export function sortDeadlinesByDueAt<T extends { dueAt: string }>(
   items: T[],
 ): T[] {

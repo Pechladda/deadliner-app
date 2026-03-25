@@ -1,28 +1,32 @@
 import { ReactNode } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
-import { colors, radius, spacing } from "@/src/theme";
+import { colors, radius, shadows, spacing } from "@/src/theme";
 
 type CardProps = {
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
+  highlighted?: boolean;
 };
 
-export function Card({ children, style }: CardProps) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function Card({ children, style, highlighted = false }: CardProps) {
+  return (
+    <View style={[styles.card, highlighted && styles.highlighted, style]}>
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.l,
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderRadius: radius.xl,
+    borderWidth: 0,
+    borderColor: colors.borderSoft,
+    padding: spacing.xl2,
+    ...shadows.shadowCard,
+  },
+  highlighted: {
+    backgroundColor: colors.cardHighlight,
   },
 });

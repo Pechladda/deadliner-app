@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, IconButton, Toast } from "@/src/components";
+import { AppButton, AppText, Card, IconButton, Toast } from "@/src/components";
 import { formatDueLabel, t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 
-function formatCompletedLabel(iso?: string) {
+function formatCompletedLabel(iso?: string | null) {
   if (!iso) {
     return "";
   }
@@ -61,6 +61,10 @@ export function HistoryScreen() {
     }, 1800);
   };
 
+  const onGoBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.container}>
@@ -93,11 +97,19 @@ export function HistoryScreen() {
             </View>
           )}
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <AppText variant="caption" style={styles.emptyText}>
+            <Card style={styles.emptyCard}>
+              <AppText variant="sectionTitle" style={styles.emptyText}>
                 {t("noHistoryYet")}
               </AppText>
-            </View>
+              <View style={styles.emptyActionWrap}>
+                <AppButton
+                  label={t("goBack")}
+                  onPress={onGoBack}
+                  variant="outline"
+                  iconName="arrow-back-outline"
+                />
+              </View>
+            </Card>
           }
         />
 
@@ -112,13 +124,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.l,
-    paddingTop: spacing.s,
+    paddingTop: spacing.m,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.l,
+    marginBottom: spacing.xl2,
   },
   headerSpacer: { width: 36, height: 36 },
   listContent: {
@@ -128,16 +140,22 @@ const styles = StyleSheet.create({
   cardWrapper: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 22,
+    borderRadius: radius.xxl,
     backgroundColor: colors.surface,
     padding: 3,
     overflow: "hidden",
   },
-  emptyWrap: {
-    marginTop: spacing.xl,
+  emptyCard: {
+    marginTop: spacing.xxl,
     alignItems: "center",
+    backgroundColor: colors.surfaceWarm,
+    borderColor: colors.borderSoft,
   },
   emptyText: {
     textAlign: "center",
+  },
+  emptyActionWrap: {
+    marginTop: spacing.l,
+    width: "100%",
   },
 });

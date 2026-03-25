@@ -1,10 +1,10 @@
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, IconButton } from "@/src/components";
+import { AppText, Card, IconButton } from "@/src/components";
 import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
-import { colors, radius, spacing } from "@/src/theme";
+import { colors, spacing, typography } from "@/src/theme";
 
 export function AboutAppScreen() {
   const navigation = useSettingsNavigation();
@@ -22,8 +22,8 @@ export function AboutAppScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
-        <View style={styles.card}>
-          <AppText variant="heading" style={styles.centerText}>
+        <Card style={styles.card}>
+          <AppText variant="sectionTitle" style={styles.centerText}>
             {t("appName")}
           </AppText>
           <AppText
@@ -39,7 +39,7 @@ export function AboutAppScreen() {
           <AppText variant="caption" style={styles.credit}>
             {t("developedBy")}
           </AppText>
-        </View>
+        </Card>
       </View>
     </SafeAreaView>
   );
@@ -47,24 +47,22 @@ export function AboutAppScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.surface },
-  container: { flex: 1, paddingHorizontal: spacing.l, paddingTop: spacing.s },
+  container: { flex: 1, paddingHorizontal: spacing.l, paddingTop: spacing.m },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xl2,
   },
   headerSpacer: { width: 36, height: 36 },
   card: {
     alignSelf: "center",
     width: "100%",
     maxWidth: 360,
-    borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xl,
+    borderColor: colors.borderSoft,
+    backgroundColor: colors.surfaceWarm,
+    paddingHorizontal: spacing.xl2,
+    paddingVertical: spacing.xl2,
     gap: spacing.m,
   },
   centerText: {
@@ -72,7 +70,7 @@ const styles = StyleSheet.create({
   },
   description: {
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: typography.lineHeight.normal,
     marginTop: spacing.s,
   },
   credit: {

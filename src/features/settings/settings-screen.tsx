@@ -1,16 +1,25 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Linking, Pressable, StyleSheet, Switch, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton, AppText, IconButton } from "@/src/components";
+import { AppButton, AppText, IconButton, Toast } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation";
 import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { useLanguage } from "@/src/providers/language-provider";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 
 type SettingsRowProps = {
   label: string;
@@ -36,6 +45,9 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
 }
 
 export function SettingsScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 375;
+  const isWide = width >= 430;
   const navigation = useSettingsNavigation();
   const { language, setAppLanguage } = useLanguage();
   const [pendingLanguage, setPendingLanguage] = useState<"en" | "th" | null>(
@@ -51,6 +63,9 @@ export function SettingsScreen() {
   const setNotificationsEnabled = useDeadlineStore(
     (state) => state.setNotificationsEnabled,
   );
+  const clearAllData = useDeadlineStore((state) => state.clearAllData);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVisible, setToastVisible] = useState(false);
 
   const onChangeLanguage = (nextLanguage: "th" | "en") => {
     setPendingLanguage(nextLanguage);
@@ -71,19 +86,56 @@ export function SettingsScreen() {
     void Linking.openSettings();
   };
 
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setToastVisible(true);
+
+    setTimeout(() => {
+      setToastVisible(false);
+    }, 2000);
+  };
+
+  const onDeleteAllData = () => {
+    Alert.alert(t("deleteAllDataTitle"), t("deleteAllDataConfirm"), [
+      { text: t("cancel"), style: "cancel" },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: () => {
+          void clearAllData().then((isSuccess) => {
+            showToast(isSuccess ? t("allDataDeleted") : t("deleteFailed"));
+          });
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <View style={styles.container}>
-        <View style={styles.headerRow}>
+      <ScrollView
+        style={[
+          styles.container,
+          isCompact && styles.containerCompact,
+          isWide && styles.containerWide,
+        ]}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.headerRow, isCompact && styles.headerRowCompact]}>
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
             accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">{t("settings")}</AppText>
+          <AppText variant="title" style={styles.screenTitle}>
+            {t("settings")}
+          </AppText>
           <View style={styles.headerSpacer} />
         </View>
 
+        <AppText variant="sectionTitle" style={styles.sectionTitle}>
+          {t("settingsAppSection")}
+        </AppText>
         <View style={styles.section}>
           <SettingsRow
             label={t("profile")}
@@ -96,13 +148,18 @@ export function SettingsScreen() {
             onPress={() => navigation.navigate(StackRoutes.AboutApp)}
           />
           <SettingsRow
+            label={t("privacyPolicy")}
+            icon="shield-checkmark-outline"
+            onPress={() => navigation.navigate(StackRoutes.PrivacyPolicy)}
+          />
+          <SettingsRow
             label={t("history")}
             icon="time-outline"
             onPress={() => navigation.navigate(StackRoutes.History)}
           />
 
           <View style={styles.toggleRow}>
-            <View style={styles.rowLeft}>
+            <View style={[styles.rowLeft, styles.toggleRowLeft]}>
               <Ionicons
                 name="notifications-outline"
                 size={20}
@@ -166,6 +223,25 @@ export function SettingsScreen() {
           </View>
         </View>
 
+        <AppText variant="sectionTitle" style={styles.sectionTitle}>
+          {t("settingsDataSection")}
+        </AppText>
+        <View style={styles.section}>
+          <View style={styles.dataSummaryWrap}>
+            <AppText variant="caption">{t("dataUsageSummary")}</AppText>
+          </View>
+
+          <View style={styles.privacyActionsWrap}>
+            <AppButton
+              label={t("deleteAllData")}
+              onPress={onDeleteAllData}
+              variant="outline"
+              iconName="trash-outline"
+              iconColorToken="danger"
+            />
+          </View>
+        </View>
+
         <View style={styles.logoutWrap}>
           <AppButton
             label={t("logout")}
@@ -175,45 +251,70 @@ export function SettingsScreen() {
             iconColorToken="danger"
           />
         </View>
-      </View>
+      </ScrollView>
+
+      <Toast message={toastMessage} visible={toastVisible} type="success" />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.surface },
-  container: { flex: 1, paddingHorizontal: spacing.l, paddingTop: spacing.s },
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, paddingHorizontal: spacing.l, paddingTop: spacing.l },
+  containerCompact: { paddingHorizontal: spacing.m },
+  containerWide: { paddingHorizontal: spacing.xl },
+  contentContainer: {
+    paddingBottom: spacing.xxxl,
+  },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: spacing.xl2,
+  },
+  headerRowCompact: {
     marginBottom: spacing.l,
   },
   headerSpacer: { width: 36, height: 36 },
+  screenTitle: {
+    flex: 1,
+    textAlign: "center",
+  },
+  sectionTitle: {
+    marginBottom: spacing.s,
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.s,
+    color: colors.textSecondary,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
   section: {
-    borderRadius: 12,
+    borderRadius: radius.xl,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: "hidden",
   },
   row: {
-    minHeight: 64,
+    minHeight: 58,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderSoft,
   },
   rowLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.m,
   },
+  toggleRowLeft: {
+    flex: 1,
+  },
   languageRow: {
-    minHeight: 64,
+    minHeight: 58,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -221,24 +322,32 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.m,
   },
   toggleRow: {
-    minHeight: 64,
+    minHeight: 58,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.m,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderSoft,
   },
   notificationsHintCard: {
     marginHorizontal: spacing.l,
     marginVertical: spacing.m,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: radius.l,
     padding: spacing.m,
     gap: spacing.s,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfacePink,
+  },
+  dataSummaryWrap: {
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.m,
+  },
+  privacyActionsWrap: {
+    paddingHorizontal: spacing.l,
+    paddingBottom: spacing.l,
   },
   settingsButtonWrap: {
     marginTop: spacing.s,
@@ -251,16 +360,17 @@ const styles = StyleSheet.create({
   languageButton: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-    backgroundColor: colors.surface,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surfacePink,
   },
   languageButtonActive: {
-    borderColor: colors.textPrimary,
+    borderColor: colors.primary,
+    backgroundColor: colors.chipBgActive,
   },
   logoutWrap: {
-    marginTop: "auto",
-    marginBottom: spacing.xl,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xxl,
   },
 });

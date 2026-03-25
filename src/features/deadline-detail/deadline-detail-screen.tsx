@@ -1,28 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, Card, IconButton } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
 import {
-  computeColorStatus,
-  formatCountdownLong,
-  formatDueLabel,
-  getRemainingMs,
-  t,
+    computeColorStatus,
+    formatCountdownLong,
+    formatDueLabel,
+    getRemainingMs,
+    getUrgencyMessage,
+    t,
 } from "@/src/core/utils";
 import {
-  useDeadlineDetailNavigation,
-  useDeadlineDetailRoute,
+    useDeadlineDetailNavigation,
+    useDeadlineDetailRoute,
 } from "@/src/features/deadline-detail/hooks/use-deadline-detail-screen";
 import {
-  ActionRowProps,
-  CountdownCardProps,
-  MissingStateProps,
+    ActionRowProps,
+    CountdownCardProps,
+    MissingStateProps,
 } from "@/src/features/deadline-detail/types";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, spacing, typography } from "@/src/theme";
 
 function MissingState({ onPressBack }: MissingStateProps) {
   return (
@@ -43,8 +44,10 @@ function MissingState({ onPressBack }: MissingStateProps) {
 }
 
 function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
+  const urgencyMessage = getUrgencyMessage(getRemainingMs(dueAt, now));
+
   return (
-    <Card style={styles.countdownCard}>
+    <Card style={styles.countdownCard} highlighted>
       <View style={styles.countdownLeft}>
         <View style={styles.countdownRow}>
           <Ionicons
@@ -52,13 +55,13 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
             size={18}
             color={
               status === "red"
-                ? colors.danger
+                ? colors.priorityRed
                 : status === "yellow"
-                  ? colors.warning
-                  : colors.success
+                  ? colors.priorityYellow
+                  : colors.priorityGreen
             }
           />
-          <AppText style={styles.countdownText}>
+          <AppText variant="title" style={styles.countdownText}>
             {formatCountdownLong(dueAt, now)}
           </AppText>
         </View>
@@ -80,6 +83,16 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
           </AppText>
         </View>
 
+        <AppText variant="caption" style={styles.urgencyHelperText}>
+          {urgencyMessage === "overdue"
+            ? t("overdue")
+            : urgencyMessage === "needsToday"
+              ? t("needsAttentionToday")
+              : urgencyMessage === "dueSoon"
+                ? t("dueVerySoon")
+                : t("safeForNow")}
+        </AppText>
+
         <AppText variant="caption" style={styles.dueText}>
           {t("due")} {formatDueLabel(dueAt)}
         </AppText>
@@ -95,7 +108,7 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
         <AppButton
           label={t("edit")}
           onPress={onEdit}
-          variant="outline"
+          variant="solid"
           iconName="pencil-outline"
         />
       </View>
@@ -113,6 +126,9 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
 }
 
 export function DeadlineDetailScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 375;
+  const isWide = width >= 430;
   const route = useDeadlineDetailRoute();
   const navigation = useDeadlineDetailNavigation();
   const deadlineId = route.params?.id;
@@ -160,10 +176,16 @@ export function DeadlineDetailScreen() {
         text: t("delete"),
         style: "destructive",
         onPress: () => {
-          deleteDeadline(deadline.id);
-          setSelectedId(null);
-          navigation.replace(StackRoutes.MainTabs, {
-            screen: TabRoutes.Home,
+          void deleteDeadline(deadline.id).then((isSuccess) => {
+            if (!isSuccess) {
+              Alert.alert(t("error"), t("deleteFailed"));
+              return;
+            }
+
+            setSelectedId(null);
+            navigation.replace(StackRoutes.MainTabs, {
+              screen: TabRoutes.Home,
+            });
           });
         },
       },
@@ -188,29 +210,56 @@ export function DeadlineDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <View style={styles.container}>
-        <View style={styles.headerRow}>
+      <View
+        style={[
+          styles.container,
+          isCompact && styles.containerCompact,
+          isWide && styles.containerWide,
+        ]}
+      >
+        <View style={[styles.headerRow, isCompact && styles.headerRowCompact]}>
           <IconButton
             icon="chevron-back"
             onPress={onPressFallbackBack}
             accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">{t("assignmentDetail")}</AppText>
+          <AppText variant="title" style={styles.screenTitle}>
+            {t("assignmentDetail")}
+          </AppText>
           <View style={styles.headerSpacer} />
         </View>
 
-        <AppText variant="heading" style={styles.assignmentTitle}>
-          {deadline.assignmentName}
-        </AppText>
-        <AppText
-          variant="body"
-          color="textSecondary"
-          style={{ textAlign: "center" }}
-        >
-          {deadline.courseName}
-        </AppText>
+        <Card style={styles.assignmentCard}>
+          <AppText variant="sectionTitle" style={styles.assignmentTitle}>
+            {deadline.assignmentName}
+          </AppText>
+          <AppText
+            variant="body"
+            color="textSecondary"
+            style={styles.courseText}
+          >
+            {deadline.courseName}
+          </AppText>
+        </Card>
 
         <CountdownCard dueAt={deadline.dueAt} now={now} status={status} />
+
+        <Card style={styles.metaCard}>
+          <View style={styles.metaRow}>
+            <AppText variant="caption">{t("reminderInfo")}</AppText>
+            <AppText variant="body" style={styles.metaValue}>
+              {deadline.reminder
+                ? deadline.reminder === "5m"
+                  ? t("reminder5m")
+                  : deadline.reminder === "30m"
+                    ? t("reminder30m")
+                    : deadline.reminder === "1h"
+                      ? t("reminder1h")
+                      : t("reminder1d")
+                : t("noReminderSelected")}
+            </AppText>
+          </View>
+        </Card>
 
         <ActionRow onEdit={onPressEdit} onDelete={onPressDelete} />
       </View>
@@ -224,14 +273,21 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.l,
     paddingTop: spacing.l,
+    gap: spacing.xl,
+  },
+  containerCompact: {
+    paddingHorizontal: spacing.m,
     gap: spacing.m,
+  },
+  containerWide: {
+    paddingHorizontal: spacing.xl,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: spacing.l,
-    gap: spacing.s,
+    gap: spacing.m,
   },
   missingTitle: { textAlign: "center" },
   missingText: { textAlign: "center" },
@@ -239,19 +295,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: spacing.xl2,
+  },
+  headerRowCompact: {
     marginBottom: spacing.l,
   },
   headerSpacer: { width: 36, height: 36 },
+  screenTitle: {
+    textAlign: "center",
+  },
+  assignmentCard: {
+    alignItems: "center",
+    backgroundColor: colors.surface,
+  },
   assignmentTitle: {
-    fontSize: 28,
-    fontWeight: "700",
+    textAlign: "center",
+    marginTop: spacing.xxs,
+  },
+  courseText: {
     textAlign: "center",
   },
   countdownCard: {
-    marginTop: spacing.s,
+    marginTop: spacing.xs,
     alignItems: "center",
     width: "100%",
-    paddingVertical: spacing.s,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.cardHighlight,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
   },
   countdownLeft: {
     gap: spacing.m,
@@ -264,14 +335,12 @@ const styles = StyleSheet.create({
     gap: spacing.s,
   },
   countdownText: {
-    fontSize: 22,
-    fontWeight: "700",
     textAlign: "center",
   },
   statusPill: {
     paddingHorizontal: spacing.l,
-    paddingVertical: spacing.s,
-    borderRadius: 999,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -281,27 +350,47 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.buttonText,
   },
+  urgencyHelperText: {
+    color: colors.textSecondary,
+    fontWeight: typography.weight.semibold,
+    textAlign: "center",
+    marginTop: spacing.xs,
+  },
   pillRed: {
-    backgroundColor: colors.danger,
+    backgroundColor: colors.priorityRed,
   },
   pillYellow: {
-    backgroundColor: colors.warning,
+    backgroundColor: colors.priorityYellow,
   },
   pillGreen: {
-    backgroundColor: colors.success,
+    backgroundColor: colors.priorityGreen,
   },
   dueText: {
     textAlign: "center",
-    fontSize: 16,
-    lineHeight: 24,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  metaCard: {
+    backgroundColor: colors.surfacePink,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  metaRow: {
+    gap: spacing.s,
+    alignItems: "center",
+  },
+  metaValue: {
+    fontWeight: typography.weight.semibold,
+    color: colors.textPrimary,
   },
   buttonRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: "auto",
-    gap: spacing.s,
-    paddingBottom: spacing.xl,
+    gap: spacing.m,
+    paddingBottom: spacing.xxl,
+    paddingTop: spacing.s,
   },
   actionButtonWrap: {
     flex: 1,

@@ -1,50 +1,67 @@
-# Welcome to your Expo app 👋
+# Deadliner
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Deadliner is an Expo React Native app for students to manage assignment deadlines with urgency-focused UI, reminders, history, and privacy-conscious data controls.
 
-## Get started
+## Setup
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. Install dependencies.
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Create environment variables.
 
-## Learn more
+```bash
+cp .env.example .env
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Fill in Firebase values in `.env`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `EXPO_PUBLIC_FIREBASE_API_KEY`
+- `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `EXPO_PUBLIC_FIREBASE_PROJECT_ID`
+- `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `EXPO_PUBLIC_FIREBASE_APP_ID`
 
-## Join the community
+4. Run the app.
 
-Join our community of developers creating universal apps.
+```bash
+npm start
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+5. If you changed `.env` values, restart Expo with cache clear.
+
+```bash
+npx expo start -c
+```
+
+## Environment Notes
+
+- Firebase config is loaded from Expo public env variables in `src/core/config/env.ts`.
+- The app throws a startup error if any required Firebase env variable is missing.
+- Do not commit real secrets to version control.
+
+## Scripts
+
+- `npm start` starts Expo
+- `npm run ios` runs on iOS simulator
+- `npm run android` runs on Android emulator/device
+- `npm run web` runs web target
+- `npm run lint` runs Expo lint checks
+
+## Architecture Highlights
+
+- Feature-based modules under `src/features`
+- Centralized theme tokens under `src/theme`
+- Firestore access isolated in `src/services/deadline-service.ts`
+- Notifications isolated in `src/services/notification-service.ts`
+- Zustand stores under `src/store`
+
+## Privacy & Data
+
+- First-use consent checkbox before login
+- Dedicated Privacy Policy screen
+- "Delete All Data" action in Settings
+- Stored data is limited to deadlines, reminders, and app preferences

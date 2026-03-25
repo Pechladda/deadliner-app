@@ -3,12 +3,19 @@ import {
     Animated,
     Pressable,
     StyleSheet,
-    Text,
     View,
     type ViewStyle,
 } from "react-native";
 
-import { colors, radius, spacing } from "@/src/theme";
+import { AppText } from "@/src/components";
+import {
+    colors,
+    motion,
+    radius,
+    shadows,
+    spacing,
+    typography,
+} from "@/src/theme";
 
 type UrgencyColor = "red" | "yellow" | "green";
 
@@ -55,15 +62,15 @@ export function DeadlineCard({
     Animated.sequence([
       Animated.parallel([
         Animated.timing(animation, {
-          toValue: 0.95,
-          duration: 120,
+          toValue: motion.scalePressed,
+          duration: motion.quick,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(animation, {
           toValue: 0,
-          duration: 180,
+          duration: motion.normal,
           useNativeDriver: true,
         }),
       ]),
@@ -98,19 +105,27 @@ export function DeadlineCard({
         accessibilityRole={onPressCard ? "button" : undefined}
         accessibilityLabel={cardAccessibilityLabel}
       >
-        <Text style={styles.assignmentName} numberOfLines={1}>
+        <AppText
+          variant="cardTitle"
+          style={styles.assignmentName}
+          numberOfLines={1}
+        >
           {assignmentName}
-        </Text>
-        <Text style={styles.courseName} numberOfLines={1}>
+        </AppText>
+        <AppText style={styles.courseName} numberOfLines={1}>
           {courseName}
-        </Text>
-        <Text style={styles.dueLabel} numberOfLines={1}>
+        </AppText>
+        <AppText variant="caption" style={styles.dueLabel} numberOfLines={1}>
           {dueLabel}
-        </Text>
+        </AppText>
         {completedLabel ? (
-          <Text style={styles.completedLabel} numberOfLines={1}>
+          <AppText
+            variant="caption"
+            style={styles.completedLabel}
+            numberOfLines={1}
+          >
             {completedLabel}
-          </Text>
+          </AppText>
         ) : null}
       </Pressable>
 
@@ -121,7 +136,9 @@ export function DeadlineCard({
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
         >
-          <Text style={styles.doneButtonText}>{actionLabel}</Text>
+          <AppText variant="caption" style={styles.doneButtonText}>
+            {actionLabel}
+          </AppText>
         </Pressable>
       ) : null}
     </Animated.View>
@@ -133,64 +150,57 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.surface,
-    borderRadius: radius.l,
+    borderRadius: radius.xxl,
     overflow: "hidden",
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderWidth: 0,
+    borderColor: colors.borderSoft,
+    ...shadows.shadowCard,
   },
   cardMuted: {
     opacity: 0.72,
   },
   urgencyBar: {
-    width: 10,
-    height: 70,
-    borderRadius: 999,
-    marginLeft: spacing.m,
-    marginRight: spacing.m,
+    width: 8,
+    height: 80,
+    borderRadius: radius.pill,
+    marginLeft: spacing.s,
+    marginRight: spacing.s,
   },
   content: {
     flex: 1,
-    paddingHorizontal: spacing.l,
+    paddingLeft: spacing.s,
+    paddingRight: spacing.m,
     paddingVertical: spacing.l,
     justifyContent: "space-between",
-    minHeight: 96,
+    minHeight: 104,
   },
   assignmentName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.textPrimary,
+    lineHeight: typography.lineHeight.relaxed,
   },
   courseName: {
     marginTop: spacing.xs,
-    fontSize: 16,
     color: colors.textSecondary,
   },
   dueLabel: {
     marginTop: spacing.s,
-    fontSize: 14,
     color: colors.textSecondary,
   },
   completedLabel: {
     marginTop: spacing.xs,
-    fontSize: 13,
-    color: colors.textSecondary,
+    color: colors.textMuted,
   },
   doneButton: {
-    marginRight: spacing.m,
+    marginRight: spacing.s,
     marginLeft: spacing.s,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.m,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-    backgroundColor: colors.surface,
+    borderWidth: 0,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.s,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.chipBg,
   },
   doneButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
+    fontWeight: typography.weight.bold,
     color: colors.textPrimary,
   },
 });

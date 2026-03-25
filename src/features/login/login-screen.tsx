@@ -1,33 +1,107 @@
 import { AppText } from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation";
 import { t } from "@/src/core/utils";
+import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { useAuthStore } from "@/src/store/auth-store";
+import { usePrivacyStore } from "@/src/store/privacy-store";
+import { colors, radius, spacing, typography } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Animated,
-    Easing,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    View,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Line } from "react-native-svg";
 
-const BRAND_PRIMARY = "#3e2723";
-const BRAND_ACCENT = "#8d6e63";
-const BRAND_LIGHT = "#c8a99a";
-const BG_WARM = "#ffffff";
+const BRAND_PRIMARY = colors.textPrimary;
+const BRAND_ACCENT = colors.primaryStrong;
+const BRAND_LIGHT = colors.border;
+const BG_WARM = colors.background;
+const INPUT_PLACEHOLDER = colors.textSecondary;
 
-const HELPER_DURATION = 200;
-const SWITCH_DELAY = 180;
-const USERNAME_HELPER_HEIGHT = 64;
-const PASSWORD_HELPER_HEIGHT = 152;
+const USERNAME_PATTERN = /^[A-Za-z0-9]+$/;
+const THAI_CHAR_PATTERN = /[\u0E00-\u0E7F]/;
+const USERNAME_DEFAULT_HELPER =
+  "Use English letters and numbers only, up to 6 characters";
+const PASSWORD_DEFAULT_HELPER =
+  "8-30 characters with uppercase, lowercase, number, and @ or _ or .";
 
-type ActiveField = "username" | "password" | null;
+type FieldErrors = {
+  username: string;
+  password: string;
+};
+
+type FieldTouched = {
+  username: boolean;
+  password: boolean;
+};
+
+function validateUsername(username: string): string {
+  const normalized = username;
+
+  if (!normalized.trim()) {
+    return "Username is required";
+  }
+
+  if (/\s/.test(normalized)) {
+    return "Username cannot contain spaces";
+  }
+
+  if (normalized.length > 6) {
+    return "Username must not exceed 6 characters";
+  }
+
+  if (
+    THAI_CHAR_PATTERN.test(normalized) ||
+    !USERNAME_PATTERN.test(normalized)
+  ) {
+    return "Use English letters and numbers only";
+  }
+
+  return "";
+}
+
+function validatePassword(password: string): string {
+  const normalized = password;
+
+  if (!normalized) {
+    return "Password is required";
+  }
+
+  if (normalized.length < 8) {
+    return "Password must be at least 8 characters";
+  }
+
+  if (normalized.length > 30) {
+    return "Password must not exceed 30 characters";
+  }
+
+  if (!/[A-Z]/.test(normalized)) {
+    return "Include at least 1 uppercase letter";
+  }
+
+  if (!/[a-z]/.test(normalized)) {
+    return "Include at least 1 lowercase letter";
+  }
+
+  if (!/\d/.test(normalized)) {
+    return "Include at least 1 number";
+  }
+
+  if (!/[@_.]/.test(normalized)) {
+    return "Include at least 1 of these: @ _ .";
+  }
+
+  return "";
+}
 
 function ClockLogo() {
   const stroke = BRAND_PRIMARY;
@@ -108,312 +182,128 @@ function ClockLogo() {
 }
 
 export function LoginScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 375;
+  const isWide = width >= 430;
+  const navigation = useLoginNavigation();
   const login = useAuthStore((state) => state.login);
+  const consentGranted = usePrivacyStore((state) => state.consentGranted);
+  const hydrateConsent = usePrivacyStore((state) => state.hydrateConsent);
+  const setConsent = usePrivacyStore((state) => state.setConsent);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [activeField, setActiveField] = useState<ActiveField>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [usernameHelperVisible, setUsernameHelperVisible] = useState(false);
-  const [passwordHelperVisible, setPasswordHelperVisible] = useState(false);
-  const [usernameInvalid, setUsernameInvalid] = useState(false);
-  const [passwordInvalid, setPasswordInvalid] = useState(false);
-  const [popupVisible, setPopupVisible] = useState(false);
-  const [popupMessages, setPopupMessages] = useState<string[]>([]);
+  const [errors, setErrors] = useState<FieldErrors>({
+    username: "",
+    password: "",
+  });
+  const [touched, setTouched] = useState<FieldTouched>({
+    username: false,
+    password: false,
+  });
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [consentError, setConsentError] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const buttonScale = useRef(new Animated.Value(1)).current;
-  const usernameHelperAnim = useRef(new Animated.Value(0)).current;
-  const passwordHelperAnim = useRef(new Animated.Value(0)).current;
-  const strengthAnim = useRef(new Animated.Value(0)).current;
-  const usernameShake = useRef(new Animated.Value(0)).current;
-  const passwordShake = useRef(new Animated.Value(0)).current;
-  const popupOpacity = useRef(new Animated.Value(0)).current;
-  const popupScale = useRef(new Animated.Value(0.95)).current;
-  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const usernameValid = useMemo(() => {
-    return (
-      username.length >= 4 &&
-      username.length <= 16 &&
-      /^[A-Za-z0-9]+$/.test(username)
-    );
-  }, [username]);
-
-  const passwordChecks = useMemo(
-    () => ({
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      number: /\d/.test(password),
-      special: /[^A-Za-z0-9]/.test(password),
-    }),
-    [password],
-  );
-
-  const passwordValid =
-    passwordChecks.length &&
-    passwordChecks.uppercase &&
-    passwordChecks.lowercase &&
-    passwordChecks.number &&
-    passwordChecks.special;
-
-  const strengthScore = Object.values(passwordChecks).filter(Boolean).length;
-  const strengthLabel =
-    strengthScore <= 1
-      ? t("strengthWeak")
-      : strengthScore === 2
-        ? t("strengthFair")
-        : strengthScore <= 4
-          ? t("strengthGood")
-          : t("strengthStrong");
 
   useEffect(() => {
-    Animated.timing(strengthAnim, {
-      toValue: strengthScore / 5,
-      duration: 210,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [strengthAnim, strengthScore]);
-
-  useEffect(() => {
-    Animated.timing(usernameHelperAnim, {
-      toValue: usernameHelperVisible ? 1 : 0,
-      duration: HELPER_DURATION,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [usernameHelperAnim, usernameHelperVisible]);
-
-  useEffect(() => {
-    Animated.timing(passwordHelperAnim, {
-      toValue: passwordHelperVisible ? 1 : 0,
-      duration: HELPER_DURATION,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [passwordHelperAnim, passwordHelperVisible]);
-
-  useEffect(() => {
-    return () => {
-      if (collapseTimerRef.current) {
-        clearTimeout(collapseTimerRef.current);
-      }
-      if (popupTimerRef.current) {
-        clearTimeout(popupTimerRef.current);
-      }
-    };
-  }, []);
-
-  const scheduleCollapse = (field: Exclude<ActiveField, null>) => {
-    if (collapseTimerRef.current) {
-      clearTimeout(collapseTimerRef.current);
-    }
-    collapseTimerRef.current = setTimeout(() => {
-      if (
-        field === "username" &&
-        activeField !== "username" &&
-        username.length === 0
-      ) {
-        setUsernameHelperVisible(false);
-      }
-      if (
-        field === "password" &&
-        activeField !== "password" &&
-        password.length === 0
-      ) {
-        setPasswordHelperVisible(false);
-      }
-    }, SWITCH_DELAY);
-  };
+    void hydrateConsent();
+  }, [hydrateConsent]);
 
   const animatePress = (toValue: number) => {
     Animated.timing(buttonScale, {
       toValue,
       duration: 120,
-      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
   };
 
-  const shakeField = (anim: Animated.Value) => {
-    anim.setValue(0);
-    Animated.sequence([
-      Animated.timing(anim, {
-        toValue: -5,
-        duration: 45,
-        useNativeDriver: true,
-      }),
-      Animated.timing(anim, {
-        toValue: 5,
-        duration: 45,
-        useNativeDriver: true,
-      }),
-      Animated.timing(anim, {
-        toValue: -4,
-        duration: 45,
-        useNativeDriver: true,
-      }),
-      Animated.timing(anim, {
-        toValue: 4,
-        duration: 45,
-        useNativeDriver: true,
-      }),
-      Animated.timing(anim, {
-        toValue: 0,
-        duration: 45,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const buildErrors = (
+    nextUsername: string,
+    nextPassword: string,
+  ): FieldErrors => {
+    return {
+      username: validateUsername(nextUsername),
+      password: validatePassword(nextPassword),
+    };
   };
 
-  const showErrorPopup = (messages: string[]) => {
-    setPopupMessages(messages);
-    setPopupVisible(true);
-    popupOpacity.setValue(0);
-    popupScale.setValue(0.95);
-    Animated.parallel([
-      Animated.timing(popupOpacity, {
-        toValue: 1,
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(popupScale, {
-        toValue: 1,
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    if (popupTimerRef.current) {
-      clearTimeout(popupTimerRef.current);
-    }
-    popupTimerRef.current = setTimeout(() => {
-      dismissPopup();
-    }, 3400);
+  const onBlurField = (field: keyof FieldTouched) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setErrors((prev) => ({
+      ...prev,
+      [field]:
+        field === "username"
+          ? validateUsername(username)
+          : validatePassword(password),
+    }));
   };
 
-  const dismissPopup = () => {
-    Animated.parallel([
-      Animated.timing(popupOpacity, {
-        toValue: 0,
-        duration: 160,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(popupScale, {
-        toValue: 0.95,
-        duration: 160,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start(({ finished }) => {
-      if (finished) {
-        setPopupVisible(false);
-      }
-    });
-  };
+  const onChangeUsername = (value: string) => {
+    setUsername(value);
 
-  const onUsernameFocus = () => {
-    setActiveField("username");
-    setUsernameHelperVisible(true);
-    if (password.length === 0) {
-      scheduleCollapse("password");
+    if (submitAttempted || touched.username) {
+      setErrors((prev) => ({
+        ...prev,
+        username: validateUsername(value),
+      }));
     }
   };
 
-  const onPasswordFocus = () => {
-    setActiveField("password");
-    setPasswordHelperVisible(true);
-    if (username.length === 0) {
-      scheduleCollapse("username");
+  const onChangePassword = (value: string) => {
+    setPassword(value);
+
+    if (submitAttempted || touched.password) {
+      setErrors((prev) => ({
+        ...prev,
+        password: validatePassword(value),
+      }));
     }
   };
 
-  const onUsernameBlur = () => {
-    setActiveField((prev) => (prev === "username" ? null : prev));
-    if (username.length === 0) {
-      scheduleCollapse("username");
-    }
-  };
-
-  const onPasswordBlur = () => {
-    setActiveField((prev) => (prev === "password" ? null : prev));
-    if (password.length === 0) {
-      scheduleCollapse("password");
-    }
-  };
+  const validationPreview = useMemo(
+    () => buildErrors(username, password),
+    [username, password],
+  );
+  const isFormValid =
+    !validationPreview.username && !validationPreview.password;
+  const hasAnyInput = username.trim().length > 0 || password.length > 0;
+  const usernameMessage =
+    (submitAttempted || touched.username) && errors.username
+      ? errors.username
+      : USERNAME_DEFAULT_HELPER;
+  const passwordMessage =
+    (submitAttempted || touched.password) && errors.password
+      ? errors.password
+      : PASSWORD_DEFAULT_HELPER;
 
   const onSubmit = () => {
-    const usernameIsValid = usernameValid;
-    const passwordIsValid = passwordValid;
+    setSubmitAttempted(true);
+    const nextErrors = buildErrors(username, password);
+    setErrors(nextErrors);
+    setTouched({ username: true, password: true });
 
-    setUsernameInvalid(!usernameIsValid);
-    setPasswordInvalid(!passwordIsValid);
-
-    if (!usernameIsValid) {
-      setUsernameHelperVisible(true);
-      shakeField(usernameShake);
-    }
-    if (!passwordIsValid) {
-      setPasswordHelperVisible(true);
-      shakeField(passwordShake);
-    }
-
-    if (!usernameIsValid || !passwordIsValid) {
-      const messages: string[] = [];
-      if (!usernameIsValid) {
-        messages.push(t("usernameInvalidMessage"));
-      }
-      if (!passwordIsValid) {
-        messages.push(t("passwordInvalidMessage"));
-      }
-      showErrorPopup(messages);
+    if (nextErrors.username || nextErrors.password) {
       return;
     }
 
-    void login();
-  };
+    if (!consentGranted && !consentChecked) {
+      setConsentError(t("consentRequired"));
+      return;
+    }
 
-  const usernameHelperStyle = {
-    height: usernameHelperAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, USERNAME_HELPER_HEIGHT],
-    }),
-    opacity: usernameHelperAnim,
-    transform: [
-      {
-        translateY: usernameHelperAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [-6, 0],
-        }),
-      },
-    ],
-  };
+    setConsentError("");
 
-  const passwordHelperStyle = {
-    height: passwordHelperAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, PASSWORD_HELPER_HEIGHT],
-    }),
-    opacity: passwordHelperAnim,
-    transform: [
-      {
-        translateY: passwordHelperAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [-6, 0],
-        }),
-      },
-    ],
-  };
+    void (async () => {
+      if (!consentGranted && consentChecked) {
+        await setConsent(true);
+      }
 
-  const strengthWidth = strengthAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0%", "100%"],
-  });
+      await login();
+    })();
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -426,99 +316,83 @@ export function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.container}>
-            <View style={styles.logoBlock}>
+          <View
+            style={[
+              styles.container,
+              isCompact && styles.containerCompact,
+              isWide && styles.containerWide,
+            ]}
+          >
+            <View
+              style={[styles.logoBlock, isCompact && styles.logoBlockCompact]}
+            >
               <ClockLogo />
               <AppText variant="title" style={styles.title}>
                 {t("appName")}
               </AppText>
+              <AppText variant="caption" style={styles.subtitle}>
+                {t("login")}
+              </AppText>
             </View>
 
             <View style={styles.formArea}>
-              <Animated.View
-                style={[
-                  styles.fieldWrap,
-                  { transform: [{ translateX: usernameShake }] },
-                ]}
-              >
+              <View style={styles.fieldWrap}>
                 <TextInput
                   value={username}
-                  onChangeText={(text) => {
-                    const nextValue = text.replace(/[^A-Za-z0-9]/g, "");
-                    setUsername(nextValue);
-                    if (usernameInvalid) {
-                      setUsernameInvalid(false);
-                    }
-                    if (nextValue.length > 0) {
-                      setUsernameHelperVisible(true);
-                    }
-                  }}
-                  onFocus={onUsernameFocus}
-                  onBlur={onUsernameBlur}
+                  onChangeText={onChangeUsername}
+                  onBlur={() => onBlurField("username")}
                   placeholder={t("usernamePlaceholder")}
-                  placeholderTextColor={BRAND_LIGHT}
+                  placeholderTextColor={INPUT_PLACEHOLDER}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  autoComplete="username"
+                  textContentType="username"
                   returnKeyType="next"
+                  selectionColor={colors.primary}
                   accessibilityLabel={t("usernameInput")}
                   style={[
                     styles.input,
-                    activeField === "username" && styles.inputFocused,
-                    usernameInvalid && styles.inputInvalid,
+                    (submitAttempted || touched.username) && !!errors.username
+                      ? styles.inputInvalid
+                      : null,
                   ]}
                 />
-                <Animated.View
-                  style={[styles.helperContainer, usernameHelperStyle]}
-                >
-                  <View style={styles.helperInner}>
-                    <AppText style={styles.ruleLine}>
-                      {username.length >= 4 && username.length <= 16
-                        ? "✓"
-                        : "○"}{" "}
-                      {t("usernameRuleLength")}
-                    </AppText>
-                    <AppText style={styles.ruleLine}>
-                      {/^[A-Za-z0-9]+$/.test(username) && username.length > 0
-                        ? "✓"
-                        : "○"}{" "}
-                      {t("usernameRuleChars")}
-                    </AppText>
-                  </View>
-                </Animated.View>
-              </Animated.View>
+                <View style={styles.errorSlot}>
+                  <AppText
+                    style={[
+                      styles.helperText,
+                      (submitAttempted || touched.username) && errors.username
+                        ? styles.errorText
+                        : null,
+                    ]}
+                  >
+                    {usernameMessage}
+                  </AppText>
+                </View>
+              </View>
 
-              <Animated.View
-                style={[
-                  styles.fieldWrap,
-                  { transform: [{ translateX: passwordShake }] },
-                ]}
-              >
+              <View style={styles.fieldWrap}>
                 <View style={styles.passwordFieldWrap}>
                   <TextInput
                     value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      if (passwordInvalid) {
-                        setPasswordInvalid(false);
-                      }
-                      if (text.length > 0) {
-                        setPasswordHelperVisible(true);
-                      }
-                    }}
-                    onFocus={onPasswordFocus}
-                    onBlur={onPasswordBlur}
+                    onChangeText={onChangePassword}
+                    onBlur={() => onBlurField("password")}
                     placeholder={t("passwordPlaceholder")}
-                    placeholderTextColor={BRAND_LIGHT}
+                    placeholderTextColor={INPUT_PLACEHOLDER}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    autoComplete="password"
+                    textContentType="password"
                     returnKeyType="done"
+                    selectionColor={colors.primary}
                     accessibilityLabel={t("passwordInput")}
                     style={[
                       styles.input,
                       styles.passwordInput,
-                      activeField === "password" && styles.inputFocused,
-                      passwordInvalid && styles.inputInvalid,
+                      (submitAttempted || touched.password) && !!errors.password
+                        ? styles.inputInvalid
+                        : null,
                     ]}
                   />
                   <Pressable
@@ -537,51 +411,70 @@ export function LoginScreen() {
                   </Pressable>
                 </View>
 
-                <Animated.View
-                  style={[styles.helperContainer, passwordHelperStyle]}
-                >
-                  <View style={styles.helperInner}>
-                    <AppText style={styles.ruleLine}>
-                      {passwordChecks.length ? "✓" : "○"}{" "}
-                      {t("passwordRuleLength")}
-                    </AppText>
-                    <AppText style={styles.ruleLine}>
-                      {passwordChecks.uppercase ? "✓" : "○"}{" "}
-                      {t("passwordRuleUppercase")}
-                    </AppText>
-                    <AppText style={styles.ruleLine}>
-                      {passwordChecks.lowercase ? "✓" : "○"}{" "}
-                      {t("passwordRuleLowercase")}
-                    </AppText>
-                    <AppText style={styles.ruleLine}>
-                      {passwordChecks.number ? "✓" : "○"}{" "}
-                      {t("passwordRuleNumber")}
-                    </AppText>
-                    <AppText style={styles.ruleLine}>
-                      {passwordChecks.special ? "✓" : "○"}{" "}
-                      {t("passwordRuleSpecial")}
-                    </AppText>
-
-                    <View style={styles.strengthRow}>
-                      <View style={styles.strengthTrack}>
-                        <Animated.View
-                          style={[
-                            styles.strengthFill,
-                            { width: strengthWidth },
-                          ]}
-                        />
-                      </View>
-                      <AppText style={styles.strengthText}>
-                        {strengthLabel}
-                      </AppText>
-                    </View>
-                  </View>
-                </Animated.View>
-              </Animated.View>
+                <View style={styles.errorSlot}>
+                  <AppText
+                    style={[
+                      styles.helperText,
+                      (submitAttempted || touched.password) && errors.password
+                        ? styles.errorText
+                        : null,
+                    ]}
+                  >
+                    {passwordMessage}
+                  </AppText>
+                </View>
+              </View>
 
               <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                {!consentGranted ? (
+                  <View style={styles.consentRow}>
+                    <Pressable
+                      onPress={() => {
+                        setConsentChecked((prev) => !prev);
+                        if (consentError) {
+                          setConsentError("");
+                        }
+                      }}
+                      style={styles.consentCheckbox}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: consentChecked }}
+                      accessibilityLabel={t("consentLabel")}
+                    >
+                      {consentChecked ? (
+                        <Ionicons
+                          name="checkmark"
+                          size={16}
+                          color={BRAND_PRIMARY}
+                        />
+                      ) : null}
+                    </Pressable>
+                    <Pressable
+                      onPress={() =>
+                        navigation.navigate(StackRoutes.PrivacyPolicy)
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={t("privacyPolicy")}
+                    >
+                      <AppText style={styles.consentText}>
+                        {t("consentLabel")}
+                      </AppText>
+                    </Pressable>
+                  </View>
+                ) : null}
+
+                {!consentGranted ? (
+                  <View style={styles.errorSlot}>
+                    {consentError ? (
+                      <AppText style={styles.errorText}>{consentError}</AppText>
+                    ) : null}
+                  </View>
+                ) : null}
+
                 <Pressable
-                  style={styles.loginButton}
+                  style={[
+                    styles.loginButton,
+                    !hasAnyInput && styles.loginButtonDisabled,
+                  ]}
                   onPress={onSubmit}
                   onPressIn={() => animatePress(0.98)}
                   onPressOut={() => animatePress(1)}
@@ -595,30 +488,6 @@ export function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {popupVisible ? (
-        <View style={styles.popupOverlay} pointerEvents="box-none">
-          <Pressable style={styles.popupOutsideTap} onPress={dismissPopup} />
-          <Animated.View
-            style={[
-              styles.popup,
-              {
-                opacity: popupOpacity,
-                transform: [{ scale: popupScale }],
-              },
-            ]}
-          >
-            <AppText variant="heading" style={styles.popupTitle}>
-              {t("error")}
-            </AppText>
-            {popupMessages.map((message) => (
-              <AppText key={message} style={styles.popupMessage}>
-                {message}
-              </AppText>
-            ))}
-          </Animated.View>
-        </View>
-      ) : null}
     </SafeAreaView>
   );
 }
@@ -633,143 +502,134 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: "center",
   },
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 28,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
+  },
+  containerCompact: {
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.xl,
+  },
+  containerWide: {
+    paddingHorizontal: spacing.xxxl,
   },
   logoBlock: {
     alignItems: "center",
-    marginBottom: 26,
+    marginBottom: spacing.xxl,
+  },
+  logoBlockCompact: {
+    marginBottom: spacing.xl,
   },
   title: {
     color: BRAND_PRIMARY,
-    letterSpacing: 1.3,
-    fontWeight: "700",
+    letterSpacing: 0.6,
+    fontWeight: typography.weight.bold,
+    marginTop: spacing.m,
+  },
+  subtitle: {
+    marginTop: spacing.xs,
+    color: colors.textSecondary,
+    letterSpacing: 0.2,
   },
   formArea: {
-    gap: 10,
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+    gap: spacing.l,
   },
   fieldWrap: {
-    gap: 4,
+    gap: spacing.xs,
   },
   input: {
-    minHeight: 52,
-    borderRadius: 16,
+    minHeight: 50,
+    borderRadius: radius.l,
     borderWidth: 1,
     borderColor: BRAND_LIGHT,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     color: BRAND_PRIMARY,
-    fontSize: 16,
-    paddingHorizontal: 16,
+    fontSize: typography.size.m,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
   },
   passwordFieldWrap: {
     position: "relative",
   },
   passwordInput: {
-    paddingRight: 48,
+    paddingRight: 52,
   },
   eyeButton: {
     position: "absolute",
-    right: 14,
-    top: 16,
+    right: 10,
+    top: "50%",
+    marginTop: -16,
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
   inputFocused: {
-    borderColor: BRAND_ACCENT,
+    borderColor: colors.primary,
   },
   inputInvalid: {
-    borderColor: BRAND_PRIMARY,
+    borderColor: colors.danger,
   },
-  helperContainer: {
-    overflow: "hidden",
+  errorSlot: {
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
   },
-  helperInner: {
-    paddingHorizontal: 8,
-    paddingTop: 4,
-    gap: 2,
+  helperText: {
+    color: colors.textSecondary,
+    fontSize: typography.size.s,
+    lineHeight: typography.lineHeight.compact,
   },
-  ruleLine: {
-    color: BRAND_ACCENT,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  strengthRow: {
-    marginTop: 6,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  strengthTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 99,
-    backgroundColor: BRAND_LIGHT,
-    overflow: "hidden",
-  },
-  strengthFill: {
-    height: 6,
-    borderRadius: 99,
-    backgroundColor: BRAND_ACCENT,
-  },
-  strengthText: {
-    color: BRAND_PRIMARY,
-    fontSize: 12,
-    fontWeight: "600",
-    minWidth: 40,
-    textAlign: "right",
+  errorText: {
+    color: colors.danger,
   },
   loginButton: {
-    marginTop: 4,
-    minHeight: 54,
-    borderRadius: 28,
-    backgroundColor: BRAND_PRIMARY,
+    marginTop: spacing.xs,
+    minHeight: 56,
+    borderRadius: radius.pill,
+    backgroundColor: colors.buttonBg,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: BRAND_PRIMARY,
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 7 },
-    shadowRadius: 14,
-    elevation: 4,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  loginButtonDisabled: {
+    opacity: 0.5,
+  },
+  consentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s,
+    marginVertical: spacing.s,
+  },
+  consentCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: BRAND_ACCENT,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  consentText: {
+    color: colors.textSecondary,
+    textDecorationLine: "underline",
   },
   loginText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  popupOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  popupOutsideTap: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  popup: {
-    width: "84%",
-    maxWidth: 360,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: BRAND_LIGHT,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    shadowColor: BRAND_PRIMARY,
-    shadowOpacity: 0.16,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
-    elevation: 5,
-  },
-  popupTitle: {
-    color: BRAND_PRIMARY,
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  popupMessage: {
-    color: BRAND_ACCENT,
-    textAlign: "center",
-    lineHeight: 20,
+    color: colors.buttonText,
+    fontSize: typography.size.m,
+    fontWeight: typography.weight.bold,
+    letterSpacing: 0.6,
   },
 });

@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { colors, radius, spacing } from "@/src/theme";
+import { AppText } from "@/src/components";
+import { colors, radius, spacing, typography } from "@/src/theme";
 
 type UrgencyBadgeProps = {
   timeLeft: string;
@@ -24,9 +25,13 @@ export function UrgencyBadge({ timeLeft, status }: UrgencyBadgeProps) {
           color={statusColorMap[status]}
           style={styles.icon}
         />
-        <Text style={styles.timeLeft} numberOfLines={1}>
+        <AppText
+          variant="sectionTitle"
+          style={styles.timeLeft}
+          numberOfLines={1}
+        >
           {timeLeft}
-        </Text>
+        </AppText>
       </View>
 
       <View
@@ -44,22 +49,22 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: radius.l,
+    borderRadius: radius.xl,
     backgroundColor: colors.urgentBg,
     paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
+    paddingVertical: spacing.xs,
   },
   icon: {
     marginRight: spacing.xs,
   },
   timeLeft: {
     color: colors.textPrimary,
-    fontSize: 22,
-    fontWeight: "600",
+    minWidth: 64,
+    fontSize: typography.size.xl,
   },
   statusPill: {
-    width: 10,
-    height: 52,
-    borderRadius: 999,
+    width: 8,
+    height: 48,
+    borderRadius: radius.pill,
   },
 });

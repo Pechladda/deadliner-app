@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
-  NavigationContainer,
-  NavigatorScreenParams,
+    NavigationContainer,
+    NavigatorScreenParams,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect } from "react";
@@ -15,9 +15,10 @@ import { HomeScreen } from "@/src/features/home-deadline-list";
 import { LoginScreen } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
 import {
-  AboutAppScreen,
-  HistoryScreen,
-  ProfileScreen,
+    AboutAppScreen,
+    HistoryScreen,
+    PrivacyPolicyScreen,
+    ProfileScreen,
 } from "@/src/features/settings/screens";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   [StackRoutes.MainTabs]: NavigatorScreenParams<TabParamList> | undefined;
   [StackRoutes.DeadlineDetail]: { id: string };
   [StackRoutes.AboutApp]: undefined;
+  [StackRoutes.PrivacyPolicy]: undefined;
   [StackRoutes.Profile]: undefined;
   [StackRoutes.History]: undefined;
 };
@@ -126,7 +128,13 @@ export function AppNavigator() {
         screenOptions={{ headerShown: false }}
       >
         {!isAuthenticated ? (
-          <Stack.Screen name={StackRoutes.Login} component={LoginScreen} />
+          <>
+            <Stack.Screen name={StackRoutes.Login} component={LoginScreen} />
+            <Stack.Screen
+              name={StackRoutes.PrivacyPolicy}
+              component={PrivacyPolicyScreen}
+            />
+          </>
         ) : (
           <>
             <Stack.Screen name={StackRoutes.MainTabs} component={MainTabs} />
@@ -137,6 +145,10 @@ export function AppNavigator() {
             <Stack.Screen
               name={StackRoutes.AboutApp}
               component={AboutAppScreen}
+            />
+            <Stack.Screen
+              name={StackRoutes.PrivacyPolicy}
+              component={PrivacyPolicyScreen}
             />
             <Stack.Screen
               name={StackRoutes.Profile}

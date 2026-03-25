@@ -1,18 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  updateDoc,
-} from "firebase/firestore";
 import { create } from "zustand";
 
-import { db } from "@/src/firebase";
+import {
+  computeColorStatus,
+  getRemainingMs,
+  sanitizeDeadlineInput,
+  sortDeadlinesByDueAt,
+  validateDeadlineInput,
+} from "@/src/core/utils";
 import { Deadline } from "@/src/models/deadline";
+import {
+  createDeadline,
+  deleteAllDeadlines,
+  deleteDeadlineDoc,
+  fetchDeadlines,
+  updateDeadlineDoc,
+} from "@/src/services/deadline-service";
 import {
   cancelAllNotifications,
   cancelNotification,
@@ -21,58 +24,39 @@ import {
   scheduleDeadlineNotification,
 } from "@/src/services/notification-service";
 
-const deadlinesCollection = "deadlines";
 const NOTIFICATIONS_ENABLED_STORAGE_KEY = "@deadliner/notifications-enabled";
 
 export function computeUrgencyColor(dueAt: string): "red" | "yellow" | "green" {
-  const dueMs = new Date(dueAt).getTime();
-
-  if (Number.isNaN(dueMs)) {
-    return "green";
-  }
-
-  const hoursLeft = (dueMs - Date.now()) / (1000 * 60 * 60);
-
-  if (hoursLeft <= 24) {
-    return "red";
-  }
-
-  if (hoursLeft <= 72) {
-    return "yellow";
-  }
-
-  return "green";
+  return computeColorStatus(getRemainingMs(dueAt));
 }
 
 function sortByDueAt(deadlines: Deadline[]): Deadline[] {
-  return [...deadlines].sort((a, b) => {
-    const aMs = new Date(a.dueAt).getTime();
-    const bMs = new Date(b.dueAt).getTime();
-
-    const safeA = Number.isNaN(aMs) ? Number.POSITIVE_INFINITY : aMs;
-    const safeB = Number.isNaN(bMs) ? Number.POSITIVE_INFINITY : bMs;
-
-    return safeA - safeB;
-  });
+  return sortDeadlinesByDueAt(deadlines);
 }
 
 interface DeadlineState {
   deadlines: Deadline[];
   completedDeadlines: Deadline[];
+  recentlyDeletedDeadline: Deadline | null;
+  isLoadingDeadlines: boolean;
   selectedDeadlineId: string | null;
   notificationsEnabled: boolean;
   hasNotificationPermission: boolean;
   hydrateNotificationsSetting: () => Promise<void>;
   setNotificationsEnabled: (enabled: boolean) => Promise<void>;
   loadDeadlines: () => Promise<void>;
-  addDeadline: (deadline: Omit<Deadline, "id" | "createdAt">) => void;
-  deleteDeadline: (id: string) => void;
+  addDeadline: (
+    deadline: Omit<Deadline, "id" | "createdAt">,
+  ) => Promise<boolean>;
+  deleteDeadline: (id: string) => Promise<boolean>;
+  undoDeleteDeadline: () => Promise<boolean>;
   completeDeadline: (id: string) => void;
   undoCompletedDeadline: (id: string) => void;
   deleteCompletedDeadline: (id: string) => void;
+  clearAllData: () => Promise<boolean>;
   setSelectedId: (id: string | null) => void;
 
-  updateDeadline: (id: string, input: Partial<Deadline>) => void;
+  updateDeadline: (id: string, input: Partial<Deadline>) => Promise<boolean>;
   selectDeadline: (id: string) => void;
   clearSelectedDeadline: () => void;
   getDeadlineById: (id: string) => Deadline | undefined;
@@ -81,6 +65,8 @@ interface DeadlineState {
 export const useDeadlineStore = create<DeadlineState>((set, get) => ({
   deadlines: [],
   completedDeadlines: [],
+  recentlyDeletedDeadline: null,
+  isLoadingDeadlines: false,
   selectedDeadlineId: null,
   notificationsEnabled: true,
   hasNotificationPermission: true,
@@ -133,6 +119,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
           notificationId: undefined,
         })),
         hasNotificationPermission: true,
+        recentlyDeletedDeadline: null,
       }));
 
       return;
@@ -142,54 +129,19 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
     set({ hasNotificationPermission: granted });
   },
   loadDeadlines: async () => {
-    try {
-      // Firestore is the source of truth for deadlines.
-      const deadlinesRef = collection(db, deadlinesCollection);
-      const deadlinesQuery = query(deadlinesRef, orderBy("dueAt", "asc"));
-      const snapshot = await getDocs(deadlinesQuery);
+    set({ isLoadingDeadlines: true });
 
-      if (snapshot.empty) {
-        set({ deadlines: [], completedDeadlines: [] });
+    try {
+      const loadedDeadlines = await fetchDeadlines();
+
+      if (!loadedDeadlines.length) {
+        set({
+          deadlines: [],
+          completedDeadlines: [],
+          isLoadingDeadlines: false,
+        });
         return;
       }
-
-      const loadedDeadlines: Deadline[] = snapshot.docs.map((snapshotDoc) => {
-        const data = snapshotDoc.data();
-        const dueAt = String(data.dueAt ?? "");
-        const colorStatus =
-          data.colorStatus === "red" ||
-          data.colorStatus === "yellow" ||
-          data.colorStatus === "green"
-            ? data.colorStatus
-            : computeUrgencyColor(dueAt);
-
-        return {
-          id: snapshotDoc.id,
-          courseName: String(data.courseName ?? ""),
-          assignmentName: String(data.assignmentName ?? ""),
-          dueDate: String(data.dueDate ?? ""),
-          dueTime: String(data.dueTime ?? ""),
-          dueAt,
-          colorStatus,
-          createdAt: String(data.createdAt ?? ""),
-          updatedAt: String(data.updatedAt ?? ""),
-          reminder:
-            data.reminder === "5m" ||
-            data.reminder === "30m" ||
-            data.reminder === "1h" ||
-            data.reminder === "1d"
-              ? data.reminder
-              : null,
-          notificationId:
-            typeof data.notificationId === "string" && data.notificationId
-              ? data.notificationId
-              : undefined,
-          completedAt:
-            typeof data.completedAt === "string" && data.completedAt
-              ? data.completedAt
-              : undefined,
-        };
-      });
 
       const activeDeadlines = loadedDeadlines.filter(
         (deadline) => !deadline.completedAt,
@@ -210,138 +162,182 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       set({
         deadlines: sortByDueAt(activeDeadlines),
         completedDeadlines: doneDeadlines,
+        isLoadingDeadlines: false,
       });
     } catch {
       // Fail gracefully so UI remains usable.
-      set({ deadlines: [], completedDeadlines: [] });
+      set({ deadlines: [], completedDeadlines: [], isLoadingDeadlines: false });
     }
   },
-  addDeadline: (input) => {
-    void (async () => {
-      try {
-        const nowIso = new Date().toISOString();
-        const colorStatus =
-          input.colorStatus ?? computeUrgencyColor(input.dueAt);
-        const reminder = input.reminder ?? null;
-        let notificationId: string | undefined;
+  addDeadline: async (input) => {
+    try {
+      const sanitizedInput = sanitizeDeadlineInput(input);
+      if (!validateDeadlineInput(sanitizedInput)) {
+        return false;
+      }
 
-        if (
-          get().notificationsEnabled &&
-          get().hasNotificationPermission &&
-          reminder
-        ) {
-          const scheduledId = await scheduleDeadlineNotification({
-            assignmentName: input.assignmentName,
-            dueAt: input.dueAt,
-            reminder,
-          });
-          notificationId = scheduledId ?? undefined;
-        }
+      const nowIso = new Date().toISOString();
+      const colorStatus =
+        sanitizedInput.colorStatus ?? computeUrgencyColor(sanitizedInput.dueAt);
+      const reminder = sanitizedInput.reminder ?? null;
+      let notificationId: string | undefined;
 
-        await addDoc(collection(db, deadlinesCollection), {
-          courseName: input.courseName,
-          assignmentName: input.assignmentName,
-          dueDate: input.dueDate,
-          dueTime: input.dueTime,
-          dueAt: input.dueAt,
+      if (
+        get().notificationsEnabled &&
+        get().hasNotificationPermission &&
+        reminder
+      ) {
+        const scheduledId = await scheduleDeadlineNotification({
+          assignmentName: sanitizedInput.assignmentName,
+          dueAt: sanitizedInput.dueAt,
           reminder,
-          notificationId: notificationId ?? null,
-          colorStatus,
-          createdAt: nowIso,
-          updatedAt: nowIso,
         });
-
-        await get().loadDeadlines();
-      } catch {
-        // Ignore network/persistence errors to avoid crashing UI.
+        notificationId = scheduledId ?? undefined;
       }
-    })();
+
+      await createDeadline({
+        courseName: sanitizedInput.courseName,
+        assignmentName: sanitizedInput.assignmentName,
+        dueDate: sanitizedInput.dueDate,
+        dueTime: sanitizedInput.dueTime,
+        dueAt: sanitizedInput.dueAt,
+        reminder,
+        notificationId: notificationId ?? null,
+        colorStatus,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      });
+
+      await get().loadDeadlines();
+      return true;
+    } catch (error) {
+      console.warn("addDeadline failed", error);
+      return false;
+    }
   },
-  updateDeadline: (id, input) => {
-    void (async () => {
-      try {
-        const existing =
-          get().deadlines.find((deadline) => deadline.id === id) ??
-          get().completedDeadlines.find((deadline) => deadline.id === id);
+  updateDeadline: async (id, input) => {
+    try {
+      const sanitizedInput = sanitizeDeadlineInput(input);
 
-        if (!existing) {
-          return;
-        }
+      const existing =
+        get().deadlines.find((deadline) => deadline.id === id) ??
+        get().completedDeadlines.find((deadline) => deadline.id === id);
 
-        const nowIso = new Date().toISOString();
-        const mergedReminder = input.reminder ?? existing.reminder ?? null;
-        const mergedDueAt = input.dueAt ?? existing.dueAt;
-
-        if (existing.notificationId) {
-          try {
-            await cancelNotification(existing.notificationId);
-          } catch {
-            // Ignore cancellation errors.
-          }
-        }
-
-        let notificationId: string | undefined;
-        if (
-          get().notificationsEnabled &&
-          get().hasNotificationPermission &&
-          !existing.completedAt &&
-          mergedReminder
-        ) {
-          notificationId =
-            (await scheduleDeadlineNotification({
-              assignmentName: input.assignmentName ?? existing.assignmentName,
-              dueAt: mergedDueAt,
-              reminder: mergedReminder,
-            })) ?? undefined;
-        }
-
-        const payload: Partial<Deadline> = {
-          ...input,
-          reminder: mergedReminder,
-          notificationId,
-          updatedAt: nowIso,
-        };
-
-        if (input.dueAt) {
-          payload.colorStatus = computeUrgencyColor(input.dueAt);
-        }
-
-        await updateDoc(doc(db, deadlinesCollection, id), payload);
-        await get().loadDeadlines();
-      } catch {
-        // Ignore network/persistence errors to avoid crashing UI.
+      if (!existing) {
+        return false;
       }
-    })();
+
+      const nowIso = new Date().toISOString();
+      const mergedReminder =
+        sanitizedInput.reminder ?? existing.reminder ?? null;
+      const mergedDueAt = sanitizedInput.dueAt ?? existing.dueAt;
+
+      if (existing.notificationId) {
+        try {
+          await cancelNotification(existing.notificationId);
+        } catch {
+          // Ignore cancellation errors.
+        }
+      }
+
+      let notificationId: string | undefined;
+      if (
+        get().notificationsEnabled &&
+        get().hasNotificationPermission &&
+        !existing.completedAt &&
+        mergedReminder
+      ) {
+        notificationId =
+          (await scheduleDeadlineNotification({
+            assignmentName:
+              sanitizedInput.assignmentName ?? existing.assignmentName,
+            dueAt: mergedDueAt,
+            reminder: mergedReminder,
+          })) ?? undefined;
+      }
+
+      const payload: Partial<Deadline> = {
+        ...sanitizedInput,
+        reminder: mergedReminder,
+        notificationId,
+        updatedAt: nowIso,
+      };
+
+      if (sanitizedInput.dueAt) {
+        payload.colorStatus = computeUrgencyColor(sanitizedInput.dueAt);
+      }
+
+      await updateDeadlineDoc(id, payload);
+      await get().loadDeadlines();
+      return true;
+    } catch (error) {
+      console.warn("updateDeadline failed", error);
+      return false;
+    }
   },
-  deleteDeadline: (id) => {
-    void (async () => {
-      try {
-        const existing =
-          get().deadlines.find((deadline) => deadline.id === id) ??
-          get().completedDeadlines.find((deadline) => deadline.id === id);
+  deleteDeadline: async (id) => {
+    try {
+      const existing =
+        get().deadlines.find((deadline) => deadline.id === id) ??
+        get().completedDeadlines.find((deadline) => deadline.id === id);
 
-        if (existing?.notificationId) {
-          try {
-            await cancelNotification(existing.notificationId);
-          } catch {
-            // Ignore cancellation errors.
-          }
+      if (existing?.notificationId) {
+        try {
+          await cancelNotification(existing.notificationId);
+        } catch {
+          // Ignore cancellation errors.
         }
-
-        await deleteDoc(doc(db, deadlinesCollection, id));
-
-        set((state) => ({
-          deadlines: state.deadlines.filter((deadline) => deadline.id !== id),
-          completedDeadlines: state.completedDeadlines.filter(
-            (deadline) => deadline.id !== id,
-          ),
-          selectedDeadlineId:
-            state.selectedDeadlineId === id ? null : state.selectedDeadlineId,
-        }));
-      } catch {
-        // Ignore network/persistence errors to avoid crashing UI.
       }
-    })();
+
+      await deleteDeadlineDoc(id);
+
+      set((state) => ({
+        deadlines: state.deadlines.filter((deadline) => deadline.id !== id),
+        completedDeadlines: state.completedDeadlines.filter(
+          (deadline) => deadline.id !== id,
+        ),
+        recentlyDeletedDeadline: existing ?? null,
+        selectedDeadlineId:
+          state.selectedDeadlineId === id ? null : state.selectedDeadlineId,
+      }));
+
+      return true;
+    } catch (error) {
+      console.warn("deleteDeadline failed", error);
+      return false;
+    }
+  },
+  undoDeleteDeadline: async () => {
+    const recent = get().recentlyDeletedDeadline;
+
+    if (!recent) {
+      return false;
+    }
+
+    const nowIso = new Date().toISOString();
+
+    try {
+      await createDeadline({
+        courseName: recent.courseName,
+        assignmentName: recent.assignmentName,
+        dueDate: recent.dueDate,
+        dueTime: recent.dueTime,
+        dueAt: recent.dueAt,
+        colorStatus: recent.colorStatus,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        reminder: recent.reminder ?? null,
+        notificationId: null,
+        completedAt: recent.completedAt ?? null,
+      });
+
+      set({ recentlyDeletedDeadline: null });
+      await get().loadDeadlines();
+
+      return true;
+    } catch {
+      return false;
+    }
   },
   completeDeadline: (id) => {
     const deadlineToComplete = get().deadlines.find(
@@ -375,7 +371,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
 
     void (async () => {
       try {
-        await updateDoc(doc(db, deadlinesCollection, id), {
+        await updateDeadlineDoc(id, {
           notificationId: null,
           completedAt: completedAtIso,
           updatedAt: completedAtIso,
@@ -446,7 +442,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
           ),
         }));
 
-        await updateDoc(doc(db, deadlinesCollection, id), {
+        await updateDeadlineDoc(id, {
           completedAt: null,
           notificationId: restoredNotificationId ?? null,
           updatedAt: restoredAtIso,
@@ -476,7 +472,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
           }
         }
 
-        await deleteDoc(doc(db, deadlinesCollection, id));
+        await deleteDeadlineDoc(id);
 
         set((state) => ({
           completedDeadlines: state.completedDeadlines.filter(
@@ -489,6 +485,24 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
         // Ignore network/persistence errors to avoid crashing UI.
       }
     })();
+  },
+  clearAllData: async () => {
+    try {
+      await cancelAllNotifications();
+      await deleteAllDeadlines();
+
+      set({
+        deadlines: [],
+        completedDeadlines: [],
+        recentlyDeletedDeadline: null,
+        selectedDeadlineId: null,
+      });
+
+      return true;
+    } catch (error) {
+      console.warn("clearAllData failed", error);
+      return false;
+    }
   },
   setSelectedId: (id) => set({ selectedDeadlineId: id }),
   selectDeadline: (id) => set({ selectedDeadlineId: id }),

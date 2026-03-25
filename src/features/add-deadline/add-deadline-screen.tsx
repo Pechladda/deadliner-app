@@ -3,10 +3,17 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { useEffect, useState } from "react";
-import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton, AppText, IconButton, Input } from "@/src/components";
+import { AppButton, AppText, Card, IconButton, Input } from "@/src/components";
 import { TabRoutes } from "@/src/core/navigation";
 import { computeColorStatus, getRemainingMs, t } from "@/src/core/utils";
 import {
@@ -14,9 +21,10 @@ import {
   useAddDeadlineRoute,
 } from "@/src/features/add-deadline/hooks/use-add-deadline-screen";
 import { PickerMode } from "@/src/features/add-deadline/types";
+import { validateDeadlineForm } from "@/src/features/add-deadline/utils/validate-deadline-form";
 import { ReminderOption } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, spacing } from "@/src/theme";
+import { colors, radius, spacing, typography } from "@/src/theme";
 
 const PICKER_LOCALE =
   Platform.OS === "ios" ? "en_US" : "en-US-u-ca-gregory-nu-latn";
@@ -128,6 +136,9 @@ function ReminderSelection({ value, onChange }: ReminderSelectionProps) {
 }
 
 export function AddDeadlineScreen() {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 375;
+  const isWide = width >= 430;
   const route = useAddDeadlineRoute();
   const navigation = useAddDeadlineNavigation();
 
@@ -145,6 +156,7 @@ export function AddDeadlineScreen() {
   );
   const [reminder, setReminder] = useState<ReminderOption | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const resetForm = () => {
     setCourseName("");
@@ -263,17 +275,25 @@ export function AddDeadlineScreen() {
     applyTime(value);
   };
 
-  const onSave = () => {
-    if (
-      !courseName.trim() ||
-      !assignmentName.trim() ||
-      !selectedDate ||
-      !hasPickedDate ||
-      !hasPickedTime
-    ) {
-      setErrorMessage(t("fillAllFieldsError"));
+  const onSave = async () => {
+    const validationError = validateDeadlineForm({
+      courseName,
+      assignmentName,
+      selectedDate,
+      hasPickedDate,
+      hasPickedTime,
+    });
+
+    if (validationError) {
+      setErrorMessage(validationError);
       return;
     }
+
+    if (!selectedDate) {
+      return;
+    }
+
+    setIsSaving(true);
 
     const dueAt = selectedDate.toISOString();
     const urgencyColor = computeColorStatus(getRemainingMs(dueAt));
@@ -289,13 +309,19 @@ export function AddDeadlineScreen() {
       updatedAt: nowIso,
     };
 
-    if (isEditMode && editId) {
-      updateDeadline(editId, values);
-    } else {
-      addDeadline(values);
+    const isSuccess =
+      isEditMode && editId
+        ? await updateDeadline(editId, values)
+        : await addDeadline(values);
+
+    if (!isSuccess) {
+      setErrorMessage(t("saveFailed"));
+      setIsSaving(false);
+      return;
     }
 
     resetForm();
+    setIsSaving(false);
     navigation.navigate(TabRoutes.Home);
   };
 
@@ -307,8 +333,14 @@ export function AddDeadlineScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <View style={styles.container}>
-        <View style={styles.headerRow}>
+      <View
+        style={[
+          styles.container,
+          isCompact && styles.containerCompact,
+          isWide && styles.containerWide,
+        ]}
+      >
+        <View style={[styles.headerRow, isCompact && styles.headerRowCompact]}>
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
@@ -321,41 +353,50 @@ export function AddDeadlineScreen() {
         </View>
 
         <View style={styles.form}>
-          <Input
-            label={t("courseName")}
-            value={courseName}
-            onChangeText={setCourseName}
-            placeholder={t("courseName")}
-            accessibilityLabel={t("courseNameInput")}
-            labelStyle={styles.inputLabelText}
-            inputStyle={styles.inputFieldText}
-          />
-          <Input
-            label={t("assignmentName")}
-            value={assignmentName}
-            onChangeText={setAssignmentName}
-            placeholder={t("assignmentName")}
-            accessibilityLabel={t("assignmentNameInput")}
-            labelStyle={styles.inputLabelText}
-            inputStyle={styles.inputFieldText}
-          />
-
-          <View style={styles.row}>
-            <DateTimeField
-              label={t("date")}
-              icon="calendar-outline"
-              value={dateValue}
-              onPress={() => openPicker("date")}
+          <Card style={styles.sectionCard}>
+            <Input
+              label={t("courseName")}
+              value={courseName}
+              onChangeText={setCourseName}
+              placeholder={t("courseName")}
+              accessibilityLabel={t("courseNameInput")}
+              labelStyle={styles.inputLabelText}
+              inputStyle={styles.inputFieldText}
             />
-            <DateTimeField
-              label={t("time")}
-              icon="time-outline"
-              value={timeValue}
-              onPress={() => openPicker("time")}
+            <Input
+              label={t("assignmentName")}
+              value={assignmentName}
+              onChangeText={setAssignmentName}
+              placeholder={t("assignmentName")}
+              accessibilityLabel={t("assignmentNameInput")}
+              labelStyle={styles.inputLabelText}
+              inputStyle={styles.inputFieldText}
             />
-          </View>
+          </Card>
 
-          <ReminderSelection value={reminder} onChange={setReminder} />
+          <Card style={styles.sectionCard}>
+            <AppText variant="caption" style={styles.sectionLabel}>
+              {t("due")}
+            </AppText>
+            <View style={[styles.row, isCompact && styles.rowCompact]}>
+              <DateTimeField
+                label={t("date")}
+                icon="calendar-outline"
+                value={dateValue}
+                onPress={() => openPicker("date")}
+              />
+              <DateTimeField
+                label={t("time")}
+                icon="time-outline"
+                value={timeValue}
+                onPress={() => openPicker("time")}
+              />
+            </View>
+          </Card>
+
+          <Card style={styles.sectionCard}>
+            <ReminderSelection value={reminder} onChange={setReminder} />
+          </Card>
 
           {errorMessage ? (
             <AppText color="danger" style={styles.errorText}>
@@ -364,16 +405,21 @@ export function AddDeadlineScreen() {
           ) : null}
         </View>
 
-        <Pressable
-          onPress={onSave}
-          style={styles.saveButton}
-          accessibilityRole="button"
-          accessibilityLabel={t("saveDeadline")}
-        >
-          <AppText variant="button" style={styles.saveButtonText}>
-            {t("save")}
-          </AppText>
-        </Pressable>
+        <View style={styles.saveButtonWrap}>
+          <Pressable
+            onPress={() => {
+              void onSave();
+            }}
+            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+            accessibilityRole="button"
+            accessibilityLabel={t("saveDeadline")}
+            disabled={isSaving}
+          >
+            <AppText variant="button" style={styles.saveButtonText}>
+              {isSaving ? "..." : t("save")}
+            </AppText>
+          </Pressable>
+        </View>
       </View>
 
       {Platform.OS === "ios" && iosPickerMode ? (
@@ -386,7 +432,7 @@ export function AddDeadlineScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalSheet}>
               <View style={styles.modalHeader}>
-                <AppText variant="heading" style={styles.brownText}>
+                <AppText variant="sectionTitle" style={styles.brownText}>
                   {iosPickerMode === "date" ? t("pickDate") : t("pickTime")}
                 </AppText>
                 <AppButton
@@ -428,28 +474,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.l,
-    paddingTop: spacing.s,
+    paddingTop: spacing.l,
+  },
+  containerCompact: {
+    paddingHorizontal: spacing.m,
+  },
+  containerWide: {
+    paddingHorizontal: spacing.xl,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: spacing.xl,
+  },
+  headerRowCompact: {
     marginBottom: spacing.l,
   },
   headerSpacer: { width: 36, height: 36 },
   form: {
+    gap: spacing.xl,
+  },
+  sectionCard: {
+    backgroundColor: colors.surface,
     gap: spacing.l,
+    padding: spacing.xl2,
+  },
+  sectionLabel: {
+    fontWeight: typography.weight.semibold,
+    color: colors.textSecondary,
   },
   row: {
     flexDirection: "row",
     gap: spacing.l,
   },
+  rowCompact: {
+    flexDirection: "column",
+    gap: spacing.s,
+  },
   fieldGroup: {
     flex: 1,
-    gap: spacing.l,
+    gap: spacing.s,
   },
   reminderWrap: {
-    gap: spacing.s,
+    gap: spacing.m,
   },
   reminderOptionsRow: {
     flexDirection: "row",
@@ -459,24 +527,25 @@ const styles = StyleSheet.create({
   reminderOption: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
+    paddingVertical: 6,
     backgroundColor: colors.surface,
   },
   reminderOptionActive: {
-    borderColor: colors.textPrimary,
+    borderColor: colors.border,
+    backgroundColor: colors.chipBgActive,
   },
   reminderOptionText: {
     color: colors.textPrimary,
   },
   dateTimeField: {
     minHeight: 48,
-    borderRadius: 16,
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.m,
+    backgroundColor: colors.surfacePink,
+    paddingHorizontal: spacing.l,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.s,
@@ -489,26 +558,38 @@ const styles = StyleSheet.create({
   },
   screenTitleText: {
     color: colors.textPrimary,
-    fontSize: 26,
+    flex: 1,
+    textAlign: "center",
   },
   inputLabelText: {
-    fontSize: 18,
+    fontSize: typography.size.l,
   },
   inputFieldText: {
-    fontSize: 15,
+    fontSize: typography.size.m,
+  },
+  saveButtonWrap: {
+    marginTop: "auto",
+    marginBottom: spacing.xxl,
   },
   saveButton: {
-    marginTop: "auto",
-    marginBottom: spacing.xl,
-    minHeight: 52,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
+    minHeight: 56,
+    borderRadius: radius.pill,
     backgroundColor: colors.buttonBg,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+  saveButtonDisabled: {
+    opacity: 0.55,
   },
   saveButtonText: {
     color: colors.buttonText,
-    fontSize: 18,
+    fontSize: typography.size.m,
+    fontWeight: typography.weight.bold,
   },
   modalOverlay: {
     flex: 1,
@@ -519,7 +600,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.l,
     paddingTop: spacing.l,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.xxl,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     gap: spacing.m,

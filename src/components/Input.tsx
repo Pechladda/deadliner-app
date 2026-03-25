@@ -1,10 +1,10 @@
 import {
-  StyleProp,
-  StyleSheet,
-  TextInput,
-  TextInputProps,
-  TextStyle,
-  View,
+    StyleProp,
+    StyleSheet,
+    TextInput,
+    TextInputProps,
+    TextStyle,
+    View,
 } from "react-native";
 
 import { colors, radius, spacing, typography } from "@/src/theme";
@@ -13,12 +13,14 @@ import { AppText } from "./app-text";
 
 type InputProps = TextInputProps & {
   label?: string;
+  error?: string;
   labelStyle?: StyleProp<TextStyle>;
   inputStyle?: StyleProp<TextStyle>;
 };
 
 export function Input({
   label,
+  error,
   style,
   labelStyle,
   inputStyle,
@@ -32,10 +34,20 @@ export function Input({
         </AppText>
       ) : null}
       <TextInput
-        style={[styles.input, inputStyle, style]}
-        placeholderTextColor={colors.textSecondary}
+        style={[
+          styles.input,
+          error ? styles.inputError : null,
+          inputStyle,
+          style,
+        ]}
+        placeholderTextColor={colors.textMuted}
         {...props}
       />
+      {error ? (
+        <AppText variant="caption" color="danger" style={styles.errorText}>
+          {error}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -45,13 +57,19 @@ const styles = StyleSheet.create({
     gap: spacing.s,
   },
   input: {
-    minHeight: 48,
-    borderRadius: radius.l,
-    backgroundColor: colors.surface,
+    minHeight: 50,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surfacePink,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.l,
     fontSize: typography.size.m,
     color: colors.textPrimary,
+  },
+  inputError: {
+    borderColor: colors.danger,
+  },
+  errorText: {
+    marginTop: spacing.xs,
   },
 });

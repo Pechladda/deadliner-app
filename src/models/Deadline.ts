@@ -13,8 +13,8 @@ export interface Deadline {
   createdAt: string;
   updatedAt: string;
   reminder: ReminderOption | null;
-  notificationId?: string;
-  completedAt?: string;
+  notificationId?: string | null;
+  completedAt?: string | null;
 }
 
 export type CreateDeadlineInput = Omit<

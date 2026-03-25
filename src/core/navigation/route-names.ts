@@ -9,6 +9,7 @@ export const StackRoutes = {
   MainTabs: "MainTabs",
   DeadlineDetail: "DeadlineDetail",
   AboutApp: "AboutApp",
+  PrivacyPolicy: "PrivacyPolicy",
   Profile: "Profile",
   History: "History",
 } as const;
