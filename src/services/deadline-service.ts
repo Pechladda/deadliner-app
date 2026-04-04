@@ -1,6 +1,7 @@
 import {
     addDoc,
     collection,
+    CollectionReference,
     deleteDoc,
     doc,
     getDocs,
@@ -10,10 +11,29 @@ import {
     writeBatch,
 } from "firebase/firestore";
 
-import { db } from "@/src/firebase";
+import { auth, db } from "@/src/firebase";
 import { Deadline } from "@/src/models/deadline";
 
 const deadlinesCollection = "deadlines";
+const usersCollection = "users";
+
+type FirebaseLikeError = Error & { code?: string };
+
+function buildAuthRequiredError(): FirebaseLikeError {
+  const error = new Error("Please sign in again.") as FirebaseLikeError;
+  error.code = "permission-denied";
+  return error;
+}
+
+function getUserDeadlinesCollection(): CollectionReference {
+  const currentUser = auth.currentUser;
+
+  if (!currentUser?.uid) {
+    throw buildAuthRequiredError();
+  }
+
+  return collection(db, usersCollection, currentUser.uid, deadlinesCollection);
+}
 
 function parseDeadline(snapshotDoc: {
   id: string;
@@ -56,42 +76,69 @@ function parseDeadline(snapshotDoc: {
 }
 
 export async function fetchDeadlines(): Promise<Deadline[]> {
-  const deadlinesRef = collection(db, deadlinesCollection);
-  const deadlinesQuery = query(deadlinesRef, orderBy("dueAt", "asc"));
-  const snapshot = await getDocs(deadlinesQuery);
+  try {
+    const deadlinesRef = getUserDeadlinesCollection();
+    const deadlinesQuery = query(deadlinesRef, orderBy("dueAt", "asc"));
+    const snapshot = await getDocs(deadlinesQuery);
 
-  return snapshot.docs.map(parseDeadline);
+    return snapshot.docs.map(parseDeadline);
+  } catch (error) {
+    console.error("[Firestore] fetchDeadlines failed:", error);
+    throw error;
+  }
 }
 
 export async function createDeadline(
   payload: Omit<Deadline, "id">,
 ): Promise<void> {
-  await addDoc(collection(db, deadlinesCollection), payload);
+  try {
+    await addDoc(getUserDeadlinesCollection(), payload);
+  } catch (error) {
+    console.error("[Firestore][deadlines] createDeadline failed", error);
+    throw error;
+  }
 }
 
 export async function updateDeadlineDoc(
   id: string,
   payload: Partial<Deadline>,
 ): Promise<void> {
-  await updateDoc(doc(db, deadlinesCollection, id), payload);
+  try {
+    const deadlinesRef = getUserDeadlinesCollection();
+    await updateDoc(doc(deadlinesRef, id), payload);
+  } catch (error) {
+    console.error("[Firestore][deadlines] updateDeadlineDoc failed", error);
+    throw error;
+  }
 }
 
 export async function deleteDeadlineDoc(id: string): Promise<void> {
-  await deleteDoc(doc(db, deadlinesCollection, id));
+  try {
+    const deadlinesRef = getUserDeadlinesCollection();
+    await deleteDoc(doc(deadlinesRef, id));
+  } catch (error) {
+    console.error("[Firestore][deadlines] deleteDeadlineDoc failed", error);
+    throw error;
+  }
 }
 
 export async function deleteAllDeadlines(): Promise<void> {
-  const deadlinesRef = collection(db, deadlinesCollection);
-  const snapshot = await getDocs(deadlinesRef);
+  try {
+    const deadlinesRef = getUserDeadlinesCollection();
+    const snapshot = await getDocs(deadlinesRef);
 
-  if (snapshot.empty) {
-    return;
+    if (snapshot.empty) {
+      return;
+    }
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((item) => {
+      batch.delete(item.ref);
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error("[Firestore][deadlines] deleteAllDeadlines failed", error);
+    throw error;
   }
-
-  const batch = writeBatch(db);
-  snapshot.docs.forEach((item) => {
-    batch.delete(item.ref);
-  });
-
-  await batch.commit();
 }

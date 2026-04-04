@@ -1,3 +1,4 @@
+import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton, AppText, Card, IconButton, Toast } from "@/src/components";
+import { AppText, Card, IconButton, Toast } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
 import {
   formatDueLabel,
@@ -21,10 +22,15 @@ import {
 } from "@/src/core/utils";
 import { useHomeNavigation } from "@/src/features/home-deadline-list/hooks/use-home-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
+import { auth } from "@/src/firebase";
+import type { Deadline } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, radius, spacing, typography } from "@/src/theme";
 
-type HomeFilter = "all" | "urgent" | "soon" | "completed";
+type HomeFilter = "all" | "urgent" | "soon" | "onTrack" | "done";
+type DeadlineListRow =
+  | { type: "overdue-container"; id: string; items: Deadline[] }
+  | { type: "item"; id: string; item: Deadline; isOverdue: boolean };
 
 function isSameCalendarDay(iso: string): boolean {
   const date = new Date(iso);
@@ -53,6 +59,41 @@ function urgencyMessageToLabel(
   }
 
   return t("safeForNow");
+}
+
+function statusLabelFromItem(item: Deadline, isOverdue: boolean): string {
+  if (isOverdue) {
+    return t("overdue");
+  }
+
+  if (item.colorStatus === "red") {
+    return t("filterUrgent");
+  }
+
+  if (item.colorStatus === "yellow") {
+    return t("filterSoon");
+  }
+
+  return t("onTrack");
+}
+
+function statusColorFromItem(
+  item: Deadline,
+  isOverdue: boolean,
+): "red" | "yellow" | "green" {
+  if (isOverdue) {
+    return "red";
+  }
+
+  if (item.colorStatus === "red") {
+    return "red";
+  }
+
+  if (item.colorStatus === "yellow") {
+    return "yellow";
+  }
+
+  return "green";
 }
 
 type FilterChipProps = {
@@ -98,20 +139,23 @@ export function HomeScreen() {
   const undoCompletedDeadline = useDeadlineStore(
     (state) => state.undoCompletedDeadline,
   );
-  const recentlyDeletedDeadline = useDeadlineStore(
-    (state) => state.recentlyDeletedDeadline,
-  );
-  const undoDeleteDeadline = useDeadlineStore(
-    (state) => state.undoDeleteDeadline,
-  );
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [filter, setFilter] = useState<HomeFilter>("all");
   const [search, setSearch] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    void loadDeadlines();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        return;
+      }
+
+      void loadDeadlines();
+    });
+
+    return unsubscribe;
   }, [loadDeadlines]);
 
   useEffect(() => {
@@ -140,27 +184,16 @@ export function HomeScreen() {
     }, 1800);
   };
 
-  const onUndoDelete = () => {
-    void undoDeleteDeadline().then((success) => {
-      if (success) {
-        setToastMessage(t("restoredToActive"));
-        setShowToast(true);
-      }
-    });
-  };
-
-  const nextDeadline = deadlines[0];
   const dueTodayCount = deadlines.filter((item) =>
     isSameCalendarDay(item.dueAt),
   ).length;
   const urgentCount = deadlines.filter(
     (item) => item.colorStatus === "red",
   ).length;
-
-  const filteredItems = useMemo(() => {
+  const activeFilteredItems = useMemo(() => {
     const normalized = search.trim().toLowerCase();
 
-    const activeFiltered = deadlines.filter((item) => {
+    return deadlines.filter((item) => {
       if (!normalized) {
         return true;
       }
@@ -170,30 +203,98 @@ export function HomeScreen() {
         item.courseName.toLowerCase().includes(normalized)
       );
     });
+  }, [deadlines, search]);
 
+  const completedFilteredItems = useMemo(() => {
+    const normalized = search.trim().toLowerCase();
+
+    return completedDeadlines.filter((item) => {
+      if (!normalized) {
+        return true;
+      }
+
+      return (
+        item.assignmentName.toLowerCase().includes(normalized) ||
+        item.courseName.toLowerCase().includes(normalized)
+      );
+    });
+  }, [completedDeadlines, search]);
+
+  // Get filtered list based on selected filter
+  const filteredItems = useMemo<Deadline[]>(() => {
     if (filter === "urgent") {
-      return activeFiltered.filter((item) => item.colorStatus === "red");
+      return activeFilteredItems.filter(
+        (item) =>
+          item.colorStatus === "red" &&
+          getUrgencyMessage(getRemainingMs(item.dueAt)) !== "overdue",
+      );
     }
 
     if (filter === "soon") {
-      return activeFiltered.filter((item) => item.colorStatus === "yellow");
+      return activeFilteredItems.filter(
+        (item) => item.colorStatus === "yellow",
+      );
     }
 
-    if (filter === "completed") {
-      return completedDeadlines.filter((item) => {
-        if (!normalized) {
-          return true;
-        }
+    if (filter === "onTrack") {
+      return activeFilteredItems.filter((item) => item.colorStatus === "green");
+    }
 
-        return (
-          item.assignmentName.toLowerCase().includes(normalized) ||
-          item.courseName.toLowerCase().includes(normalized)
-        );
+    if (filter === "done") {
+      return completedFilteredItems;
+    }
+
+    return activeFilteredItems;
+  }, [activeFilteredItems, completedFilteredItems, filter]);
+
+  // Get overdue items count (only show in All filter)
+  const overdueItems = useMemo(() => {
+    if (filter !== "all") {
+      return [];
+    }
+
+    return activeFilteredItems.filter(
+      (item) => getUrgencyMessage(getRemainingMs(item.dueAt)) === "overdue",
+    );
+  }, [activeFilteredItems, filter]);
+
+  const remainingActiveItems = useMemo(() => {
+    return filteredItems.filter(
+      (item) => getUrgencyMessage(getRemainingMs(item.dueAt)) !== "overdue",
+    );
+  }, [filteredItems]);
+
+  const listRows = useMemo<DeadlineListRow[]>(() => {
+    if (filter !== "all") {
+      return filteredItems.map((item) => ({
+        type: "item",
+        id: `item-${item.id}`,
+        item,
+        isOverdue: false,
+      }));
+    }
+
+    const rows: DeadlineListRow[] = [];
+
+    if (overdueItems.length > 0) {
+      rows.push({
+        type: "overdue-container",
+        id: "overdue-container",
+        items: overdueItems,
       });
     }
 
-    return activeFiltered;
-  }, [completedDeadlines, deadlines, filter, search]);
+    rows.push(
+      ...remainingActiveItems.map((item) => ({
+        type: "item" as const,
+        id: `active-${item.id}`,
+        item,
+        isOverdue: false,
+      })),
+    );
+
+    return rows;
+  }, [filter, filteredItems, overdueItems, remainingActiveItems]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -246,14 +347,6 @@ export function HomeScreen() {
               </AppText>
             </View>
           </View>
-          <View style={styles.nextRow}>
-            <AppText variant="caption">{t("summaryNext")}</AppText>
-            <AppText variant="body" style={styles.nextText} numberOfLines={1}>
-              {nextDeadline
-                ? `${nextDeadline.assignmentName} • ${formatDueLabel(nextDeadline.dueAt)}`
-                : t("homeEmptyHint")}
-            </AppText>
-          </View>
         </Card>
 
         <View style={styles.filterRow}>
@@ -261,7 +354,8 @@ export function HomeScreen() {
             { key: "all", label: t("filterAll") },
             { key: "urgent", label: t("filterUrgent") },
             { key: "soon", label: t("filterSoon") },
-            { key: "completed", label: t("filterCompleted") },
+            { key: "onTrack", label: t("onTrack") },
+            { key: "done", label: t("done") },
           ].map((item) => (
             <FilterChip
               key={item.key}
@@ -273,90 +367,133 @@ export function HomeScreen() {
         </View>
 
         <View style={styles.searchWrap}>
+          {!search && !isSearchFocused ? (
+            <AppText variant="caption" style={styles.searchPlaceholderText}>
+              {t("searchDeadlinePlaceholder")}
+            </AppText>
+          ) : null}
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder={t("searchDeadlinePlaceholder")}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            placeholder=""
             placeholderTextColor={colors.textMuted}
             style={styles.searchInput}
             accessibilityLabel={t("searchDeadlinePlaceholder")}
           />
         </View>
 
-        {recentlyDeletedDeadline ? (
-          <View style={styles.undoRow}>
-            <AppButton
-              label={t("undoDelete")}
-              onPress={onUndoDelete}
-              variant="outline"
-              iconName="refresh-outline"
-            />
-          </View>
-        ) : null}
+        <View style={styles.listSection}>
+          {isLoadingDeadlines ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={colors.primaryStrong} />
+              <AppText variant="caption" style={styles.loadingText}>
+                {t("loadingDeadlines")}
+              </AppText>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                data={listRows}
+                keyExtractor={(row) => row.id}
+                contentContainerStyle={styles.listContent}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={isLoadingDeadlines}
+                    onRefresh={() => {
+                      if (!auth.currentUser) {
+                        return;
+                      }
 
-        {isLoadingDeadlines ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator color={colors.primaryStrong} />
-          </View>
-        ) : (
-          <FlatList
-            data={filteredItems}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoadingDeadlines}
-                onRefresh={() => {
-                  void loadDeadlines();
-                }}
-                tintColor={colors.primaryStrong}
-              />
-            }
-            renderItem={({ item }) => (
-              <View style={styles.cardWrapper}>
-                <DeadlineCard
-                  assignmentName={item.assignmentName}
-                  courseName={item.courseName}
-                  dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)} • ${urgencyMessageToLabel(getUrgencyMessage(getRemainingMs(item.dueAt)))}`}
-                  urgencyColor={item.colorStatus}
-                  actionLabel={filter === "completed" ? t("undo") : t("done")}
-                  onPressAction={() =>
-                    filter === "completed"
-                      ? undoCompletedDeadline(item.id)
-                      : onDone(item.id)
-                  }
-                  muted={filter === "completed"}
-                  onPressCard={
-                    filter === "completed"
-                      ? undefined
-                      : () => {
-                          navigation.navigate(StackRoutes.DeadlineDetail, {
-                            id: item.id,
-                          });
-                        }
-                  }
-                  cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
-                />
-              </View>
-            )}
-            ListEmptyComponent={
-              <Card style={styles.emptyCard}>
-                <AppText variant="sectionTitle" style={styles.emptyTitle}>
-                  {t("homeEmptyTitle")}
-                </AppText>
-                <AppText variant="caption" style={styles.emptyHint}>
-                  {t("homeEmptyHint")}
-                </AppText>
-                <View style={styles.emptyActionWrap}>
-                  <AppButton
-                    label={t("createNewDeadline")}
-                    onPress={onPressAdd}
+                      void loadDeadlines();
+                    }}
+                    tintColor={colors.primaryStrong}
                   />
-                </View>
-              </Card>
-            }
-          />
-        )}
+                }
+                renderItem={({ item: row }) => {
+                  if (row.type === "overdue-container") {
+                    return (
+                      <Card style={styles.overdueBanner}>
+                        <View style={styles.overdueContent}>
+                          <AppText
+                            variant="caption"
+                            style={styles.overdueBannerText}
+                          >
+                            {t("overdue")}: {row.items.length}{" "}
+                            {row.items.length === 1 ? "item" : "items"}
+                          </AppText>
+                        </View>
+                        <View style={styles.overdueItemsWrap}>
+                          {row.items.map((item) => (
+                            <View key={item.id} style={styles.cardWrapper}>
+                              <DeadlineCard
+                                assignmentName={item.assignmentName}
+                                courseName={item.courseName}
+                                dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)} • ${statusLabelFromItem(item, true)}`}
+                                urgencyColor={statusColorFromItem(item, true)}
+                                actionLabel={t("done")}
+                                onPressAction={() => onDone(item.id)}
+                                onPressCard={() => {
+                                  navigation.navigate(
+                                    StackRoutes.DeadlineDetail,
+                                    {
+                                      id: item.id,
+                                    },
+                                  );
+                                }}
+                                cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
+                              />
+                            </View>
+                          ))}
+                        </View>
+                      </Card>
+                    );
+                  }
+
+                  const isDoneFilter = filter === "done";
+                  const item = row.item;
+                  const isOverdue = row.isOverdue;
+                  return (
+                    <View style={styles.cardWrapper}>
+                      <DeadlineCard
+                        assignmentName={item.assignmentName}
+                        courseName={item.courseName}
+                        dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)} • ${statusLabelFromItem(item, isOverdue)}`}
+                        urgencyColor={
+                          isDoneFilter
+                            ? item.colorStatus
+                            : statusColorFromItem(item, isOverdue)
+                        }
+                        actionLabel={isDoneFilter ? t("undo") : t("done")}
+                        onPressAction={() =>
+                          isDoneFilter
+                            ? undoCompletedDeadline(item.id)
+                            : onDone(item.id)
+                        }
+                        muted={isDoneFilter}
+                        onPressCard={
+                          isDoneFilter
+                            ? undefined
+                            : () => {
+                                navigation.navigate(
+                                  StackRoutes.DeadlineDetail,
+                                  {
+                                    id: item.id,
+                                  },
+                                );
+                              }
+                        }
+                        cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
+                      />
+                    </View>
+                  );
+                }}
+                ListEmptyComponent={null}
+              />
+            </>
+          )}
+        </View>
 
         <Toast message={toastMessage} visible={showToast} type="success" />
       </View>
@@ -417,16 +554,11 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     lineHeight: typography.lineHeight.relaxed,
   },
-  nextRow: {
-    marginTop: spacing.m,
-    gap: spacing.xs,
-  },
-  nextText: {
-    fontWeight: typography.weight.semibold,
-  },
   searchWrap: {
     marginTop: spacing.l,
     marginBottom: spacing.xl,
+    position: "relative",
+    justifyContent: "center",
   },
   searchInput: {
     minHeight: 38,
@@ -438,18 +570,25 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: typography.size.m,
   },
+  searchPlaceholderText: {
+    position: "absolute",
+    left: spacing.l,
+    zIndex: 1,
+    color: colors.textMuted,
+    fontSize: typography.size.s,
+  },
   filterRow: {
     flexDirection: "row",
-    gap: spacing.s,
-    paddingHorizontal: spacing.l,
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.xs,
   },
   filterChip: {
     flex: 1,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.s,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.xxs,
+    paddingVertical: spacing.xs,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -476,6 +615,36 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     paddingBottom: spacing.xxl,
   },
+  listSection: {
+    flex: 1,
+    gap: spacing.s,
+  },
+  sectionHeader: {
+    marginTop: spacing.xs,
+  },
+  listSectionTitle: {
+    paddingHorizontal: spacing.s,
+    color: colors.textSecondary,
+    fontWeight: "600",
+    letterSpacing: 0.2,
+  },
+  overdueBanner: {
+    backgroundColor: colors.surfacePink,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.danger,
+    marginBottom: spacing.l,
+  },
+  overdueContent: {
+    alignItems: "flex-start",
+  },
+  overdueBannerText: {
+    color: colors.danger,
+    fontWeight: "500",
+  },
+  overdueItemsWrap: {
+    marginTop: spacing.s,
+    gap: spacing.l,
+  },
   cardWrapper: {
     borderWidth: 0,
     borderColor: colors.borderSoft,
@@ -488,6 +657,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.s,
+  },
+  loadingText: {
+    color: colors.textSecondary,
   },
   emptyCard: {
     marginTop: spacing.xxxl,
@@ -496,6 +669,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     textAlign: "center",
+    color: colors.textSecondary,
   },
   emptyHint: {
     textAlign: "center",
@@ -506,5 +680,32 @@ const styles = StyleSheet.create({
   },
   undoRow: {
     marginBottom: spacing.l,
+  },
+  overdueCard: {
+    marginBottom: spacing.m,
+    borderColor: colors.border,
+    backgroundColor: colors.surfacePink,
+    gap: spacing.xs,
+  },
+  overdueTitle: {
+    color: colors.warning,
+  },
+  overdueHint: {
+    color: colors.textSecondary,
+  },
+  errorCard: {
+    marginBottom: spacing.m,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+  },
+  errorTitle: {
+    color: colors.danger,
+  },
+  errorHint: {
+    color: colors.textSecondary,
+  },
+  errorActionWrap: {
+    marginTop: spacing.s,
   },
 });

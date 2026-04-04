@@ -17,8 +17,10 @@ type AppButtonProps = {
   label: string;
   onPress: () => void;
   variant?: "solid" | "outline";
+  size?: "default" | "compact";
   iconName?: keyof typeof Ionicons.glyphMap;
   iconColorToken?: keyof typeof colors;
+  labelColorToken?: keyof typeof colors;
   disabled?: boolean;
   loading?: boolean;
 };
@@ -27,8 +29,10 @@ export function AppButton({
   label,
   onPress,
   variant = "solid",
+  size = "default",
   iconName,
   iconColorToken,
+  labelColorToken,
   disabled = false,
   loading = false,
 }: AppButtonProps) {
@@ -37,6 +41,11 @@ export function AppButton({
   const isDisabled = disabled || loading;
   const iconColor = iconColorToken
     ? colors[iconColorToken]
+    : isOutline
+      ? colors.textPrimary
+      : colors.buttonText;
+  const labelColor = labelColorToken
+    ? colors[labelColorToken]
     : isOutline
       ? colors.textPrimary
       : colors.buttonText;
@@ -54,6 +63,7 @@ export function AppButton({
       <Pressable
         style={[
           styles.base,
+          size === "compact" && styles.baseCompact,
           isOutline ? styles.outline : styles.solid,
           isDisabled && styles.disabled,
         ]}
@@ -69,7 +79,10 @@ export function AppButton({
           ) : null}
           <AppText
             variant="button"
-            style={isOutline ? styles.outlineLabel : styles.solidLabel}
+            style={[
+              isOutline ? styles.outlineLabel : styles.solidLabel,
+              { color: labelColor },
+            ]}
           >
             {loading ? "..." : label}
           </AppText>
@@ -88,6 +101,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     borderWidth: 1,
     ...shadows.shadowLight,
+  },
+  baseCompact: {
+    minHeight: 48,
   },
   solid: {
     backgroundColor: colors.buttonBg,

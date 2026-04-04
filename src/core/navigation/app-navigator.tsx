@@ -12,7 +12,11 @@ import { t } from "@/src/core/utils";
 import { AddDeadlineScreen } from "@/src/features/add-deadline";
 import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
-import { LoginScreen } from "@/src/features/login";
+import {
+    ForgotPasswordScreen,
+    LoginScreen,
+    RegisterScreen,
+} from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
 import {
     AboutAppScreen,
@@ -36,6 +40,8 @@ export type TabParamList = {
 
 export type RootStackParamList = {
   [StackRoutes.Login]: undefined;
+  [StackRoutes.ForgotPassword]: undefined;
+  [StackRoutes.Register]: undefined;
   [StackRoutes.MainTabs]: NavigatorScreenParams<TabParamList> | undefined;
   [StackRoutes.DeadlineDetail]: { id: string };
   [StackRoutes.AboutApp]: undefined;
@@ -99,6 +105,9 @@ export function AppNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const hydrateAuth = useAuthStore((state) => state.hydrateAuth);
+  const syncAuthFromFirebase = useAuthStore(
+    (state) => state.syncAuthFromFirebase,
+  );
   const hydrateNotificationsSetting = useDeadlineStore(
     (state) => state.hydrateNotificationsSetting,
   );
@@ -106,6 +115,11 @@ export function AppNavigator() {
   useEffect(() => {
     void hydrateAuth();
   }, [hydrateAuth]);
+
+  useEffect(() => {
+    const unsubscribe = syncAuthFromFirebase();
+    return unsubscribe;
+  }, [syncAuthFromFirebase]);
 
   useEffect(() => {
     void hydrateNotificationsSetting();
@@ -130,6 +144,14 @@ export function AppNavigator() {
         {!isAuthenticated ? (
           <>
             <Stack.Screen name={StackRoutes.Login} component={LoginScreen} />
+            <Stack.Screen
+              name={StackRoutes.ForgotPassword}
+              component={ForgotPasswordScreen}
+            />
+            <Stack.Screen
+              name={StackRoutes.Register}
+              component={RegisterScreen}
+            />
             <Stack.Screen
               name={StackRoutes.PrivacyPolicy}
               component={PrivacyPolicyScreen}

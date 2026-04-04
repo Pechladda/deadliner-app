@@ -6,6 +6,8 @@ export const TabRoutes = {
 
 export const StackRoutes = {
   Login: "Login",
+  ForgotPassword: "ForgotPassword",
+  Register: "Register",
   MainTabs: "MainTabs",
   DeadlineDetail: "DeadlineDetail",
   AboutApp: "AboutApp",

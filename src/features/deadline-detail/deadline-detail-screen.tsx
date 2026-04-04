@@ -6,21 +6,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppButton, AppText, Card, IconButton } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
 import {
-    computeColorStatus,
-    formatCountdownLong,
-    formatDueLabel,
-    getRemainingMs,
-    getUrgencyMessage,
-    t,
+  computeColorStatus,
+  formatCountdownLong,
+  formatDueLabel,
+  getRemainingMs,
+  getUrgencyMessage,
+  t,
 } from "@/src/core/utils";
 import {
-    useDeadlineDetailNavigation,
-    useDeadlineDetailRoute,
+  useDeadlineDetailNavigation,
+  useDeadlineDetailRoute,
 } from "@/src/features/deadline-detail/hooks/use-deadline-detail-screen";
 import {
-    ActionRowProps,
-    CountdownCardProps,
-    MissingStateProps,
+  ActionRowProps,
+  CountdownCardProps,
+  MissingStateProps,
 } from "@/src/features/deadline-detail/types";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, radius, spacing, typography } from "@/src/theme";
@@ -109,6 +109,7 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
           label={t("edit")}
           onPress={onEdit}
           variant="solid"
+          size="compact"
           iconName="pencil-outline"
         />
       </View>
@@ -117,6 +118,7 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
           label={t("delete")}
           onPress={onDelete}
           variant="outline"
+          size="compact"
           iconName="trash-outline"
           iconColorToken="danger"
         />
@@ -217,51 +219,61 @@ export function DeadlineDetailScreen() {
           isWide && styles.containerWide,
         ]}
       >
-        <View style={[styles.headerRow, isCompact && styles.headerRowCompact]}>
-          <IconButton
-            icon="chevron-back"
-            onPress={onPressFallbackBack}
-            accessibilityLabel={t("goBack")}
-          />
-          <AppText variant="title" style={styles.screenTitle}>
-            {t("assignmentDetail")}
-          </AppText>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <Card style={styles.assignmentCard}>
-          <AppText variant="sectionTitle" style={styles.assignmentTitle}>
-            {deadline.assignmentName}
-          </AppText>
-          <AppText
-            variant="body"
-            color="textSecondary"
-            style={styles.courseText}
+        <View
+          style={[
+            styles.content,
+            isCompact && styles.contentCompact,
+            isWide && styles.contentWide,
+          ]}
+        >
+          <View
+            style={[styles.headerRow, isCompact && styles.headerRowCompact]}
           >
-            {deadline.courseName}
-          </AppText>
-        </Card>
-
-        <CountdownCard dueAt={deadline.dueAt} now={now} status={status} />
-
-        <Card style={styles.metaCard}>
-          <View style={styles.metaRow}>
-            <AppText variant="caption">{t("reminderInfo")}</AppText>
-            <AppText variant="body" style={styles.metaValue}>
-              {deadline.reminder
-                ? deadline.reminder === "5m"
-                  ? t("reminder5m")
-                  : deadline.reminder === "30m"
-                    ? t("reminder30m")
-                    : deadline.reminder === "1h"
-                      ? t("reminder1h")
-                      : t("reminder1d")
-                : t("noReminderSelected")}
+            <IconButton
+              icon="chevron-back"
+              onPress={onPressFallbackBack}
+              accessibilityLabel={t("goBack")}
+            />
+            <AppText variant="title" style={styles.screenTitle}>
+              {t("assignmentDetail")}
             </AppText>
+            <View style={styles.headerSpacer} />
           </View>
-        </Card>
 
-        <ActionRow onEdit={onPressEdit} onDelete={onPressDelete} />
+          <Card style={styles.assignmentCard}>
+            <AppText variant="sectionTitle" style={styles.assignmentTitle}>
+              {deadline.assignmentName}
+            </AppText>
+            <AppText
+              variant="body"
+              color="textSecondary"
+              style={styles.courseText}
+            >
+              {deadline.courseName}
+            </AppText>
+          </Card>
+
+          <CountdownCard dueAt={deadline.dueAt} now={now} status={status} />
+
+          <Card style={styles.metaCard}>
+            <View style={styles.metaRow}>
+              <AppText variant="caption">{t("reminderInfo")}</AppText>
+              <AppText variant="body" style={styles.metaValue}>
+                {deadline.reminder
+                  ? deadline.reminder === "5m"
+                    ? t("reminder5m")
+                    : deadline.reminder === "30m"
+                      ? t("reminder30m")
+                      : deadline.reminder === "1h"
+                        ? t("reminder1h")
+                        : t("reminder1d")
+                  : t("noReminderSelected")}
+              </AppText>
+            </View>
+          </Card>
+
+          <ActionRow onEdit={onPressEdit} onDelete={onPressDelete} />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -271,16 +283,31 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.l,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.l,
-    gap: spacing.xl,
+    paddingBottom: spacing.l,
   },
   containerCompact: {
-    paddingHorizontal: spacing.m,
-    gap: spacing.m,
+    paddingHorizontal: spacing.l,
+    paddingTop: spacing.m,
   },
   containerWide: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.xxxl,
+    paddingTop: spacing.xl,
+  },
+  content: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+    gap: spacing.l,
+  },
+  contentCompact: {
+    maxWidth: 360,
+    gap: spacing.m,
+  },
+  contentWide: {
+    maxWidth: 460,
   },
   center: {
     flex: 1,
@@ -295,18 +322,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.xl2,
+    marginBottom: spacing.s,
   },
   headerRowCompact: {
     marginBottom: spacing.l,
   },
-  headerSpacer: { width: 36, height: 36 },
+  headerSpacer: { width: 38, height: 38 },
   screenTitle: {
+    flex: 1,
     textAlign: "center",
   },
   assignmentCard: {
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.cardHighlight,
   },
   assignmentTitle: {
     textAlign: "center",
@@ -316,7 +344,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   countdownCard: {
-    marginTop: spacing.xs,
+    marginTop: 0,
     alignItems: "center",
     width: "100%",
     paddingVertical: spacing.xl,
@@ -371,9 +399,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   metaCard: {
-    backgroundColor: colors.surfacePink,
+    backgroundColor: colors.cardHighlight,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderSoft,
   },
   metaRow: {
     gap: spacing.s,
@@ -389,7 +417,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: "auto",
     gap: spacing.m,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.l,
     paddingTop: spacing.s,
   },
   actionButtonWrap: {

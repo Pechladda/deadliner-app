@@ -67,7 +67,7 @@ const translations = {
       "Please choose an assignment from Home to see its details.",
     urgent: "URGENT",
     soon: "SOON",
-    onTrack: "ON TRACK",
+    onTrack: "On Track",
     due: "Due",
     edit: "Edit",
     delete: "Delete",
@@ -103,13 +103,13 @@ const translations = {
     privacyPolicy: "Privacy Policy",
     privacyWhatWeStoreTitle: "What we store",
     privacyWhatWeStoreBody:
-      "We store your deadlines, reminder settings, notification preference, and app language to make the app work.",
+      "We store your name, email, deadlines, and reminder settings.",
     privacyWhyTitle: "Why we store it",
     privacyWhyBody:
-      "Data is used only to show your tasks, schedule reminders, and save your preferences.",
-    privacyDeleteTitle: "Delete your data",
+      "We use it only to run the app and send deadline reminders.",
+    privacyDeleteTitle: "Your data",
     privacyDeleteBody:
-      "You can remove all deadlines and related reminder data anytime from Settings.",
+      "You can edit your profile and delete deadlines anytime in Settings.",
     privacyNoExtraDataTitle: "Minimal data",
     privacyNoExtraDataBody:
       "Deadliner does not collect unnecessary personal data such as location or contacts.",
@@ -146,7 +146,25 @@ const translations = {
     settingsDataSection: "Data and privacy",
     settingsAppSection: "App preferences",
     dataUsageSummary:
-      "Stored data: course, assignment, due date/time, reminder, and language preference.",
+      "We store your course details, assignments, due dates, and reminders to help you manage your deadlines.",
+    dataStoredLocally:
+      "Some data is stored on your device for performance, and some is securely stored in Firestore to sync your data.",
+    dataStoredInCloud: "You can manage or delete your data anytime.",
+    logoutSuccess: "Logged out successfully",
+    logoutFailed: "Unable to log out right now. Please try again.",
+    retry: "Retry",
+    loadingDeadlines: "Loading your deadlines...",
+    homeLoadErrorTitle: "Unable to load deadlines",
+    overdueSectionTitle: "Overdue",
+    overdueSectionHint: "You have %{count} overdue deadlines.",
+    homeEmptyCompletedTitle: "No completed deadlines yet",
+    homeEmptyCompletedHint: "Completed items will appear here.",
+    privacyLocalDataTitle: "Data stored on your device",
+    privacyLocalDataBody:
+      "We store language, consent, session state, and notification preferences locally so the app opens quickly and remembers your setup.",
+    privacyCloudDataTitle: "Data stored in Firestore",
+    privacyCloudDataBody:
+      "Your account profile and deadlines are stored in Firestore so your data is tied to your account.",
   },
   th: {
     tabHome: "หน้าแรก",
@@ -246,13 +264,11 @@ const translations = {
     privacyPolicy: "นโยบายความเป็นส่วนตัว",
     privacyWhatWeStoreTitle: "ข้อมูลที่เราจัดเก็บ",
     privacyWhatWeStoreBody:
-      "เราเก็บข้อมูลงานที่ต้องส่ง การตั้งค่าการแจ้งเตือน และค่าภาษา เพื่อให้แอปทำงานได้",
+      "เราเก็บชื่อ อีเมล เดดไลน์ และการตั้งค่าแจ้งเตือนของคุณ",
     privacyWhyTitle: "เหตุผลที่เก็บข้อมูล",
-    privacyWhyBody:
-      "ข้อมูลถูกใช้เพื่อแสดงงาน ตั้งการแจ้งเตือน และบันทึกการตั้งค่าของคุณเท่านั้น",
-    privacyDeleteTitle: "การลบข้อมูล",
-    privacyDeleteBody:
-      "คุณสามารถลบเดดไลน์และข้อมูลเตือนทั้งหมดได้ทุกเมื่อจากหน้าตั้งค่า",
+    privacyWhyBody: "ข้อมูลถูกใช้เพื่อให้แอปทำงานและแจ้งเตือนเดดไลน์เท่านั้น",
+    privacyDeleteTitle: "ข้อมูลของคุณ",
+    privacyDeleteBody: "คุณแก้ไขโปรไฟล์และลบเดดไลน์ได้ทุกเมื่อจากหน้าตั้งค่า",
     privacyNoExtraDataTitle: "เก็บข้อมูลเท่าที่จำเป็น",
     privacyNoExtraDataBody:
       "Deadliner ไม่เก็บข้อมูลส่วนตัวที่ไม่จำเป็น เช่น ตำแหน่งหรือรายชื่อผู้ติดต่อ",
@@ -288,8 +304,24 @@ const translations = {
     noReminderSelected: "ไม่ตั้งการแจ้งเตือน",
     settingsDataSection: "ข้อมูลและความเป็นส่วนตัว",
     settingsAppSection: "การตั้งค่าแอป",
-    dataUsageSummary:
-      "ข้อมูลที่จัดเก็บ: ชื่อวิชา ชื่องาน วันเวลาแจ้งส่ง การแจ้งเตือน และภาษาที่เลือก",
+    dataUsageSummary: "ข้อมูลที่จัดเก็บ: วิชา งาน วันส่ง การแจ้งเตือน ภาษา",
+    dataStoredLocally: "ในเครื่อง: สถานะเข้าสู่ระบบ การแจ้งเตือน ภาษา",
+    dataStoredInCloud: "ใน Firestore: โปรไฟล์ เดดไลน์ที่กำลังทำ ประวัติ",
+    logoutSuccess: "ออกจากระบบเรียบร้อยแล้ว",
+    logoutFailed: "ไม่สามารถออกจากระบบได้ในขณะนี้ กรุณาลองใหม่",
+    retry: "ลองอีกครั้ง",
+    loadingDeadlines: "กำลังโหลดงานของคุณ...",
+    homeLoadErrorTitle: "ไม่สามารถโหลดเดดไลน์ได้",
+    overdueSectionTitle: "เกินกำหนด",
+    overdueSectionHint: "คุณมีงานเกินกำหนด %{count} งาน",
+    homeEmptyCompletedTitle: "ยังไม่มีงานที่เสร็จสิ้น",
+    homeEmptyCompletedHint: "เมื่อทำงานเสร็จแล้วจะแสดงที่นี่",
+    privacyLocalDataTitle: "ข้อมูลที่จัดเก็บในอุปกรณ์",
+    privacyLocalDataBody:
+      "เราเก็บภาษา การยอมรับนโยบาย สถานะเข้าสู่ระบบ และการตั้งค่าการแจ้งเตือนไว้ในเครื่อง เพื่อให้แอปเปิดได้รวดเร็วและจำค่าของคุณ",
+    privacyCloudDataTitle: "ข้อมูลที่จัดเก็บใน Firestore",
+    privacyCloudDataBody:
+      "โปรไฟล์บัญชีและเดดไลน์ของคุณจะถูกจัดเก็บใน Firestore เพื่อผูกข้อมูลกับบัญชีผู้ใช้",
   },
 };
 

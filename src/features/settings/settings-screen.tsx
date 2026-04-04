@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  useWindowDimensions,
-  View,
+    Alert,
+    Linking,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -66,6 +66,7 @@ export function SettingsScreen() {
   const clearAllData = useDeadlineStore((state) => state.clearAllData);
   const [toastMessage, setToastMessage] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
 
   const onChangeLanguage = (nextLanguage: "th" | "en") => {
     setPendingLanguage(nextLanguage);
@@ -75,7 +76,14 @@ export function SettingsScreen() {
   };
 
   const onLogout = () => {
-    void logout();
+    void (async () => {
+      try {
+        await logout();
+        showToast(t("logoutSuccess"), "success");
+      } catch {
+        showToast(t("logoutFailed"), "error");
+      }
+    })();
   };
 
   const onToggleNotifications = (enabled: boolean) => {
@@ -86,8 +94,9 @@ export function SettingsScreen() {
     void Linking.openSettings();
   };
 
-  const showToast = (message: string) => {
+  const showToast = (message: string, type: "success" | "error") => {
     setToastMessage(message);
+    setToastType(type);
     setToastVisible(true);
 
     setTimeout(() => {
@@ -103,7 +112,10 @@ export function SettingsScreen() {
         style: "destructive",
         onPress: () => {
           void clearAllData().then((isSuccess) => {
-            showToast(isSuccess ? t("allDataDeleted") : t("deleteFailed"));
+            showToast(
+              isSuccess ? t("allDataDeleted") : t("deleteFailed"),
+              isSuccess ? "success" : "error",
+            );
           });
         },
       },
@@ -121,172 +133,217 @@ export function SettingsScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.headerRow, isCompact && styles.headerRowCompact]}>
-          <IconButton
-            icon="chevron-back"
-            onPress={() => navigation.goBack()}
-            accessibilityLabel={t("goBack")}
-          />
-          <AppText variant="title" style={styles.screenTitle}>
-            {t("settings")}
-          </AppText>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        <AppText variant="sectionTitle" style={styles.sectionTitle}>
-          {t("settingsAppSection")}
-        </AppText>
-        <View style={styles.section}>
-          <SettingsRow
-            label={t("profile")}
-            icon="person-outline"
-            onPress={() => navigation.navigate(StackRoutes.Profile)}
-          />
-          <SettingsRow
-            label={t("aboutApp")}
-            icon="help-circle-outline"
-            onPress={() => navigation.navigate(StackRoutes.AboutApp)}
-          />
-          <SettingsRow
-            label={t("privacyPolicy")}
-            icon="shield-checkmark-outline"
-            onPress={() => navigation.navigate(StackRoutes.PrivacyPolicy)}
-          />
-          <SettingsRow
-            label={t("history")}
-            icon="time-outline"
-            onPress={() => navigation.navigate(StackRoutes.History)}
-          />
-
-          <View style={styles.toggleRow}>
-            <View style={[styles.rowLeft, styles.toggleRowLeft]}>
-              <Ionicons
-                name="notifications-outline"
-                size={20}
-                color={colors.textSecondary}
-              />
-              <AppText>{t("enableNotifications")}</AppText>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={onToggleNotifications}
-              accessibilityLabel={t("enableNotifications")}
+        <View
+          style={[
+            styles.contentInner,
+            isCompact && styles.contentInnerCompact,
+            isWide && styles.contentInnerWide,
+          ]}
+        >
+          <View
+            style={[styles.headerRow, isCompact && styles.headerRowCompact]}
+          >
+            <IconButton
+              icon="chevron-back"
+              onPress={() => navigation.goBack()}
+              accessibilityLabel={t("goBack")}
             />
+            <AppText variant="title" style={styles.screenTitle}>
+              {t("settings")}
+            </AppText>
+            <View style={styles.headerSpacer} />
           </View>
 
-          {notificationsEnabled && !hasNotificationPermission ? (
-            <View style={styles.notificationsHintCard}>
-              <AppText variant="body">
-                {t("notificationsDisabledTitle")}
-              </AppText>
-              <AppText variant="caption">
-                {t("notificationsDisabledHint")}
-              </AppText>
-              <View style={styles.settingsButtonWrap}>
+          <View style={styles.sectionBlock}>
+            <AppText variant="sectionTitle" style={styles.sectionTitle}>
+              Account
+            </AppText>
+            <View style={styles.section}>
+              <SettingsRow
+                label={t("profile")}
+                icon="person-outline"
+                onPress={() => navigation.navigate(StackRoutes.Profile)}
+              />
+            </View>
+          </View>
+
+          <View style={styles.sectionBlock}>
+            <AppText variant="sectionTitle" style={styles.sectionTitle}>
+              Preferences
+            </AppText>
+            <View style={styles.section}>
+              <View style={styles.toggleRow}>
+                <View style={[styles.rowLeft, styles.toggleRowLeft]}>
+                  <Ionicons
+                    name="notifications-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                  <AppText>{t("enableNotifications")}</AppText>
+                </View>
+                <Switch
+                  value={notificationsEnabled}
+                  onValueChange={onToggleNotifications}
+                  accessibilityLabel={t("enableNotifications")}
+                />
+              </View>
+
+              {notificationsEnabled && !hasNotificationPermission ? (
+                <View style={styles.notificationsHintCard}>
+                  <AppText variant="body">
+                    {t("notificationsDisabledTitle")}
+                  </AppText>
+                  <AppText variant="caption">
+                    {t("notificationsDisabledHint")}
+                  </AppText>
+                  <View style={styles.settingsButtonWrap}>
+                    <AppButton
+                      label={t("openSettings")}
+                      onPress={onOpenSystemSettings}
+                      variant="outline"
+                    />
+                  </View>
+                </View>
+              ) : null}
+
+              <View style={styles.languageRow}>
+                <AppText>{t("language")}</AppText>
+                <View style={styles.languageButtons}>
+                  <Pressable
+                    onPress={() => onChangeLanguage("en")}
+                    style={[
+                      styles.languageButton,
+                      (pendingLanguage === "en" || language === "en") &&
+                        styles.languageButtonActive,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("english")}
+                  >
+                    <AppText>{t("english")}</AppText>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => onChangeLanguage("th")}
+                    style={[
+                      styles.languageButton,
+                      (pendingLanguage === "th" || language === "th") &&
+                        styles.languageButtonActive,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("thai")}
+                  >
+                    <AppText>{t("thai")}</AppText>
+                  </Pressable>
+                </View>
+              </View>
+
+              <SettingsRow
+                label={t("history")}
+                icon="time-outline"
+                onPress={() => navigation.navigate(StackRoutes.History)}
+              />
+            </View>
+          </View>
+
+          <View style={styles.sectionBlock}>
+            <AppText variant="sectionTitle" style={styles.sectionTitle}>
+              Support and Privacy
+            </AppText>
+            <View style={styles.section}>
+              <SettingsRow
+                label={t("privacyPolicy")}
+                icon="shield-checkmark-outline"
+                onPress={() => navigation.navigate(StackRoutes.PrivacyPolicy)}
+              />
+              <SettingsRow
+                label={t("aboutApp")}
+                icon="help-circle-outline"
+                onPress={() => navigation.navigate(StackRoutes.AboutApp)}
+              />
+
+              <View style={styles.deleteActionWrap}>
                 <AppButton
-                  label={t("openSettings")}
-                  onPress={onOpenSystemSettings}
+                  label={t("deleteAllData")}
+                  onPress={onDeleteAllData}
                   variant="outline"
+                  iconName="trash-outline"
+                  iconColorToken="danger"
+                  labelColorToken="danger"
                 />
               </View>
             </View>
-          ) : null}
-
-          <View style={styles.languageRow}>
-            <AppText>{t("language")}</AppText>
-            <View style={styles.languageButtons}>
-              <Pressable
-                onPress={() => onChangeLanguage("en")}
-                style={[
-                  styles.languageButton,
-                  (pendingLanguage === "en" || language === "en") &&
-                    styles.languageButtonActive,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t("english")}
-              >
-                <AppText>{t("english")}</AppText>
-              </Pressable>
-              <Pressable
-                onPress={() => onChangeLanguage("th")}
-                style={[
-                  styles.languageButton,
-                  (pendingLanguage === "th" || language === "th") &&
-                    styles.languageButtonActive,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={t("thai")}
-              >
-                <AppText>{t("thai")}</AppText>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
-        <AppText variant="sectionTitle" style={styles.sectionTitle}>
-          {t("settingsDataSection")}
-        </AppText>
-        <View style={styles.section}>
-          <View style={styles.dataSummaryWrap}>
-            <AppText variant="caption">{t("dataUsageSummary")}</AppText>
           </View>
 
-          <View style={styles.privacyActionsWrap}>
+          <View style={styles.accountActionWrap}>
             <AppButton
-              label={t("deleteAllData")}
-              onPress={onDeleteAllData}
+              label="Sign Out"
+              onPress={onLogout}
               variant="outline"
-              iconName="trash-outline"
+              iconName="log-out-outline"
               iconColorToken="danger"
             />
           </View>
         </View>
-
-        <View style={styles.logoutWrap}>
-          <AppButton
-            label={t("logout")}
-            onPress={onLogout}
-            variant="outline"
-            iconName="log-out-outline"
-            iconColorToken="danger"
-          />
-        </View>
       </ScrollView>
 
-      <Toast message={toastMessage} visible={toastVisible} type="success" />
+      <Toast message={toastMessage} visible={toastVisible} type={toastType} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  container: { flex: 1, paddingHorizontal: spacing.l, paddingTop: spacing.l },
-  containerCompact: { paddingHorizontal: spacing.m },
-  containerWide: { paddingHorizontal: spacing.xl },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.l,
+    paddingBottom: spacing.l,
+  },
+  containerCompact: {
+    paddingHorizontal: spacing.l,
+    paddingTop: spacing.m,
+  },
+  containerWide: {
+    paddingHorizontal: spacing.xxxl,
+    paddingTop: spacing.xl,
+  },
   contentContainer: {
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.l,
+  },
+  contentInner: {
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+  },
+  contentInnerCompact: {
+    maxWidth: 360,
+  },
+  contentInnerWide: {
+    maxWidth: 460,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.xl2,
+    marginBottom: spacing.s,
   },
   headerRowCompact: {
     marginBottom: spacing.l,
   },
-  headerSpacer: { width: 36, height: 36 },
+  headerSpacer: { width: 38, height: 38 },
   screenTitle: {
     flex: 1,
     textAlign: "center",
   },
   sectionTitle: {
     marginBottom: spacing.s,
-    marginTop: spacing.xl,
     paddingHorizontal: spacing.s,
     color: colors.textSecondary,
     fontWeight: "600",
     letterSpacing: 0.2,
+  },
+  sectionBlock: {
+    marginTop: spacing.xl2,
+    gap: spacing.s,
   },
   section: {
     borderRadius: radius.xl,
@@ -296,12 +353,12 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   row: {
-    minHeight: 58,
+    minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
-    paddingVertical: spacing.m,
+    paddingVertical: spacing.s,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSoft,
   },
@@ -314,20 +371,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   languageRow: {
-    minHeight: 58,
+    minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
-    paddingVertical: spacing.m,
+    paddingVertical: spacing.s,
   },
   toggleRow: {
-    minHeight: 58,
+    minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
-    paddingVertical: spacing.m,
+    paddingVertical: spacing.s,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSoft,
   },
@@ -344,6 +401,10 @@ const styles = StyleSheet.create({
   dataSummaryWrap: {
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.m,
+    gap: spacing.xs,
+  },
+  dataDetailText: {
+    color: colors.textSecondary,
   },
   privacyActionsWrap: {
     paddingHorizontal: spacing.l,
@@ -369,8 +430,26 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.chipBgActive,
   },
-  logoutWrap: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxl,
+  accountActionWrap: {
+    marginTop: spacing.s,
+  },
+  deleteActionWrap: {
+    paddingHorizontal: spacing.l,
+    paddingBottom: spacing.l,
+    paddingTop: spacing.s,
+  },
+  deleteActionButton: {
+    minHeight: 48,
+    borderRadius: radius.l,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfacePink,
+    paddingHorizontal: spacing.m,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  deleteActionText: {
+    color: colors.danger,
+    fontWeight: "600",
   },
 });

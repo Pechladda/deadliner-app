@@ -19,4 +19,9 @@ export {
     t
 } from "./translations";
 
+export {
+    getAuthErrorMessage,
+    getFirestoreErrorMessage
+} from "./firebase-errors";
+
 export { sanitizeDeadlineInput, validateDeadlineInput } from "./validation";

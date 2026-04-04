@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 function getRequiredEnvValue(name: string): string {
@@ -45,6 +46,7 @@ function getFirebaseConfigFromEnv() {
 }
 
 const firebaseConfig = getFirebaseConfigFromEnv();
+const app = initializeApp(firebaseConfig);
 
 if (__DEV__) {
   // TEMP DEBUG LOG: remove after confirming Expo reads env variables correctly.
@@ -59,4 +61,5 @@ if (__DEV__) {
   );
 }
 
-export const db = getFirestore(initializeApp(firebaseConfig));
+export const db = getFirestore(app);
+export const auth = getAuth(app);

@@ -18,33 +18,62 @@ export function PrivacyPolicyScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">{t("privacyPolicy")}</AppText>
+          <AppText variant="title">Privacy Policy</AppText>
           <View style={styles.headerSpacer} />
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
           <Card style={styles.card}>
-            <AppText variant="cardTitle">
-              {t("privacyWhatWeStoreTitle")}
+            <AppText variant="cardTitle">1. What we collect</AppText>
+            <AppText style={styles.bodyText}>
+              We collect limited personal data, including your name, email
+              address, deadlines, and reminder settings, in order to provide
+              core application functionality.
             </AppText>
-            <AppText>{t("privacyWhatWeStoreBody")}</AppText>
           </Card>
 
           <Card style={styles.card}>
-            <AppText variant="cardTitle">{t("privacyWhyTitle")}</AppText>
-            <AppText>{t("privacyWhyBody")}</AppText>
+            <AppText variant="cardTitle">2. Purpose of data usage</AppText>
+            <AppText style={styles.bodyText}>
+              Your data is used solely for operating the application, displaying
+              your tasks, and sending deadline reminders. We do not use your
+              data for marketing or share it with third parties.
+            </AppText>
           </Card>
 
           <Card style={styles.card}>
-            <AppText variant="cardTitle">{t("privacyDeleteTitle")}</AppText>
-            <AppText>{t("privacyDeleteBody")}</AppText>
+            <AppText variant="cardTitle">3. Data storage</AppText>
+            <AppText style={styles.bodyText}>
+              Your data is securely stored using Firebase (Cloud Firestore) and
+              is linked to your account to ensure data consistency across
+              sessions.
+            </AppText>
+          </Card>
+
+          <Card style={styles.card}>
+            <AppText variant="cardTitle">4. Data security</AppText>
+            <AppText style={styles.bodyText}>
+              We implement appropriate technical measures to protect your
+              personal data from unauthorized access, loss, or misuse.
+            </AppText>
           </Card>
 
           <Card style={styles.card}>
             <AppText variant="cardTitle">
-              {t("privacyNoExtraDataTitle")}
+              5. User rights (PDPA compliance)
             </AppText>
-            <AppText>{t("privacyNoExtraDataBody")}</AppText>
+            <AppText style={styles.bodyText}>
+              Users have the right to access, update, or delete their personal
+              data at any time through the application settings.
+            </AppText>
+          </Card>
+
+          <Card style={styles.card}>
+            <AppText variant="cardTitle">6. Data retention</AppText>
+            <AppText style={styles.bodyText}>
+              Your data will be retained only for as long as necessary to
+              provide the service. Users may delete their data at any time.
+            </AppText>
           </Card>
         </ScrollView>
       </View>
@@ -63,12 +92,16 @@ const styles = StyleSheet.create({
   },
   headerSpacer: { width: 36, height: 36 },
   content: {
-    gap: spacing.l,
+    gap: spacing.xl2,
     paddingBottom: spacing.xxl,
   },
   card: {
     borderColor: colors.borderSoft,
     backgroundColor: colors.surfaceWarm,
     gap: spacing.s,
+  },
+  bodyText: {
+    color: colors.textSecondary,
+    lineHeight: 22,
   },
 });

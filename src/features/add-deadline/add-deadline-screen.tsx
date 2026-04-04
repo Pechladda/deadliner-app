@@ -143,6 +143,7 @@ export function AddDeadlineScreen() {
   const navigation = useAddDeadlineNavigation();
 
   const deadlines = useDeadlineStore((state) => state.deadlines);
+  const deadlinesError = useDeadlineStore((state) => state.deadlinesError);
   const addDeadline = useDeadlineStore((state) => state.addDeadline);
   const updateDeadline = useDeadlineStore((state) => state.updateDeadline);
   const [courseName, setCourseName] = useState("");
@@ -284,6 +285,9 @@ export function AddDeadlineScreen() {
       hasPickedTime,
     });
 
+    console.info("[AddDeadlineScreen] validation result:", validationError);
+    console.info("[AddDeadlineScreen] selectedDate:", selectedDate);
+
     if (validationError) {
       setErrorMessage(validationError);
       return;
@@ -309,13 +313,22 @@ export function AddDeadlineScreen() {
       updatedAt: nowIso,
     };
 
+    console.info("[AddDeadlineScreen] values payload:", values);
+
     const isSuccess =
       isEditMode && editId
         ? await updateDeadline(editId, values)
         : await addDeadline(values);
 
+    if (isEditMode && editId) {
+      console.info("[AddDeadlineScreen] updateDeadline result:", isSuccess);
+    } else {
+      console.info("[AddDeadlineScreen] addDeadline result:", isSuccess);
+    }
+
     if (!isSuccess) {
-      setErrorMessage(t("saveFailed"));
+      const latestError = useDeadlineStore.getState().deadlinesError;
+      setErrorMessage(latestError ?? deadlinesError ?? t("saveFailed"));
       setIsSaving(false);
       return;
     }
@@ -352,22 +365,28 @@ export function AddDeadlineScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
-        <View style={styles.form}>
+        <View
+          style={[
+            styles.form,
+            isCompact && styles.formCompact,
+            isWide && styles.formWide,
+          ]}
+        >
           <Card style={styles.sectionCard}>
             <Input
-              label={t("courseName")}
+              label="Course Name"
               value={courseName}
               onChangeText={setCourseName}
-              placeholder={t("courseName")}
+              placeholder="Enter course name"
               accessibilityLabel={t("courseNameInput")}
               labelStyle={styles.inputLabelText}
               inputStyle={styles.inputFieldText}
             />
             <Input
-              label={t("assignmentName")}
+              label="Assignment Title"
               value={assignmentName}
               onChangeText={setAssignmentName}
-              placeholder={t("assignmentName")}
+              placeholder="Enter assignment title"
               accessibilityLabel={t("assignmentNameInput")}
               labelStyle={styles.inputLabelText}
               inputStyle={styles.inputFieldText}
@@ -405,7 +424,13 @@ export function AddDeadlineScreen() {
           ) : null}
         </View>
 
-        <View style={styles.saveButtonWrap}>
+        <View
+          style={[
+            styles.saveButtonWrap,
+            isCompact && styles.saveButtonWrapCompact,
+            isWide && styles.saveButtonWrapWide,
+          ]}
+        >
           <Pressable
             onPress={() => {
               void onSave();
@@ -473,32 +498,44 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.l,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.l,
+    paddingBottom: spacing.l,
   },
   containerCompact: {
-    paddingHorizontal: spacing.m,
+    paddingHorizontal: spacing.l,
+    paddingTop: spacing.m,
   },
   containerWide: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.xxxl,
+    paddingTop: spacing.xl,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.s,
   },
   headerRowCompact: {
     marginBottom: spacing.l,
   },
   headerSpacer: { width: 36, height: 36 },
   form: {
-    gap: spacing.xl,
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+    gap: spacing.l,
+  },
+  formCompact: {
+    maxWidth: 360,
+  },
+  formWide: {
+    maxWidth: 460,
   },
   sectionCard: {
     backgroundColor: colors.surface,
     gap: spacing.l,
-    padding: spacing.xl2,
+    padding: spacing.l,
   },
   sectionLabel: {
     fontWeight: typography.weight.semibold,
@@ -514,7 +551,7 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     flex: 1,
-    gap: spacing.s,
+    gap: spacing.xxs,
   },
   reminderWrap: {
     gap: spacing.m,
@@ -540,12 +577,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   dateTimeField: {
-    minHeight: 48,
-    borderRadius: radius.xl,
+    minHeight: 50,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfacePink,
-    paddingHorizontal: spacing.l,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.m,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.s,
@@ -562,18 +599,34 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   inputLabelText: {
-    fontSize: typography.size.l,
+    fontSize: typography.size.s,
   },
   inputFieldText: {
-    fontSize: typography.size.m,
+    minHeight: 50,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+    fontSize: typography.size.s,
   },
   saveButtonWrap: {
     marginTop: "auto",
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.l,
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+  },
+  saveButtonWrapCompact: {
+    maxWidth: 360,
+  },
+  saveButtonWrapWide: {
+    maxWidth: 460,
   },
   saveButton: {
-    minHeight: 56,
-    borderRadius: radius.pill,
+    minHeight: 48,
+    borderRadius: radius.xxl,
     backgroundColor: colors.buttonBg,
     alignItems: "center",
     justifyContent: "center",
@@ -588,8 +641,9 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: colors.buttonText,
-    fontSize: typography.size.m,
-    fontWeight: typography.weight.bold,
+    fontSize: typography.size.s,
+    fontWeight: typography.weight.semibold,
+    letterSpacing: 0.2,
   },
   modalOverlay: {
     flex: 1,

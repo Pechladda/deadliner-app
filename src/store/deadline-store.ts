@@ -3,6 +3,7 @@ import { create } from "zustand";
 
 import {
   computeColorStatus,
+  getFirestoreErrorMessage,
   getRemainingMs,
   sanitizeDeadlineInput,
   sortDeadlinesByDueAt,
@@ -39,6 +40,7 @@ interface DeadlineState {
   completedDeadlines: Deadline[];
   recentlyDeletedDeadline: Deadline | null;
   isLoadingDeadlines: boolean;
+  deadlinesError: string | null;
   selectedDeadlineId: string | null;
   notificationsEnabled: boolean;
   hasNotificationPermission: boolean;
@@ -67,6 +69,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
   completedDeadlines: [],
   recentlyDeletedDeadline: null,
   isLoadingDeadlines: false,
+  deadlinesError: null,
   selectedDeadlineId: null,
   notificationsEnabled: true,
   hasNotificationPermission: true,
@@ -138,6 +141,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
         set({
           deadlines: [],
           completedDeadlines: [],
+          deadlinesError: null,
           isLoadingDeadlines: false,
         });
         return;
@@ -162,17 +166,28 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       set({
         deadlines: sortByDueAt(activeDeadlines),
         completedDeadlines: doneDeadlines,
+        deadlinesError: null,
         isLoadingDeadlines: false,
       });
-    } catch {
-      // Fail gracefully so UI remains usable.
-      set({ deadlines: [], completedDeadlines: [], isLoadingDeadlines: false });
+    } catch (error) {
+      set({
+        deadlines: [],
+        completedDeadlines: [],
+        deadlinesError: getFirestoreErrorMessage(error),
+        isLoadingDeadlines: false,
+      });
     }
   },
   addDeadline: async (input) => {
+    let newlyScheduledNotificationId: string | undefined;
+
     try {
+      console.info("[AddDeadline] addDeadline input:", input);
       const sanitizedInput = sanitizeDeadlineInput(input);
+      console.info("[AddDeadline] sanitized input:", sanitizedInput);
       if (!validateDeadlineInput(sanitizedInput)) {
+        console.error("[AddDeadline] validation failed in store");
+        set({ deadlinesError: "Please complete all required fields." });
         return false;
       }
 
@@ -180,9 +195,15 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       const colorStatus =
         sanitizedInput.colorStatus ?? computeUrgencyColor(sanitizedInput.dueAt);
       const reminder = sanitizedInput.reminder ?? null;
-      let notificationId: string | undefined;
+      const existingNotificationId =
+        typeof sanitizedInput.notificationId === "string" &&
+        sanitizedInput.notificationId
+          ? sanitizedInput.notificationId
+          : undefined;
+      let notificationId = existingNotificationId;
 
       if (
+        !notificationId &&
         get().notificationsEnabled &&
         get().hasNotificationPermission &&
         reminder
@@ -193,6 +214,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
           reminder,
         });
         notificationId = scheduledId ?? undefined;
+        newlyScheduledNotificationId = notificationId;
       }
 
       await createDeadline({
@@ -208,16 +230,33 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
         updatedAt: nowIso,
       });
 
+      console.info("[AddDeadline] Firestore create success");
+
       await get().loadDeadlines();
+      set({ deadlinesError: null });
       return true;
     } catch (error) {
-      console.warn("addDeadline failed", error);
+      if (newlyScheduledNotificationId) {
+        try {
+          await cancelNotification(newlyScheduledNotificationId);
+        } catch {
+          // Ignore cleanup failures.
+        }
+      }
+
+      const readableError = getFirestoreErrorMessage(error);
+      console.error("[AddDeadline] addDeadline failed:", error);
+      set({ deadlinesError: readableError });
       return false;
     }
   },
   updateDeadline: async (id, input) => {
+    let newlyScheduledNotificationId: string | undefined;
+
     try {
+      console.info("[AddDeadline] updateDeadline id:", id, "input:", input);
       const sanitizedInput = sanitizeDeadlineInput(input);
+      console.info("[AddDeadline] update sanitized input:", sanitizedInput);
 
       const existing =
         get().deadlines.find((deadline) => deadline.id === id) ??
@@ -231,47 +270,77 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       const mergedReminder =
         sanitizedInput.reminder ?? existing.reminder ?? null;
       const mergedDueAt = sanitizedInput.dueAt ?? existing.dueAt;
+      const mergedAssignmentName =
+        sanitizedInput.assignmentName ?? existing.assignmentName;
+      const existingNotificationId =
+        typeof existing.notificationId === "string" && existing.notificationId
+          ? existing.notificationId
+          : undefined;
 
-      if (existing.notificationId) {
-        try {
-          await cancelNotification(existing.notificationId);
-        } catch {
-          // Ignore cancellation errors.
+      const reminderFieldChanged =
+        sanitizedInput.reminder !== undefined ||
+        sanitizedInput.dueAt !== undefined ||
+        sanitizedInput.assignmentName !== undefined;
+
+      let notificationId: string | null | undefined = existingNotificationId;
+
+      if (reminderFieldChanged) {
+        if (existingNotificationId) {
+          try {
+            await cancelNotification(existingNotificationId);
+          } catch {
+            // Ignore cancellation errors.
+          }
         }
-      }
 
-      let notificationId: string | undefined;
-      if (
-        get().notificationsEnabled &&
-        get().hasNotificationPermission &&
-        !existing.completedAt &&
-        mergedReminder
-      ) {
-        notificationId =
-          (await scheduleDeadlineNotification({
-            assignmentName:
-              sanitizedInput.assignmentName ?? existing.assignmentName,
-            dueAt: mergedDueAt,
-            reminder: mergedReminder,
-          })) ?? undefined;
+        notificationId = null;
+        if (
+          get().notificationsEnabled &&
+          get().hasNotificationPermission &&
+          !existing.completedAt &&
+          mergedReminder
+        ) {
+          notificationId =
+            (await scheduleDeadlineNotification({
+              assignmentName: mergedAssignmentName,
+              dueAt: mergedDueAt,
+              reminder: mergedReminder,
+            })) ?? null;
+          newlyScheduledNotificationId = notificationId ?? undefined;
+        }
       }
 
       const payload: Partial<Deadline> = {
         ...sanitizedInput,
         reminder: mergedReminder,
-        notificationId,
         updatedAt: nowIso,
       };
+
+      if (reminderFieldChanged) {
+        payload.notificationId = notificationId ?? null;
+      }
 
       if (sanitizedInput.dueAt) {
         payload.colorStatus = computeUrgencyColor(sanitizedInput.dueAt);
       }
 
       await updateDeadlineDoc(id, payload);
+      console.info("[AddDeadline] Firestore update success for id:", id);
       await get().loadDeadlines();
+      set({ deadlinesError: null });
       return true;
     } catch (error) {
-      console.warn("updateDeadline failed", error);
+      if (newlyScheduledNotificationId) {
+        try {
+          await cancelNotification(newlyScheduledNotificationId);
+        } catch {
+          // Ignore cleanup failures.
+        }
+      }
+
+      const readableError = getFirestoreErrorMessage(error);
+      console.error("[AddDeadline] updateDeadline failed:", error);
+      set({ deadlinesError: readableError });
       return false;
     }
   },
@@ -399,7 +468,11 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
 
     const restoredAtIso = new Date().toISOString();
     const restoredReminder = deadlineToRestore.reminder ?? null;
-    let restoredNotificationId: string | undefined;
+    let restoredNotificationId =
+      typeof deadlineToRestore.notificationId === "string" &&
+      deadlineToRestore.notificationId
+        ? deadlineToRestore.notificationId
+        : undefined;
 
     const restoredDeadline: Deadline = {
       ...deadlineToRestore,
@@ -420,6 +493,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
     void (async () => {
       try {
         if (
+          !restoredNotificationId &&
           get().notificationsEnabled &&
           get().hasNotificationPermission &&
           restoredReminder
