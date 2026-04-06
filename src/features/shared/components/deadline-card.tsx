@@ -17,7 +17,7 @@ import {
     typography,
 } from "@/src/theme";
 
-type UrgencyColor = "red" | "yellow" | "green";
+type UrgencyColor = "red" | "yellow" | "green" | "gray";
 
 type DeadlineCardProps = {
   assignmentName: string;
@@ -37,6 +37,7 @@ const urgencyColorMap: Record<UrgencyColor, string> = {
   red: colors.priorityRed,
   yellow: colors.priorityYellow,
   green: colors.priorityGreen,
+  gray: colors.borderSoft,
 };
 
 export function DeadlineCard({

@@ -27,31 +27,44 @@ export function PrivacyPolicyScreen() {
             <AppText variant="cardTitle">1. What we collect</AppText>
             <AppText style={styles.bodyText}>
               We collect limited personal data, including your name, email
-              address, deadlines, and reminder settings, in order to provide
-              core application functionality.
+              address, tasks, deadlines, and reminder settings. We may also
+              collect basic app performance and crash logs to improve
+              application stability.
             </AppText>
           </Card>
 
           <Card style={styles.card}>
             <AppText variant="cardTitle">2. Purpose of data usage</AppText>
             <AppText style={styles.bodyText}>
-              Your data is used solely for operating the application, displaying
-              your tasks, and sending deadline reminders. We do not use your
-              data for marketing or share it with third parties.
+              Your data is used solely for operating the Deadliner application,
+              displaying your tasks, and sending deadline reminders. We do not
+              sell your personal data or share it with third parties for
+              marketing purposes.
             </AppText>
           </Card>
 
           <Card style={styles.card}>
             <AppText variant="cardTitle">3. Data storage</AppText>
             <AppText style={styles.bodyText}>
-              Your data is securely stored using Firebase (Cloud Firestore) and
-              is linked to your account to ensure data consistency across
-              sessions.
+              Your data is securely stored using Google Firebase (Cloud
+              Firestore) to ensure data consistency across your devices.
+              Firebase acts as our trusted service provider under strict
+              security standards.
             </AppText>
           </Card>
 
           <Card style={styles.card}>
-            <AppText variant="cardTitle">4. Data security</AppText>
+            <AppText variant="cardTitle">4. Data retention</AppText>
+            <AppText style={styles.bodyText}>
+              We retain your personal data for as long as your account is
+              active. If you choose to delete your account, your personal data
+              will be completely removed from our active database within 30
+              days.
+            </AppText>
+          </Card>
+
+          <Card style={styles.card}>
+            <AppText variant="cardTitle">5. Data security</AppText>
             <AppText style={styles.bodyText}>
               We implement appropriate technical measures to protect your
               personal data from unauthorized access, loss, or misuse.
@@ -60,19 +73,20 @@ export function PrivacyPolicyScreen() {
 
           <Card style={styles.card}>
             <AppText variant="cardTitle">
-              5. User rights (PDPA compliance)
+              6. User rights (PDPA compliance)
             </AppText>
             <AppText style={styles.bodyText}>
-              Users have the right to access, update, or delete their personal
-              data at any time through the application settings.
+              You have the right to access, update, or delete your personal data
+              at any time through the app settings. You also have the right to
+              withdraw your consent for data processing.
             </AppText>
           </Card>
 
           <Card style={styles.card}>
-            <AppText variant="cardTitle">6. Data retention</AppText>
+            <AppText variant="cardTitle">7. Contact us</AppText>
             <AppText style={styles.bodyText}>
-              Your data will be retained only for as long as necessary to
-              provide the service. Users may delete their data at any time.
+              If you have any questions, privacy concerns, or wish to exercise
+              your rights, please contact us at: [ support@deadliner.com]
             </AppText>
           </Card>
         </ScrollView>

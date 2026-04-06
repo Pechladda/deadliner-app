@@ -2,6 +2,8 @@ const msPerMinute = 60 * 1000;
 const msPerHour = 60 * msPerMinute;
 const msPerDay = 24 * msPerHour;
 
+export type DeadlineStatus = "overdue" | "urgent" | "soon" | "onTrack";
+
 function parseOffsetMs(timeZoneName: string): number {
   const match = timeZoneName.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?$/i);
   if (!match) {
@@ -82,6 +84,57 @@ export function getRemainingMs(dueAtISO: string, now = new Date()): number {
   return dueAtMs - now.getTime();
 }
 
+export function getDeadlineStatus(
+  dueAtISO: string,
+  now = new Date(),
+): DeadlineStatus {
+  const remainingMs = getRemainingMs(dueAtISO, now);
+
+  if (remainingMs <= 0) {
+    return "overdue";
+  }
+
+  if (remainingMs <= msPerDay) {
+    return "urgent";
+  }
+
+  if (remainingMs <= 3 * msPerDay) {
+    return "soon";
+  }
+
+  return "onTrack";
+}
+
+export function getDeadlineStatusColor(
+  status: DeadlineStatus,
+): "green" | "yellow" | "red" {
+  if (status === "onTrack") {
+    return "green";
+  }
+
+  if (status === "soon") {
+    return "yellow";
+  }
+
+  return "red";
+}
+
+export function getDeadlineStatusLabel(status: DeadlineStatus): string {
+  if (status === "overdue") {
+    return "Overdue";
+  }
+
+  if (status === "urgent") {
+    return "Urgent";
+  }
+
+  if (status === "soon") {
+    return "Soon";
+  }
+
+  return "On Track";
+}
+
 export function getUrgencyPriority(
   iso: string,
   now = new Date(),
@@ -134,11 +187,15 @@ export function formatRemaining(dueAtISO: string, now = new Date()): string {
 export function computeColorStatus(
   remainingMs: number,
 ): "green" | "yellow" | "red" {
-  if (remainingMs < msPerDay) {
+  if (remainingMs <= 0) {
     return "red";
   }
 
-  if (remainingMs < 3 * msPerDay) {
+  if (remainingMs <= msPerDay) {
+    return "red";
+  }
+
+  if (remainingMs <= 3 * msPerDay) {
     return "yellow";
   }
 

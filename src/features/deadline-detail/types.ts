@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/src/core/navigation";
 import { StackRoutes } from "@/src/core/navigation";
+import type { DeadlineStatus } from "@/src/core/utils";
 
 export type MissingStateProps = {
   onPressBack: () => void;
@@ -10,7 +11,7 @@ export type MissingStateProps = {
 
 export type CountdownCardProps = {
   dueAt: string;
-  status: "green" | "yellow" | "red";
+  status: DeadlineStatus;
   now: Date;
 };
 

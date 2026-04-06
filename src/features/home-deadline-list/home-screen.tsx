@@ -16,8 +16,8 @@ import { AppText, Card, IconButton, Toast } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
 import {
   formatDueLabel,
-  getRemainingMs,
-  getUrgencyMessage,
+  getDeadlineStatus,
+  getDeadlineStatusColor,
   t,
 } from "@/src/core/utils";
 import { useHomeNavigation } from "@/src/features/home-deadline-list/hooks/use-home-navigation";
@@ -27,10 +27,8 @@ import type { Deadline } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, radius, spacing, typography } from "@/src/theme";
 
-type HomeFilter = "all" | "urgent" | "soon" | "onTrack" | "done";
-type DeadlineListRow =
-  | { type: "overdue-container"; id: string; items: Deadline[] }
-  | { type: "item"; id: string; item: Deadline; isOverdue: boolean };
+type HomeFilter = "all" | "overdue" | "urgent" | "soon" | "onTrack";
+type DeadlineListRow = { id: string; item: Deadline; isOverdue: boolean };
 
 function isSameCalendarDay(iso: string): boolean {
   const date = new Date(iso);
@@ -43,34 +41,18 @@ function isSameCalendarDay(iso: string): boolean {
   );
 }
 
-function urgencyMessageToLabel(
-  message: ReturnType<typeof getUrgencyMessage>,
-): string {
-  if (message === "overdue") {
-    return t("overdue");
-  }
-
-  if (message === "needsToday") {
-    return t("needsAttentionToday");
-  }
-
-  if (message === "dueSoon") {
-    return t("dueVerySoon");
-  }
-
-  return t("safeForNow");
-}
-
 function statusLabelFromItem(item: Deadline, isOverdue: boolean): string {
+  const status = getDeadlineStatus(item.dueAt);
+
   if (isOverdue) {
     return t("overdue");
   }
 
-  if (item.colorStatus === "red") {
+  if (status === "urgent") {
     return t("filterUrgent");
   }
 
-  if (item.colorStatus === "yellow") {
+  if (status === "soon") {
     return t("filterSoon");
   }
 
@@ -80,20 +62,14 @@ function statusLabelFromItem(item: Deadline, isOverdue: boolean): string {
 function statusColorFromItem(
   item: Deadline,
   isOverdue: boolean,
-): "red" | "yellow" | "green" {
+): "red" | "yellow" | "green" | "gray" {
+  const status = getDeadlineStatus(item.dueAt);
+
   if (isOverdue) {
-    return "red";
+    return "gray";
   }
 
-  if (item.colorStatus === "red") {
-    return "red";
-  }
-
-  if (item.colorStatus === "yellow") {
-    return "yellow";
-  }
-
-  return "green";
+  return getDeadlineStatusColor(status);
 }
 
 type FilterChipProps = {
@@ -128,17 +104,11 @@ export function HomeScreen() {
   const isWide = width >= 430;
   const navigation = useHomeNavigation();
   const deadlines = useDeadlineStore((state) => state.deadlines);
-  const completedDeadlines = useDeadlineStore(
-    (state) => state.completedDeadlines,
-  );
   const loadDeadlines = useDeadlineStore((state) => state.loadDeadlines);
   const isLoadingDeadlines = useDeadlineStore(
     (state) => state.isLoadingDeadlines,
   );
   const completeDeadline = useDeadlineStore((state) => state.completeDeadline);
-  const undoCompletedDeadline = useDeadlineStore(
-    (state) => state.undoCompletedDeadline,
-  );
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [filter, setFilter] = useState<HomeFilter>("all");
@@ -188,7 +158,7 @@ export function HomeScreen() {
     isSameCalendarDay(item.dueAt),
   ).length;
   const urgentCount = deadlines.filter(
-    (item) => item.colorStatus === "red",
+    (item) => getDeadlineStatus(item.dueAt) === "urgent",
   ).length;
   const activeFilteredItems = useMemo(() => {
     const normalized = search.trim().toLowerCase();
@@ -205,96 +175,42 @@ export function HomeScreen() {
     });
   }, [deadlines, search]);
 
-  const completedFilteredItems = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-
-    return completedDeadlines.filter((item) => {
-      if (!normalized) {
-        return true;
-      }
-
-      return (
-        item.assignmentName.toLowerCase().includes(normalized) ||
-        item.courseName.toLowerCase().includes(normalized)
-      );
-    });
-  }, [completedDeadlines, search]);
-
   // Get filtered list based on selected filter
   const filteredItems = useMemo<Deadline[]>(() => {
+    if (filter === "overdue") {
+      return activeFilteredItems.filter(
+        (item) => getDeadlineStatus(item.dueAt) === "overdue",
+      );
+    }
+
     if (filter === "urgent") {
       return activeFilteredItems.filter(
-        (item) =>
-          item.colorStatus === "red" &&
-          getUrgencyMessage(getRemainingMs(item.dueAt)) !== "overdue",
+        (item) => getDeadlineStatus(item.dueAt) === "urgent",
       );
     }
 
     if (filter === "soon") {
       return activeFilteredItems.filter(
-        (item) => item.colorStatus === "yellow",
+        (item) => getDeadlineStatus(item.dueAt) === "soon",
       );
     }
 
     if (filter === "onTrack") {
-      return activeFilteredItems.filter((item) => item.colorStatus === "green");
-    }
-
-    if (filter === "done") {
-      return completedFilteredItems;
+      return activeFilteredItems.filter(
+        (item) => getDeadlineStatus(item.dueAt) === "onTrack",
+      );
     }
 
     return activeFilteredItems;
-  }, [activeFilteredItems, completedFilteredItems, filter]);
-
-  // Get overdue items count (only show in All filter)
-  const overdueItems = useMemo(() => {
-    if (filter !== "all") {
-      return [];
-    }
-
-    return activeFilteredItems.filter(
-      (item) => getUrgencyMessage(getRemainingMs(item.dueAt)) === "overdue",
-    );
   }, [activeFilteredItems, filter]);
 
-  const remainingActiveItems = useMemo(() => {
-    return filteredItems.filter(
-      (item) => getUrgencyMessage(getRemainingMs(item.dueAt)) !== "overdue",
-    );
-  }, [filteredItems]);
-
   const listRows = useMemo<DeadlineListRow[]>(() => {
-    if (filter !== "all") {
-      return filteredItems.map((item) => ({
-        type: "item",
-        id: `item-${item.id}`,
-        item,
-        isOverdue: false,
-      }));
-    }
-
-    const rows: DeadlineListRow[] = [];
-
-    if (overdueItems.length > 0) {
-      rows.push({
-        type: "overdue-container",
-        id: "overdue-container",
-        items: overdueItems,
-      });
-    }
-
-    rows.push(
-      ...remainingActiveItems.map((item) => ({
-        type: "item" as const,
-        id: `active-${item.id}`,
-        item,
-        isOverdue: false,
-      })),
-    );
-
-    return rows;
-  }, [filter, filteredItems, overdueItems, remainingActiveItems]);
+    return filteredItems.map((item) => ({
+      id: `item-${item.id}`,
+      item,
+      isOverdue: getDeadlineStatus(item.dueAt) === "overdue",
+    }));
+  }, [filteredItems]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -352,10 +268,10 @@ export function HomeScreen() {
         <View style={styles.filterRow}>
           {[
             { key: "all", label: t("filterAll") },
+            { key: "overdue", label: t("overdue") },
             { key: "urgent", label: t("filterUrgent") },
             { key: "soon", label: t("filterSoon") },
             { key: "onTrack", label: t("onTrack") },
-            { key: "done", label: t("done") },
           ].map((item) => (
             <FilterChip
               key={item.key}
@@ -412,46 +328,6 @@ export function HomeScreen() {
                   />
                 }
                 renderItem={({ item: row }) => {
-                  if (row.type === "overdue-container") {
-                    return (
-                      <Card style={styles.overdueBanner}>
-                        <View style={styles.overdueContent}>
-                          <AppText
-                            variant="caption"
-                            style={styles.overdueBannerText}
-                          >
-                            {t("overdue")}: {row.items.length}{" "}
-                            {row.items.length === 1 ? "item" : "items"}
-                          </AppText>
-                        </View>
-                        <View style={styles.overdueItemsWrap}>
-                          {row.items.map((item) => (
-                            <View key={item.id} style={styles.cardWrapper}>
-                              <DeadlineCard
-                                assignmentName={item.assignmentName}
-                                courseName={item.courseName}
-                                dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)} • ${statusLabelFromItem(item, true)}`}
-                                urgencyColor={statusColorFromItem(item, true)}
-                                actionLabel={t("done")}
-                                onPressAction={() => onDone(item.id)}
-                                onPressCard={() => {
-                                  navigation.navigate(
-                                    StackRoutes.DeadlineDetail,
-                                    {
-                                      id: item.id,
-                                    },
-                                  );
-                                }}
-                                cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
-                              />
-                            </View>
-                          ))}
-                        </View>
-                      </Card>
-                    );
-                  }
-
-                  const isDoneFilter = filter === "done";
                   const item = row.item;
                   const isOverdue = row.isOverdue;
                   return (
@@ -460,30 +336,14 @@ export function HomeScreen() {
                         assignmentName={item.assignmentName}
                         courseName={item.courseName}
                         dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)} • ${statusLabelFromItem(item, isOverdue)}`}
-                        urgencyColor={
-                          isDoneFilter
-                            ? item.colorStatus
-                            : statusColorFromItem(item, isOverdue)
-                        }
-                        actionLabel={isDoneFilter ? t("undo") : t("done")}
-                        onPressAction={() =>
-                          isDoneFilter
-                            ? undoCompletedDeadline(item.id)
-                            : onDone(item.id)
-                        }
-                        muted={isDoneFilter}
-                        onPressCard={
-                          isDoneFilter
-                            ? undefined
-                            : () => {
-                                navigation.navigate(
-                                  StackRoutes.DeadlineDetail,
-                                  {
-                                    id: item.id,
-                                  },
-                                );
-                              }
-                        }
+                        urgencyColor={statusColorFromItem(item, isOverdue)}
+                        actionLabel={t("done")}
+                        onPressAction={() => onDone(item.id)}
+                        onPressCard={() => {
+                          navigation.navigate(StackRoutes.DeadlineDetail, {
+                            id: item.id,
+                          });
+                        }}
                         cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
                       />
                     </View>
@@ -627,23 +487,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: "600",
     letterSpacing: 0.2,
-  },
-  overdueBanner: {
-    backgroundColor: colors.surfacePink,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.danger,
-    marginBottom: spacing.l,
-  },
-  overdueContent: {
-    alignItems: "flex-start",
-  },
-  overdueBannerText: {
-    color: colors.danger,
-    fontWeight: "500",
-  },
-  overdueItemsWrap: {
-    marginTop: spacing.s,
-    gap: spacing.l,
   },
   cardWrapper: {
     borderWidth: 0,

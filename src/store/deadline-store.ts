@@ -2,12 +2,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
 import {
-  computeColorStatus,
+  getDeadlineStatus,
+  getDeadlineStatusColor,
   getFirestoreErrorMessage,
-  getRemainingMs,
   sanitizeDeadlineInput,
   sortDeadlinesByDueAt,
-  validateDeadlineInput,
+  validateDeadlineInput
 } from "@/src/core/utils";
 import { Deadline } from "@/src/models/deadline";
 import {
@@ -28,7 +28,7 @@ import {
 const NOTIFICATIONS_ENABLED_STORAGE_KEY = "@deadliner/notifications-enabled";
 
 export function computeUrgencyColor(dueAt: string): "red" | "yellow" | "green" {
-  return computeColorStatus(getRemainingMs(dueAt));
+  return getDeadlineStatusColor(getDeadlineStatus(dueAt));
 }
 
 function sortByDueAt(deadlines: Deadline[]): Deadline[] {
@@ -192,8 +192,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       }
 
       const nowIso = new Date().toISOString();
-      const colorStatus =
-        sanitizedInput.colorStatus ?? computeUrgencyColor(sanitizedInput.dueAt);
+      const colorStatus = computeUrgencyColor(sanitizedInput.dueAt);
       const reminder = sanitizedInput.reminder ?? null;
       const existingNotificationId =
         typeof sanitizedInput.notificationId === "string" &&

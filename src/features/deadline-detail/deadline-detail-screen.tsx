@@ -6,9 +6,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppButton, AppText, Card, IconButton } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation";
 import {
-  computeColorStatus,
   formatCountdownLong,
   formatDueLabel,
+  getDeadlineStatus,
+  getDeadlineStatusColor,
   getRemainingMs,
   getUrgencyMessage,
   t,
@@ -45,6 +46,7 @@ function MissingState({ onPressBack }: MissingStateProps) {
 
 function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
   const urgencyMessage = getUrgencyMessage(getRemainingMs(dueAt, now));
+  const statusColor = getDeadlineStatusColor(status);
 
   return (
     <Card style={styles.countdownCard} highlighted>
@@ -54,9 +56,9 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
             name="alarm-outline"
             size={18}
             color={
-              status === "red"
+              statusColor === "red"
                 ? colors.priorityRed
-                : status === "yellow"
+                : statusColor === "yellow"
                   ? colors.priorityYellow
                   : colors.priorityGreen
             }
@@ -69,17 +71,19 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
         <View
           style={[
             styles.statusPill,
-            status === "red" && styles.pillRed,
-            status === "yellow" && styles.pillYellow,
-            status === "green" && styles.pillGreen,
+            statusColor === "red" && styles.pillRed,
+            statusColor === "yellow" && styles.pillYellow,
+            statusColor === "green" && styles.pillGreen,
           ]}
         >
           <AppText style={styles.statusPillText}>
-            {status === "red"
-              ? t("urgent")
-              : status === "yellow"
-                ? t("soon")
-                : t("onTrack")}
+            {status === "overdue"
+              ? t("overdue")
+              : status === "urgent"
+                ? t("urgent")
+                : status === "soon"
+                  ? t("soon")
+                  : t("onTrack")}
           </AppText>
         </View>
 
@@ -207,8 +211,7 @@ export function DeadlineDetailScreen() {
     );
   }
 
-  const remainingMs = getRemainingMs(deadline.dueAt, now);
-  const status = computeColorStatus(remainingMs);
+  const status = getDeadlineStatus(deadline.dueAt, now);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>

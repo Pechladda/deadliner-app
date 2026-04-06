@@ -3,7 +3,12 @@ import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, Card, IconButton, Toast } from "@/src/components";
-import { formatDueLabel, t } from "@/src/core/utils";
+import {
+  formatDueLabel,
+  getDeadlineStatus,
+  getDeadlineStatusColor,
+  t,
+} from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
@@ -89,7 +94,9 @@ export function HistoryScreen() {
                 courseName={item.courseName}
                 dueLabel={`${t("originalDue")}: ${formatDueLabel(item.dueAt)}`}
                 completedLabel={`${t("completedOn")}: ${formatCompletedLabel(item.completedAt)}`}
-                urgencyColor={item.colorStatus}
+                urgencyColor={getDeadlineStatusColor(
+                  getDeadlineStatus(item.dueAt),
+                )}
                 actionLabel={t("undo")}
                 onPressAction={() => onUndo(item.id)}
                 muted

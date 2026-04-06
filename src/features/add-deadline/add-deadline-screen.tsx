@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, Card, IconButton, Input } from "@/src/components";
 import { TabRoutes } from "@/src/core/navigation";
-import { computeColorStatus, getRemainingMs, t } from "@/src/core/utils";
+import { getDeadlineStatus, getDeadlineStatusColor, t } from "@/src/core/utils";
 import {
   useAddDeadlineNavigation,
   useAddDeadlineRoute,
@@ -300,7 +300,7 @@ export function AddDeadlineScreen() {
     setIsSaving(true);
 
     const dueAt = selectedDate.toISOString();
-    const urgencyColor = computeColorStatus(getRemainingMs(dueAt));
+    const urgencyColor = getDeadlineStatusColor(getDeadlineStatus(dueAt));
     const nowIso = new Date().toISOString();
     const values = {
       courseName: courseName.trim(),
