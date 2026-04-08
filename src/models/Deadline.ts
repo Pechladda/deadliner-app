@@ -14,6 +14,7 @@ export interface Deadline {
   updatedAt: string;
   reminder: ReminderOption | null;
   notificationId?: string | null;
+  isCompleted?: boolean;
   completedAt?: string | null;
 }
 
@@ -23,6 +24,7 @@ export type CreateDeadlineInput = Omit<
   | "colorStatus"
   | "createdAt"
   | "updatedAt"
+  | "isCompleted"
   | "completedAt"
   | "notificationId"
 > & {

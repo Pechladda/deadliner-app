@@ -119,6 +119,20 @@ export function getDeadlineStatusColor(
   return "red";
 }
 
+export function getDeadlineStatusDisplayColor(
+  status: DeadlineStatus,
+): "green" | "yellow" | "red" | "orange" {
+  if (status === "overdue") {
+    return "red";
+  }
+
+  if (status === "urgent") {
+    return "orange";
+  }
+
+  return getDeadlineStatusColor(status);
+}
+
 export function getDeadlineStatusLabel(status: DeadlineStatus): string {
   if (status === "overdue") {
     return "Overdue";

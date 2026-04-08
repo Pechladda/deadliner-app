@@ -12,12 +12,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Card, IconButton, Toast } from "@/src/components";
-import { StackRoutes, TabRoutes } from "@/src/core/navigation";
+import { AppText, Card, Toast } from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation";
 import {
   formatDueLabel,
   getDeadlineStatus,
-  getDeadlineStatusColor,
+  getDeadlineStatusDisplayColor,
   t,
 } from "@/src/core/utils";
 import { useHomeNavigation } from "@/src/features/home-deadline-list/hooks/use-home-navigation";
@@ -62,14 +62,12 @@ function statusLabelFromItem(item: Deadline, isOverdue: boolean): string {
 function statusColorFromItem(
   item: Deadline,
   isOverdue: boolean,
-): "red" | "yellow" | "green" | "gray" {
+): "red" | "orange" | "yellow" | "green" {
   const status = getDeadlineStatus(item.dueAt);
 
-  if (isOverdue) {
-    return "gray";
-  }
-
-  return getDeadlineStatusColor(status);
+  return isOverdue
+    ? getDeadlineStatusDisplayColor("overdue")
+    : getDeadlineStatusDisplayColor(status);
 }
 
 type FilterChipProps = {
@@ -136,10 +134,6 @@ export function HomeScreen() {
     };
   }, []);
 
-  const onPressAdd = () => {
-    navigation.navigate(TabRoutes.AddDeadline);
-  };
-
   const onDone = (id: string) => {
     completeDeadline(id);
     setToastMessage(t("movedToHistory"));
@@ -156,6 +150,9 @@ export function HomeScreen() {
 
   const dueTodayCount = deadlines.filter((item) =>
     isSameCalendarDay(item.dueAt),
+  ).length;
+  const overdueCount = deadlines.filter(
+    (item) => getDeadlineStatus(item.dueAt) === "overdue",
   ).length;
   const urgentCount = deadlines.filter(
     (item) => getDeadlineStatus(item.dueAt) === "urgent",
@@ -231,21 +228,14 @@ export function HomeScreen() {
           <AppText variant="title" style={styles.headerTitle}>
             {t("myDeadlines")}
           </AppText>
-          <View style={styles.addButton}>
-            <IconButton
-              icon="add"
-              onPress={onPressAdd}
-              accessibilityLabel={t("createNewDeadline")}
-            />
-          </View>
         </View>
 
         <Card style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <AppText variant="caption">{t("summaryTotalActive")}</AppText>
+              <AppText variant="caption">{t("overdue")}</AppText>
               <AppText variant="sectionTitle" style={styles.summaryValue}>
-                {String(deadlines.length)}
+                {String(overdueCount)}
               </AppText>
             </View>
             <View style={styles.summaryDivider} />
@@ -349,7 +339,23 @@ export function HomeScreen() {
                     </View>
                   );
                 }}
-                ListEmptyComponent={null}
+                ListEmptyComponent={
+                  <Card style={styles.emptyStateCard}>
+                    <AppText
+                      variant="sectionTitle"
+                      style={styles.emptyStateTitle}
+                    >
+                      {filter === "all"
+                        ? t("allCaughtUp")
+                        : t("noTasksInCategoryYet")}
+                    </AppText>
+                    <AppText variant="caption" style={styles.emptyStateHint}>
+                      {filter === "all"
+                        ? t("homeEmptyHint")
+                        : t("searchDeadlinePlaceholder")}
+                    </AppText>
+                  </Card>
+                }
               />
             </>
           )}
@@ -466,10 +472,6 @@ const styles = StyleSheet.create({
   filterChipTextActive: {
     color: colors.textPrimary,
   },
-  addButton: {
-    position: "absolute",
-    right: 0,
-  },
   listContent: {
     gap: spacing.l,
     paddingTop: spacing.xs,
@@ -478,15 +480,6 @@ const styles = StyleSheet.create({
   listSection: {
     flex: 1,
     gap: spacing.s,
-  },
-  sectionHeader: {
-    marginTop: spacing.xs,
-  },
-  listSectionTitle: {
-    paddingHorizontal: spacing.s,
-    color: colors.textSecondary,
-    fontWeight: "600",
-    letterSpacing: 0.2,
   },
   cardWrapper: {
     borderWidth: 0,
@@ -505,50 +498,19 @@ const styles = StyleSheet.create({
   loadingText: {
     color: colors.textSecondary,
   },
-  emptyCard: {
+  emptyStateCard: {
     marginTop: spacing.xxxl,
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceWarm,
+    borderColor: colors.borderSoft,
   },
-  emptyTitle: {
+  emptyStateTitle: {
     textAlign: "center",
     color: colors.textSecondary,
   },
-  emptyHint: {
+  emptyStateHint: {
+    marginTop: spacing.xs,
     textAlign: "center",
-  },
-  emptyActionWrap: {
-    marginTop: spacing.l,
-    width: "100%",
-  },
-  undoRow: {
-    marginBottom: spacing.l,
-  },
-  overdueCard: {
-    marginBottom: spacing.m,
-    borderColor: colors.border,
-    backgroundColor: colors.surfacePink,
-    gap: spacing.xs,
-  },
-  overdueTitle: {
-    color: colors.warning,
-  },
-  overdueHint: {
-    color: colors.textSecondary,
-  },
-  errorCard: {
-    marginBottom: spacing.m,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    gap: spacing.xs,
-  },
-  errorTitle: {
-    color: colors.danger,
-  },
-  errorHint: {
-    color: colors.textSecondary,
-  },
-  errorActionWrap: {
-    marginTop: spacing.s,
+    color: colors.textMuted,
   },
 });

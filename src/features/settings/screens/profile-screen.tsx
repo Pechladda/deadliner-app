@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Pressable,
@@ -9,12 +9,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Card, IconButton, Input } from "@/src/components";
+import { AppText, Card, IconButton } from "@/src/components";
 import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { auth, db } from "@/src/firebase";
 import { useAuthStore } from "@/src/store/auth-store";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { colors, spacing } from "@/src/theme";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -62,7 +62,7 @@ export function ProfileScreen() {
     );
   }, [loadError]);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!isHydrated) {
       return;
     }
@@ -106,7 +106,7 @@ export function ProfileScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser, isAuthenticated, isHydrated]);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -114,7 +114,7 @@ export function ProfileScreen() {
     }
 
     void loadProfile();
-  }, [currentUser, isHydrated, isAuthenticated]);
+  }, [isHydrated, loadProfile]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -184,28 +184,21 @@ export function ProfileScreen() {
             ) : null}
 
             <View style={styles.formWrap}>
-              <Input
-                label={t("usernamePlaceholder")}
-                value={username}
-                editable={false}
-                inputStyle={[
-                  styles.readOnlyInput,
-                  styles.profileInput,
-                  isCompact && styles.profileInputCompact,
-                ]}
-              />
-              <Input
-                label={t("email")}
-                value={email}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={false}
-                inputStyle={[
-                  styles.readOnlyInput,
-                  styles.profileInput,
-                  isCompact && styles.profileInputCompact,
-                ]}
-              />
+              <View style={styles.readOnlyRow}>
+                <AppText variant="caption" style={styles.readOnlyLabel}>
+                  {t("usernamePlaceholder")}
+                </AppText>
+                <AppText style={styles.readOnlyValue}>
+                  {username || "-"}
+                </AppText>
+              </View>
+
+              <View style={styles.readOnlyRow}>
+                <AppText variant="caption" style={styles.readOnlyLabel}>
+                  {t("email")}
+                </AppText>
+                <AppText style={styles.readOnlyValue}>{email || "-"}</AppText>
+              </View>
             </View>
           </Card>
         </View>
@@ -268,6 +261,21 @@ const styles = StyleSheet.create({
     padding: spacing.l,
   },
   formWrap: { gap: spacing.s },
+  readOnlyRow: {
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    borderRadius: 12,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+    backgroundColor: colors.surfaceMint,
+    gap: spacing.xxs,
+  },
+  readOnlyLabel: {
+    color: colors.textMuted,
+  },
+  readOnlyValue: {
+    color: colors.textPrimary,
+  },
   loadingWrap: {
     alignItems: "center",
     justifyContent: "center",
@@ -299,21 +307,5 @@ const styles = StyleSheet.create({
   errorActionText: {
     color: colors.primary,
     textDecorationLine: "underline",
-  },
-  readOnlyInput: {
-    backgroundColor: colors.surfaceMint,
-    color: colors.textSecondary,
-    borderColor: colors.borderSoft,
-  },
-  profileInput: {
-    minHeight: 50,
-    borderRadius: radius.xxl,
-    fontSize: typography.size.s,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-  },
-  profileInputCompact: {
-    minHeight: 46,
-    fontSize: typography.size.xs,
   },
 });

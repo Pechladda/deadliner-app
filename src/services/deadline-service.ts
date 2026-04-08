@@ -41,6 +41,14 @@ function parseDeadline(snapshotDoc: {
 }): Deadline {
   const data = snapshotDoc.data();
   const dueAt = String(data.dueAt ?? "");
+  const completedAt =
+    typeof data.completedAt === "string" && data.completedAt
+      ? data.completedAt
+      : undefined;
+  const isCompleted =
+    typeof data.isCompleted === "boolean"
+      ? data.isCompleted
+      : Boolean(completedAt);
 
   return {
     id: snapshotDoc.id,
@@ -68,10 +76,8 @@ function parseDeadline(snapshotDoc: {
       typeof data.notificationId === "string" && data.notificationId
         ? data.notificationId
         : undefined,
-    completedAt:
-      typeof data.completedAt === "string" && data.completedAt
-        ? data.completedAt
-        : undefined,
+    isCompleted,
+    completedAt,
   };
 }
 

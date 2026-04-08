@@ -30,12 +30,8 @@ const INPUT_PLACEHOLDER = colors.textSecondary;
 const USERNAME_PATTERN = /^[A-Za-z0-9]+$/;
 const THAI_CHAR_PATTERN = /[\u0E00-\u0E7F]/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const USERNAME_DEFAULT_HELPER =
-  "Use English letters and numbers only (maximum 6 characters).";
-const EMAIL_DEFAULT_HELPER = "Please enter a valid email address.";
 const PASSWORD_DEFAULT_HELPER =
   "8–30 characters, including uppercase, lowercase, numbers, and at least one symbol (@, _ or .).";
-const CONFIRM_DEFAULT_HELPER = "Password must match.";
 
 const SUCCESS_MESSAGE = "Account created successfully.";
 
@@ -64,15 +60,15 @@ function validateUsername(username: string): string {
     return "Username cannot contain spaces.";
   }
 
-  if (normalized.length > 6) {
-    return "Use English letters and numbers only (maximum 6 characters).";
+  if (normalized.length > 20) {
+    return "Use English letters and numbers (maximum 20 characters).";
   }
 
   if (
     THAI_CHAR_PATTERN.test(normalized) ||
     !USERNAME_PATTERN.test(normalized)
   ) {
-    return "Use English letters and numbers only (maximum 6 characters).";
+    return "Use English letters and numbers (maximum 20 characters).";
   }
 
   return "";
@@ -271,31 +267,15 @@ export function RegisterScreen() {
     !validationPreview.password &&
     !validationPreview.confirmPassword;
 
-  const hasAnyInput =
-    username.trim().length > 0 ||
-    email.trim().length > 0 ||
-    password.length > 0 ||
-    confirmPassword.length > 0;
+  const showUsernameError =
+    (submitAttempted || touched.username) && Boolean(errors.username);
+  const showEmailError =
+    (submitAttempted || touched.email) && Boolean(errors.email);
+  const showConfirmPasswordError =
+    (submitAttempted || touched.confirmPassword) &&
+    Boolean(errors.confirmPassword);
 
-  const usernameMessage =
-    (submitAttempted || touched.username) && errors.username
-      ? errors.username
-      : USERNAME_DEFAULT_HELPER;
-
-  const emailMessage =
-    (submitAttempted || touched.email) && errors.email
-      ? errors.email
-      : EMAIL_DEFAULT_HELPER;
-
-  const passwordMessage =
-    (submitAttempted || touched.password) && errors.password
-      ? errors.password
-      : PASSWORD_DEFAULT_HELPER;
-
-  const confirmPasswordMessage =
-    (submitAttempted || touched.confirmPassword) && errors.confirmPassword
-      ? errors.confirmPassword
-      : CONFIRM_DEFAULT_HELPER;
+  const isSignUpDisabled = !isFormValid || !consentChecked || isSubmitting;
 
   const onSubmit = () => {
     setSubmitAttempted(true);
@@ -440,16 +420,11 @@ export function RegisterScreen() {
                   ]}
                 />
                 <View style={styles.errorSlot}>
-                  <AppText
-                    style={[
-                      styles.helperText,
-                      (submitAttempted || touched.username) && errors.username
-                        ? styles.errorText
-                        : null,
-                    ]}
-                  >
-                    {usernameMessage}
-                  </AppText>
+                  {showUsernameError ? (
+                    <AppText style={[styles.helperText, styles.errorText]}>
+                      {errors.username}
+                    </AppText>
+                  ) : null}
                 </View>
               </View>
 
@@ -478,16 +453,11 @@ export function RegisterScreen() {
                   ]}
                 />
                 <View style={styles.errorSlot}>
-                  <AppText
-                    style={[
-                      styles.helperText,
-                      (submitAttempted || touched.email) && errors.email
-                        ? styles.errorText
-                        : null,
-                    ]}
-                  >
-                    {emailMessage}
-                  </AppText>
+                  {showEmailError ? (
+                    <AppText style={[styles.helperText, styles.errorText]}>
+                      {errors.email}
+                    </AppText>
+                  ) : null}
                 </View>
               </View>
 
@@ -533,15 +503,8 @@ export function RegisterScreen() {
                   </Pressable>
                 </View>
                 <View style={styles.errorSlot}>
-                  <AppText
-                    style={[
-                      styles.helperText,
-                      (submitAttempted || touched.password) && errors.password
-                        ? styles.errorText
-                        : null,
-                    ]}
-                  >
-                    {passwordMessage}
+                  <AppText style={styles.helperText}>
+                    {PASSWORD_DEFAULT_HELPER}
                   </AppText>
                 </View>
               </View>
@@ -593,17 +556,11 @@ export function RegisterScreen() {
                   </Pressable>
                 </View>
                 <View style={styles.errorSlot}>
-                  <AppText
-                    style={[
-                      styles.helperText,
-                      (submitAttempted || touched.confirmPassword) &&
-                      errors.confirmPassword
-                        ? styles.errorText
-                        : null,
-                    ]}
-                  >
-                    {confirmPasswordMessage}
-                  </AppText>
+                  {showConfirmPasswordError ? (
+                    <AppText style={[styles.helperText, styles.errorText]}>
+                      {errors.confirmPassword}
+                    </AppText>
+                  ) : null}
                 </View>
               </View>
 
@@ -666,18 +623,14 @@ export function RegisterScreen() {
                   style={[
                     styles.submitButton,
                     isCompact && styles.submitButtonCompact,
-                    (!hasAnyInput ||
-                      !isFormValid ||
-                      isSubmitting ||
-                      !consentChecked) &&
-                      styles.submitButtonDisabled,
+                    isSignUpDisabled && styles.submitButtonDisabled,
                   ]}
                   onPress={onSubmit}
                   onPressIn={() => animatePress(0.98)}
                   onPressOut={() => animatePress(1)}
                   accessibilityRole="button"
                   accessibilityLabel="Register"
-                  disabled={isSubmitting}
+                  disabled={isSignUpDisabled}
                 >
                   <AppText style={styles.submitText}>
                     {isSubmitting ? "SIGNING UP..." : "Sign Up"}

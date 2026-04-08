@@ -7,7 +7,7 @@ import {
   getFirestoreErrorMessage,
   sanitizeDeadlineInput,
   sortDeadlinesByDueAt,
-  validateDeadlineInput
+  validateDeadlineInput,
 } from "@/src/core/utils";
 import { Deadline } from "@/src/models/deadline";
 import {
@@ -38,23 +38,21 @@ function sortByDueAt(deadlines: Deadline[]): Deadline[] {
 interface DeadlineState {
   deadlines: Deadline[];
   completedDeadlines: Deadline[];
-  recentlyDeletedDeadline: Deadline | null;
   isLoadingDeadlines: boolean;
   deadlinesError: string | null;
   selectedDeadlineId: string | null;
   notificationsEnabled: boolean;
   hasNotificationPermission: boolean;
   hydrateNotificationsSetting: () => Promise<void>;
+  refreshNotificationPermission: () => Promise<void>;
   setNotificationsEnabled: (enabled: boolean) => Promise<void>;
   loadDeadlines: () => Promise<void>;
   addDeadline: (
     deadline: Omit<Deadline, "id" | "createdAt">,
   ) => Promise<boolean>;
   deleteDeadline: (id: string) => Promise<boolean>;
-  undoDeleteDeadline: () => Promise<boolean>;
   completeDeadline: (id: string) => void;
   undoCompletedDeadline: (id: string) => void;
-  deleteCompletedDeadline: (id: string) => void;
   clearAllData: () => Promise<boolean>;
   setSelectedId: (id: string | null) => void;
 
@@ -67,7 +65,6 @@ interface DeadlineState {
 export const useDeadlineStore = create<DeadlineState>((set, get) => ({
   deadlines: [],
   completedDeadlines: [],
-  recentlyDeletedDeadline: null,
   isLoadingDeadlines: false,
   deadlinesError: null,
   selectedDeadlineId: null,
@@ -83,7 +80,8 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       set({ notificationsEnabled });
 
       if (!notificationsEnabled) {
-        set({ hasNotificationPermission: true });
+        const granted = await hasNotificationPermission();
+        set({ hasNotificationPermission: granted });
         return;
       }
 
@@ -91,6 +89,14 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       set({ hasNotificationPermission: granted });
     } catch {
       set({ notificationsEnabled: true, hasNotificationPermission: false });
+    }
+  },
+  refreshNotificationPermission: async () => {
+    try {
+      const granted = await hasNotificationPermission();
+      set({ hasNotificationPermission: granted });
+    } catch {
+      set({ hasNotificationPermission: false });
     }
   },
   setNotificationsEnabled: async (enabled) => {
@@ -121,8 +127,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
           ...deadline,
           notificationId: undefined,
         })),
-        hasNotificationPermission: true,
-        recentlyDeletedDeadline: null,
+        hasNotificationPermission: state.hasNotificationPermission,
       }));
 
       return;
@@ -148,10 +153,10 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       }
 
       const activeDeadlines = loadedDeadlines.filter(
-        (deadline) => !deadline.completedAt,
+        (deadline) => deadline.isCompleted !== true,
       );
       const doneDeadlines = loadedDeadlines
-        .filter((deadline) => Boolean(deadline.completedAt))
+        .filter((deadline) => deadline.isCompleted === true)
         .sort((a, b) => {
           const aMs = new Date(a.completedAt ?? "").getTime();
           const bMs = new Date(b.completedAt ?? "").getTime();
@@ -225,6 +230,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
         reminder,
         notificationId: notificationId ?? null,
         colorStatus,
+        isCompleted: false,
         createdAt: nowIso,
         updatedAt: nowIso,
       });
@@ -364,7 +370,6 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
         completedDeadlines: state.completedDeadlines.filter(
           (deadline) => deadline.id !== id,
         ),
-        recentlyDeletedDeadline: existing ?? null,
         selectedDeadlineId:
           state.selectedDeadlineId === id ? null : state.selectedDeadlineId,
       }));
@@ -372,38 +377,6 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       return true;
     } catch (error) {
       console.warn("deleteDeadline failed", error);
-      return false;
-    }
-  },
-  undoDeleteDeadline: async () => {
-    const recent = get().recentlyDeletedDeadline;
-
-    if (!recent) {
-      return false;
-    }
-
-    const nowIso = new Date().toISOString();
-
-    try {
-      await createDeadline({
-        courseName: recent.courseName,
-        assignmentName: recent.assignmentName,
-        dueDate: recent.dueDate,
-        dueTime: recent.dueTime,
-        dueAt: recent.dueAt,
-        colorStatus: recent.colorStatus,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-        reminder: recent.reminder ?? null,
-        notificationId: null,
-        completedAt: recent.completedAt ?? null,
-      });
-
-      set({ recentlyDeletedDeadline: null });
-      await get().loadDeadlines();
-
-      return true;
-    } catch {
       return false;
     }
   },
@@ -426,6 +399,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
     const completedDeadline: Deadline = {
       ...deadlineToComplete,
       notificationId: undefined,
+      isCompleted: true,
       completedAt: completedAtIso,
       updatedAt: completedAtIso,
     };
@@ -440,6 +414,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
     void (async () => {
       try {
         await updateDeadlineDoc(id, {
+          isCompleted: true,
           notificationId: null,
           completedAt: completedAtIso,
           updatedAt: completedAtIso,
@@ -476,6 +451,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
     const restoredDeadline: Deadline = {
       ...deadlineToRestore,
       notificationId: undefined,
+      isCompleted: false,
       completedAt: undefined,
       updatedAt: restoredAtIso,
     };
@@ -516,6 +492,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
         }));
 
         await updateDeadlineDoc(id, {
+          isCompleted: false,
           completedAt: null,
           notificationId: restoredNotificationId ?? null,
           updatedAt: restoredAtIso,
@@ -530,35 +507,6 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       }
     })();
   },
-  deleteCompletedDeadline: (id) => {
-    void (async () => {
-      try {
-        const existing = get().completedDeadlines.find(
-          (deadline) => deadline.id === id,
-        );
-
-        if (existing?.notificationId) {
-          try {
-            await cancelNotification(existing.notificationId);
-          } catch {
-            // Ignore cancellation errors.
-          }
-        }
-
-        await deleteDeadlineDoc(id);
-
-        set((state) => ({
-          completedDeadlines: state.completedDeadlines.filter(
-            (deadline) => deadline.id !== id,
-          ),
-          selectedDeadlineId:
-            state.selectedDeadlineId === id ? null : state.selectedDeadlineId,
-        }));
-      } catch {
-        // Ignore network/persistence errors to avoid crashing UI.
-      }
-    })();
-  },
   clearAllData: async () => {
     try {
       await cancelAllNotifications();
@@ -567,7 +515,6 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       set({
         deadlines: [],
         completedDeadlines: [],
-        recentlyDeletedDeadline: null,
         selectedDeadlineId: null,
       });
 

@@ -159,6 +159,8 @@ const translations = {
     overdueSectionHint: "You have %{count} overdue deadlines.",
     homeEmptyCompletedTitle: "No completed deadlines yet",
     homeEmptyCompletedHint: "Completed items will appear here.",
+    allCaughtUp: "You're all caught up.",
+    noTasksInCategoryYet: "No tasks in this category yet.",
     privacyLocalDataTitle: "Data stored on your device",
     privacyLocalDataBody:
       "We store language, consent, session state, and notification preferences locally so the app opens quickly and remembers your setup.",
@@ -316,6 +318,8 @@ const translations = {
     overdueSectionHint: "คุณมีงานเกินกำหนด %{count} งาน",
     homeEmptyCompletedTitle: "ยังไม่มีงานที่เสร็จสิ้น",
     homeEmptyCompletedHint: "เมื่อทำงานเสร็จแล้วจะแสดงที่นี่",
+    allCaughtUp: "ตอนนี้คุณเคลียร์งานหมดแล้ว",
+    noTasksInCategoryYet: "ยังไม่มีงานในหมวดนี้",
     privacyLocalDataTitle: "ข้อมูลที่จัดเก็บในอุปกรณ์",
     privacyLocalDataBody:
       "เราเก็บภาษา การยอมรับนโยบาย สถานะเข้าสู่ระบบ และการตั้งค่าการแจ้งเตือนไว้ในเครื่อง เพื่อให้แอปเปิดได้รวดเร็วและจำค่าของคุณ",

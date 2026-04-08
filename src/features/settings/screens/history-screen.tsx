@@ -3,12 +3,7 @@ import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, Card, IconButton, Toast } from "@/src/components";
-import {
-  formatDueLabel,
-  getDeadlineStatus,
-  getDeadlineStatusColor,
-  t,
-} from "@/src/core/utils";
+import { formatDueLabel, t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
@@ -39,10 +34,9 @@ export function HistoryScreen() {
   const completedDeadlines = useDeadlineStore(
     (state) => state.completedDeadlines,
   );
-  const undoCompletedDeadline = useDeadlineStore(
-    (state) => state.undoCompletedDeadline,
-  );
+  const deleteDeadline = useDeadlineStore((state) => state.deleteDeadline);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -53,17 +47,19 @@ export function HistoryScreen() {
     };
   }, []);
 
-  const onUndo = (id: string) => {
-    undoCompletedDeadline(id);
-    setShowToast(true);
+  const onDelete = (id: string) => {
+    void deleteDeadline(id).then((isSuccess) => {
+      setToastMessage(isSuccess ? t("deletedDeadline") : t("deleteFailed"));
+      setShowToast(true);
 
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
 
-    toastTimerRef.current = setTimeout(() => {
-      setShowToast(false);
-    }, 1800);
+      toastTimerRef.current = setTimeout(() => {
+        setShowToast(false);
+      }, 1800);
+    });
   };
 
   const onGoBack = () => {
@@ -94,11 +90,10 @@ export function HistoryScreen() {
                 courseName={item.courseName}
                 dueLabel={`${t("originalDue")}: ${formatDueLabel(item.dueAt)}`}
                 completedLabel={`${t("completedOn")}: ${formatCompletedLabel(item.completedAt)}`}
-                urgencyColor={getDeadlineStatusColor(
-                  getDeadlineStatus(item.dueAt),
-                )}
-                actionLabel={t("undo")}
-                onPressAction={() => onUndo(item.id)}
+                urgencyColor="gray"
+                actionLabel={t("delete")}
+                actionStyle="trash"
+                onPressAction={() => onDelete(item.id)}
                 muted
               />
             </View>
@@ -120,7 +115,7 @@ export function HistoryScreen() {
           }
         />
 
-        <Toast message={t("restoredToActive")} visible={showToast} />
+        <Toast message={toastMessage} visible={showToast} />
       </View>
     </SafeAreaView>
   );

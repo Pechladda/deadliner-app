@@ -6,13 +6,14 @@ import { colors, radius, spacing, typography } from "@/src/theme";
 
 type UrgencyBadgeProps = {
   timeLeft: string;
-  status: "green" | "yellow" | "red";
+  status: "green" | "yellow" | "orange" | "red";
 };
 
 const statusColorMap: Record<UrgencyBadgeProps["status"], string> = {
   green: colors.priorityGreen,
   yellow: colors.priorityYellow,
-  red: colors.priorityRed,
+  orange: colors.priorityUrgent,
+  red: colors.priorityOverdue,
 };
 
 export function UrgencyBadge({ timeLeft, status }: UrgencyBadgeProps) {

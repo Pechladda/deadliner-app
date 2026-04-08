@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
-    NavigationContainer,
-    NavigatorScreenParams,
+  NavigationContainer,
+  NavigatorScreenParams,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect } from "react";
@@ -13,16 +13,16 @@ import { AddDeadlineScreen } from "@/src/features/add-deadline";
 import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
 import {
-    ForgotPasswordScreen,
-    LoginScreen,
-    RegisterScreen,
+  ForgotPasswordScreen,
+  LoginScreen,
+  RegisterScreen,
 } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
 import {
-    AboutAppScreen,
-    HistoryScreen,
-    PrivacyPolicyScreen,
-    ProfileScreen,
+  AboutAppScreen,
+  HistoryScreen,
+  PrivacyPolicyScreen,
+  ProfileScreen,
 } from "@/src/features/settings/screens";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
@@ -82,6 +82,7 @@ function MainTabs() {
         component={AddDeadlineScreen}
         options={{
           title: t("tabAdd"),
+          tabBarStyle: { display: "none" },
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-outline" size={size} color={color} />
           ),

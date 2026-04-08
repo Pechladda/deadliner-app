@@ -20,6 +20,8 @@ export const colors = {
   danger: "#C35A5A",
   warning: "#B27A3F",
   success: "#3D9D5A",
+  priorityOverdue: "#8B0000",
+  priorityUrgent: "#F08A24",
   priorityRed: "#e51c23",
   priorityYellow: "#FFD700",
   priorityGreen: "#4CD964",

@@ -155,7 +155,7 @@ export function ForgotPasswordScreen() {
                     setTouched(true);
                     setEmailError(validateEmail(email));
                   }}
-                  placeholder="Please enter your registered email address."
+                  placeholder="Email address"
                   placeholderTextColor={INPUT_PLACEHOLDER}
                   autoCapitalize="none"
                   autoCorrect={false}

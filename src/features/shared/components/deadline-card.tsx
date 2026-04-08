@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRef } from "react";
 import {
     Animated,
@@ -17,7 +18,8 @@ import {
     typography,
 } from "@/src/theme";
 
-type UrgencyColor = "red" | "yellow" | "green" | "gray";
+type UrgencyColor = "red" | "orange" | "yellow" | "green" | "gray";
+type ActionStyle = "text" | "check" | "trash";
 
 type DeadlineCardProps = {
   assignmentName: string;
@@ -29,12 +31,14 @@ type DeadlineCardProps = {
   onPressCard?: () => void;
   cardAccessibilityLabel?: string;
   actionLabel?: string;
+  actionStyle?: ActionStyle;
   muted?: boolean;
   style?: ViewStyle;
 };
 
 const urgencyColorMap: Record<UrgencyColor, string> = {
-  red: colors.priorityRed,
+  red: colors.priorityOverdue,
+  orange: colors.priorityUrgent,
   yellow: colors.priorityYellow,
   green: colors.priorityGreen,
   gray: colors.borderSoft,
@@ -50,6 +54,7 @@ export function DeadlineCard({
   onPressCard,
   cardAccessibilityLabel,
   actionLabel,
+  actionStyle = "text",
   muted = false,
   style,
 }: DeadlineCardProps) {
@@ -133,13 +138,29 @@ export function DeadlineCard({
       {onPressAction && actionLabel ? (
         <Pressable
           onPress={handlePressAction}
-          style={styles.doneButton}
+          style={
+            actionStyle === "check" ? styles.checkButton : styles.doneButton
+          }
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
         >
-          <AppText variant="caption" style={styles.doneButtonText}>
-            {actionLabel}
-          </AppText>
+          {actionStyle === "check" ? (
+            <Ionicons
+              name="checkmark-circle"
+              size={24}
+              color={colors.priorityGreen}
+            />
+          ) : actionStyle === "trash" ? (
+            <Ionicons
+              name="trash-outline"
+              size={18}
+              color={colors.textSecondary}
+            />
+          ) : (
+            <AppText variant="caption" style={styles.doneButtonText}>
+              {actionLabel}
+            </AppText>
+          )}
         </Pressable>
       ) : null}
     </Animated.View>
@@ -193,12 +214,27 @@ const styles = StyleSheet.create({
   doneButton: {
     marginRight: spacing.s,
     marginLeft: spacing.s,
-    borderWidth: 0,
-    borderColor: colors.borderSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.s,
+    minHeight: 30,
+    paddingHorizontal: spacing.m,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.chipBg,
+    backgroundColor: colors.surfaceWarm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkButton: {
+    marginRight: spacing.s,
+    marginLeft: spacing.s,
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceWarm,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
   },
   doneButtonText: {
     fontWeight: typography.weight.bold,

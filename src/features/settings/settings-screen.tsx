@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
 import {
     Alert,
+    AppState,
     Linking,
     Pressable,
     ScrollView,
@@ -12,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton, AppText, IconButton, Toast } from "@/src/components";
+import { AppButton, AppText, Toast } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation";
 import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
@@ -63,6 +65,9 @@ export function SettingsScreen() {
   const setNotificationsEnabled = useDeadlineStore(
     (state) => state.setNotificationsEnabled,
   );
+  const refreshNotificationPermission = useDeadlineStore(
+    (state) => state.refreshNotificationPermission,
+  );
   const clearAllData = useDeadlineStore((state) => state.clearAllData);
   const [toastMessage, setToastMessage] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
@@ -87,8 +92,28 @@ export function SettingsScreen() {
   };
 
   const onToggleNotifications = (enabled: boolean) => {
+    if (!hasNotificationPermission) {
+      return;
+    }
+
     void setNotificationsEnabled(enabled);
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshNotificationPermission();
+    }, [refreshNotificationPermission]),
+  );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void refreshNotificationPermission();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [refreshNotificationPermission]);
 
   const onOpenSystemSettings = () => {
     void Linking.openSettings();
@@ -143,15 +168,9 @@ export function SettingsScreen() {
           <View
             style={[styles.headerRow, isCompact && styles.headerRowCompact]}
           >
-            <IconButton
-              icon="chevron-back"
-              onPress={() => navigation.goBack()}
-              accessibilityLabel={t("goBack")}
-            />
             <AppText variant="title" style={styles.screenTitle}>
               {t("settings")}
             </AppText>
-            <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.sectionBlock}>
@@ -184,11 +203,26 @@ export function SettingsScreen() {
                 <Switch
                   value={notificationsEnabled}
                   onValueChange={onToggleNotifications}
+                  disabled={!hasNotificationPermission}
+                  trackColor={{
+                    false: hasNotificationPermission
+                      ? colors.border
+                      : colors.borderSoft,
+                    true: hasNotificationPermission
+                      ? colors.primaryStrong
+                      : colors.borderSoft,
+                  }}
+                  thumbColor={
+                    hasNotificationPermission
+                      ? colors.surface
+                      : colors.textMuted
+                  }
+                  ios_backgroundColor={colors.borderSoft}
                   accessibilityLabel={t("enableNotifications")}
                 />
               </View>
 
-              {notificationsEnabled && !hasNotificationPermission ? (
+              {!hasNotificationPermission ? (
                 <View style={styles.notificationsHintCard}>
                   <AppText variant="body">
                     {t("notificationsDisabledTitle")}
@@ -329,9 +363,7 @@ const styles = StyleSheet.create({
   headerRowCompact: {
     marginBottom: spacing.l,
   },
-  headerSpacer: { width: 38, height: 38 },
   screenTitle: {
-    flex: 1,
     textAlign: "center",
   },
   sectionTitle: {

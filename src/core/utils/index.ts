@@ -6,6 +6,7 @@ export {
     formatRemaining,
     getDeadlineStatus,
     getDeadlineStatusColor,
+    getDeadlineStatusDisplayColor,
     getDeadlineStatusLabel,
     getRemainingMs,
     getUrgencyMessage,

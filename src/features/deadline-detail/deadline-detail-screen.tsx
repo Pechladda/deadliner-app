@@ -9,7 +9,7 @@ import {
   formatCountdownLong,
   formatDueLabel,
   getDeadlineStatus,
-  getDeadlineStatusColor,
+  getDeadlineStatusDisplayColor,
   getRemainingMs,
   getUrgencyMessage,
   t,
@@ -46,7 +46,7 @@ function MissingState({ onPressBack }: MissingStateProps) {
 
 function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
   const urgencyMessage = getUrgencyMessage(getRemainingMs(dueAt, now));
-  const statusColor = getDeadlineStatusColor(status);
+  const statusColor = getDeadlineStatusDisplayColor(status);
 
   return (
     <Card style={styles.countdownCard} highlighted>
@@ -57,10 +57,12 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
             size={18}
             color={
               statusColor === "red"
-                ? colors.priorityRed
-                : statusColor === "yellow"
-                  ? colors.priorityYellow
-                  : colors.priorityGreen
+                ? colors.priorityOverdue
+                : statusColor === "orange"
+                  ? colors.priorityUrgent
+                  : statusColor === "yellow"
+                    ? colors.priorityYellow
+                    : colors.priorityGreen
             }
           />
           <AppText variant="title" style={styles.countdownText}>
@@ -72,6 +74,7 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
           style={[
             styles.statusPill,
             statusColor === "red" && styles.pillRed,
+            statusColor === "orange" && styles.pillOrange,
             statusColor === "yellow" && styles.pillYellow,
             statusColor === "green" && styles.pillGreen,
           ]}
@@ -87,15 +90,15 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
           </AppText>
         </View>
 
-        <AppText variant="caption" style={styles.urgencyHelperText}>
-          {urgencyMessage === "overdue"
-            ? t("overdue")
-            : urgencyMessage === "needsToday"
+        {urgencyMessage !== "overdue" ? (
+          <AppText variant="caption" style={styles.urgencyHelperText}>
+            {urgencyMessage === "needsToday"
               ? t("needsAttentionToday")
               : urgencyMessage === "dueSoon"
                 ? t("dueVerySoon")
                 : t("safeForNow")}
-        </AppText>
+          </AppText>
+        ) : null}
 
         <AppText variant="caption" style={styles.dueText}>
           {t("due")} {formatDueLabel(dueAt)}
@@ -388,7 +391,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   pillRed: {
-    backgroundColor: colors.priorityRed,
+    backgroundColor: colors.priorityOverdue,
+  },
+  pillOrange: {
+    backgroundColor: colors.priorityUrgent,
   },
   pillYellow: {
     backgroundColor: colors.priorityYellow,
