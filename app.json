@@ -49,6 +49,12 @@
     "owner": "pechladda",
     "experiments": {
       "reactCompiler": true
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c80be70e-5f07-4dda-85cc-9b2e9f77919a"
     }
   }
 }
