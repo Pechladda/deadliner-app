@@ -1,7 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
-import { colors, motion, radius, spacing } from "@/src/theme";
+import {
+    colors,
+    motion,
+    radius,
+    shadows,
+    sharedComponentTokens,
+    spacing,
+} from "@/src/theme";
 
 type IconButtonProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -16,7 +23,7 @@ export function IconButton({
   onPress,
   accessibilityLabel,
   colorToken = "textPrimary",
-  size = 22,
+  size = sharedComponentTokens.iconButtonDefaultIconSize,
 }: IconButtonProps) {
   return (
     <Pressable
@@ -32,8 +39,8 @@ export function IconButton({
 
 const styles = StyleSheet.create({
   button: {
-    width: 38,
-    height: 38,
+    width: sharedComponentTokens.iconButtonSize,
+    height: sharedComponentTokens.iconButtonSize,
     borderRadius: radius.l,
     justifyContent: "center",
     alignItems: "center",
@@ -41,6 +48,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.xs,
+    ...shadows.shadowLight,
   },
   buttonPressed: {
     transform: [{ scale: motion.scalePressed }],

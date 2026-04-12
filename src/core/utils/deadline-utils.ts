@@ -1,6 +1,23 @@
+import {
+    COMPLETED_LABEL_OPTIONS,
+    DATE_DISPLAY_LOCALE,
+    DATE_LOCALE_BY_LANGUAGE,
+    DUE_LABEL_OPTIONS,
+} from "@/src/core/config";
+import { getLanguage, t } from "@/src/i18n";
+
 const msPerMinute = 60 * 1000;
 const msPerHour = 60 * msPerMinute;
 const msPerDay = 24 * msPerHour;
+const dueLabelFallbackOptions: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+};
+const completedLabelFallbackOptions: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+};
 
 export type DeadlineStatus = "overdue" | "urgent" | "soon" | "onTrack";
 
@@ -18,7 +35,7 @@ function parseOffsetMs(timeZoneName: string): number {
 }
 
 function getTimezoneOffsetMs(atUtcMs: number, timezone: string): number {
-  const formatter = new Intl.DateTimeFormat("en-US", {
+  const formatter = new Intl.DateTimeFormat(DATE_DISPLAY_LOCALE, {
     timeZone: timezone,
     hour: "2-digit",
     minute: "2-digit",
@@ -43,7 +60,7 @@ export function parseDueAt(
   const timeMatch = dueTime.match(/^(\d{1,2}):(\d{2})$/);
 
   if (!dateMatch || !timeMatch) {
-    throw new Error("Invalid due date or time format");
+    throw new Error(t("invalidDueDateOrTimeFormat"));
   }
 
   const year = Number(dateMatch[1]);
@@ -53,7 +70,7 @@ export function parseDueAt(
   const minute = Number(timeMatch[2]);
 
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-    throw new Error("Invalid due time value");
+    throw new Error(t("invalidDueTimeValue"));
   }
 
   if (!timezone) {
@@ -61,7 +78,7 @@ export function parseDueAt(
       `${dueDate}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`,
     );
     if (Number.isNaN(localIso.getTime())) {
-      throw new Error("Invalid due date value");
+      throw new Error(t("invalidDueDateValue"));
     }
     return localIso.toISOString();
   }
@@ -135,18 +152,18 @@ export function getDeadlineStatusDisplayColor(
 
 export function getDeadlineStatusLabel(status: DeadlineStatus): string {
   if (status === "overdue") {
-    return "Overdue";
+    return t("overdue");
   }
 
   if (status === "urgent") {
-    return "Urgent";
+    return t("urgent");
   }
 
   if (status === "soon") {
-    return "Soon";
+    return t("soon");
   }
 
-  return "On Track";
+  return t("onTrack");
 }
 
 export function getUrgencyPriority(
@@ -172,12 +189,11 @@ export function formatDueLabel(iso: string): string {
     return iso;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  const locale =
+    DATE_LOCALE_BY_LANGUAGE?.[getLanguage()] ?? DATE_DISPLAY_LOCALE;
+  const formatOptions = DUE_LABEL_OPTIONS ?? dueLabelFallbackOptions;
+
+  return new Intl.DateTimeFormat(locale, formatOptions).format(date);
 }
 
 export function formatCountdownLong(iso: string, now = new Date()): string {
@@ -188,14 +204,23 @@ export function formatRemaining(dueAtISO: string, now = new Date()): string {
   const diffMs = getRemainingMs(dueAtISO, now);
 
   if (diffMs <= 0) {
-    return "Overdue";
+    return t("countdownOverdue");
   }
 
-  const totalHours = Math.floor(diffMs / msPerHour);
-  const days = Math.floor(totalHours / 24);
-  const hours = totalHours % 24;
+  const totalMinutes = Math.floor(diffMs / msPerMinute);
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const minutes = totalMinutes % 60;
 
-  return `${days} Day${days === 1 ? "" : "s"}, ${hours} Hour${hours === 1 ? "" : "s"}`;
+  if (days > 0) {
+    return `${days} ${t(days === 1 ? "day" : "days")}, ${hours} ${t(hours === 1 ? "hour" : "hours")} ${t("left")}`;
+  }
+
+  if (hours > 0) {
+    return `${hours} ${t(hours === 1 ? "hour" : "hours")}, ${minutes} ${t(minutes === 1 ? "minute" : "minutes")} ${t("left")}`;
+  }
+
+  return `${minutes} ${t(minutes === 1 ? "minute" : "minutes")} ${t("left")}`;
 }
 
 export function computeColorStatus(
@@ -251,7 +276,7 @@ export function sortDeadlinesByDueAt<T extends { dueAt: string }>(
 export function formatCountdownShort(iso: string, now = new Date()): string {
   const diffMs = getRemainingMs(iso, now);
   if (diffMs <= 0) {
-    return "Overdue";
+    return t("countdownOverdue");
   }
 
   const totalMinutes = Math.floor(diffMs / msPerMinute);
@@ -260,22 +285,30 @@ export function formatCountdownShort(iso: string, now = new Date()): string {
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `${days}d ${hours}h left`;
+    return `${days}d ${hours}h ${t("left")}`;
   }
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m left`;
+    return `${hours}h ${minutes}m ${t("left")}`;
   }
 
-  return `${minutes}m left`;
+  return `${minutes}m ${t("left")}`;
 }
 
-// Unit-like examples:
-// const dueAt = parseDueAt("2026-02-20", "14:30", "Asia/Bangkok");
-// getRemainingMs("2026-02-20T07:30:00.000Z", new Date("2026-02-20T06:30:00.000Z")) === 3600000;
-// formatRemaining("2026-02-21T12:00:00.000Z", new Date("2026-02-20T10:00:00.000Z")) === "1 Day, 2 Hours";
-// formatRemaining("2026-02-20T09:00:00.000Z", new Date("2026-02-20T10:00:00.000Z")) === "Overdue";
-// computeColorStatus(23 * 60 * 60 * 1000) === "red";
-// computeColorStatus(48 * 60 * 60 * 1000) === "yellow";
-// computeColorStatus(96 * 60 * 60 * 1000) === "green";
-// sortDeadlinesByDueAt([{ dueAt: "2026-02-21T00:00:00.000Z" }, { dueAt: "2026-02-20T00:00:00.000Z" }]);
+export function formatCompletedLabel(iso?: string | null): string {
+  if (!iso) {
+    return "";
+  }
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const locale =
+    DATE_LOCALE_BY_LANGUAGE?.[getLanguage()] ?? DATE_DISPLAY_LOCALE;
+  const formatOptions =
+    COMPLETED_LABEL_OPTIONS ?? completedLabelFallbackOptions;
+
+  return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+}

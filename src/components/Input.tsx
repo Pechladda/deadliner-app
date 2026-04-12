@@ -7,7 +7,14 @@ import {
     View,
 } from "react-native";
 
-import { colors, radius, spacing, typography } from "@/src/theme";
+import {
+    colors,
+    radius,
+    shadows,
+    sharedComponentTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
 
 import { AppText } from "./app-text";
 
@@ -40,7 +47,7 @@ export function Input({
           inputStyle,
           style,
         ]}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.textSecondary}
         {...props}
       />
       {error ? (
@@ -59,12 +66,13 @@ const styles = StyleSheet.create({
   input: {
     minHeight: 50,
     borderRadius: radius.xl,
-    backgroundColor: colors.surfacePink,
+    backgroundColor: sharedComponentTokens.inputBackground,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.l,
     fontSize: typography.size.m,
     color: colors.textPrimary,
+    ...shadows.shadowLight,
   },
   inputError: {
     borderColor: colors.danger,

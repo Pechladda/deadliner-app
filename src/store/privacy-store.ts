@@ -2,6 +2,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
 const CONSENT_STORAGE_KEY = "@deadliner/privacy-consent";
+const TRUE_STRING = "true";
+
+function parseStoredConsent(value: string | null): boolean {
+  return value === TRUE_STRING;
+}
 
 type PrivacyState = {
   consentGranted: boolean;
@@ -14,12 +19,16 @@ export const usePrivacyStore = create<PrivacyState>((set) => ({
   consentGranted: false,
   isHydrated: false,
   hydrateConsent: async () => {
+    let consentGranted = false;
+
     try {
       const stored = await AsyncStorage.getItem(CONSENT_STORAGE_KEY);
-      set({ consentGranted: stored === "true", isHydrated: true });
+      consentGranted = parseStoredConsent(stored);
     } catch {
-      set({ consentGranted: false, isHydrated: true });
+      consentGranted = false;
     }
+
+    set({ consentGranted, isHydrated: true });
   },
   setConsent: async (granted) => {
     set({ consentGranted: granted });

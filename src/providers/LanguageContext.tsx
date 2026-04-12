@@ -7,11 +7,8 @@ import {
     useState,
 } from "react";
 
-import {
-    initLanguage,
-    LanguageCode,
-    setLanguage,
-} from "@/src/core/utils/translations";
+import { LANGUAGE_PROVIDER_ERROR } from "@/src/core/config";
+import { initLanguage, LanguageCode, setLanguage } from "@/src/i18n";
 
 type LanguageContextValue = {
   appLanguage: LanguageCode;
@@ -74,7 +71,7 @@ export function useLanguage() {
   const context = useContext(LanguageContext);
 
   if (!context) {
-    throw new Error("useLanguage must be used within LanguageProvider");
+    throw new Error(LANGUAGE_PROVIDER_ERROR);
   }
 
   return context;

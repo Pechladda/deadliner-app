@@ -2,32 +2,29 @@ import { useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton, AppText, Card, IconButton, Toast } from "@/src/components";
-import { formatDueLabel, t } from "@/src/core/utils";
+import {
+    AppButton,
+    AppText,
+    Card,
+    IconButton,
+    PastelBackground,
+    Toast,
+} from "@/src/components";
+import { t } from "@/src/core/utils";
+import {
+    formatCompletedLabel,
+    formatDueLabel,
+} from "@/src/core/utils/deadline-utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, radius, spacing } from "@/src/theme";
-
-function formatCompletedLabel(iso?: string | null) {
-  if (!iso) {
-    return "";
-  }
-
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat("en-US-u-ca-gregory-nu-latn", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(parsed);
-}
+import {
+    colors,
+    radius,
+    screenSharedTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
 
 export function HistoryScreen() {
   const navigation = useSettingsNavigation();
@@ -68,6 +65,7 @@ export function HistoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <PastelBackground />
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <IconButton
@@ -75,8 +73,9 @@ export function HistoryScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">{t("history")}</AppText>
-          <View style={styles.headerSpacer} />
+          <AppText variant="title" style={styles.screenTitle}>
+            {t("history")}
+          </AppText>
         </View>
 
         <FlatList
@@ -131,10 +130,17 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: spacing.s,
     marginBottom: spacing.xl2,
   },
-  headerSpacer: { width: 36, height: 36 },
+  screenTitle: {
+    textAlign: "left",
+    color: screenSharedTokens.screenTitleColor,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
+    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+  },
   listContent: {
     gap: spacing.m,
     paddingBottom: spacing.xl,
@@ -150,7 +156,7 @@ const styles = StyleSheet.create({
   emptyCard: {
     marginTop: spacing.xxl,
     alignItems: "center",
-    backgroundColor: colors.surfaceWarm,
+    backgroundColor: colors.surface,
     borderColor: colors.borderSoft,
   },
   emptyText: {

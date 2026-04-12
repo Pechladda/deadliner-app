@@ -1,22 +1,24 @@
-import { AppText } from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation";
+import {
+  AppButton,
+  AppText,
+  FormInput,
+  PastelBackground,
+} from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation/route-names";
 import { t } from "@/src/core/utils";
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth } from "@/src/firebase";
 import { useAuthStore } from "@/src/store/auth-store";
-import { usePrivacyStore } from "@/src/store/privacy-store";
-import { colors, radius, spacing, typography } from "@/src/theme";
-import { Ionicons } from "@expo/vector-icons";
+import { colors, loginTokens, radius, spacing, typography } from "@/src/theme";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
-  Animated,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
@@ -24,191 +26,142 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Line } from "react-native-svg";
 
 const BRAND_PRIMARY = colors.textPrimary;
-const BRAND_ACCENT = colors.primaryStrong;
-const BRAND_LIGHT = colors.border;
 const BG_WARM = colors.background;
-const INPUT_PLACEHOLDER = colors.textSecondary;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function ClockLogo() {
   const stroke = BRAND_PRIMARY;
-  const accent = BRAND_ACCENT;
+  const accent = stroke;
+  const logo = loginTokens.clockLogo;
 
-  const ticks = Array.from({ length: 12 }, (_, i) => {
-    const deg = i * 30;
+  const ticks = Array.from({ length: logo.tickCount }, (_, i) => {
+    const deg = i * logo.tickStepDegrees;
     const rad = (Math.PI * deg) / 180;
-    const isMain = i % 3 === 0;
-    const inner = isMain ? 20 : 22;
+    const isMain = i % logo.majorTickEvery === 0;
+    const inner = isMain
+      ? logo.majorTickInnerRadius
+      : logo.minorTickInnerRadius;
     return { rad, isMain, inner };
   });
 
   return (
-    <Svg width={90} height={90} viewBox="0 0 64 64">
-      {/* Outer circle */}
+    <Svg
+      width={logo.svgSize}
+      height={logo.svgSize}
+      viewBox={`0 0 ${logo.viewBoxSize} ${logo.viewBoxSize}`}
+    >
       <Circle
-        cx="32"
-        cy="32"
-        r="26"
+        cx={logo.center}
+        cy={logo.center}
+        r={logo.outerRadius}
         stroke={stroke}
-        strokeWidth="2.5"
+        strokeWidth={logo.outlineStrokeWidth}
         fill="none"
       />
-
-      {/* Hour ticks */}
       {ticks.map(({ rad, isMain, inner }, i) => (
         <Line
           key={i}
-          x1={32 + inner * Math.sin(rad)}
-          y1={32 - inner * Math.cos(rad)}
-          x2={32 + 26 * Math.sin(rad)}
-          y2={32 - 26 * Math.cos(rad)}
+          x1={logo.center + inner * Math.sin(rad)}
+          y1={logo.center - inner * Math.cos(rad)}
+          x2={logo.center + logo.outerRadius * Math.sin(rad)}
+          y2={logo.center - logo.outerRadius * Math.cos(rad)}
           stroke={stroke}
-          strokeWidth={isMain ? 2 : 1}
+          strokeWidth={
+            isMain ? logo.majorTickStrokeWidth : logo.minorTickStrokeWidth
+          }
           strokeLinecap="round"
-          opacity={isMain ? 1 : 0.35}
+          opacity={isMain ? 1 : logo.minorTickOpacity}
         />
       ))}
-
-      {/* Minute hand — 12 o'clock */}
       <Line
-        x1="32"
-        y1="32"
-        x2="32"
-        y2="10"
+        x1={logo.center}
+        y1={logo.center}
+        x2={logo.center}
+        y2={logo.handLongY}
         stroke={stroke}
-        strokeWidth="2"
+        strokeWidth={logo.handLongStrokeWidth}
         strokeLinecap="round"
       />
-
-      {/* Hour hand — ~10 o'clock */}
       <Line
-        x1="32"
-        y1="32"
-        x2="19"
-        y2="22"
+        x1={logo.center}
+        y1={logo.center}
+        x2={logo.handShortX}
+        y2={logo.handShortY}
         stroke={stroke}
-        strokeWidth="2.5"
+        strokeWidth={logo.handShortStrokeWidth}
         strokeLinecap="round"
       />
-
-      {/* Second hand accent */}
       <Line
-        x1="32"
-        y1="36"
-        x2="44"
-        y2="18"
+        x1={logo.center}
+        y1={logo.accentHandFromY}
+        x2={logo.accentHandToX}
+        y2={logo.accentHandToY}
         stroke={accent}
-        strokeWidth="1.5"
+        strokeWidth={logo.accentHandStrokeWidth}
         strokeLinecap="round"
       />
-
-      {/* Center dot */}
-      <Circle cx="32" cy="32" r="2.5" fill={accent} />
+      <Circle
+        cx={logo.center}
+        cy={logo.center}
+        r={logo.centerDotRadius}
+        fill={accent}
+      />
     </Svg>
   );
 }
 
 export function LoginScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 375;
-  const isWide = width >= 430;
+  const isCompact = width < loginTokens.compactWidthThreshold;
+  const isWide = width >= loginTokens.wideWidthThreshold;
   const navigation = useLoginNavigation();
   const login = useAuthStore((state) => state.login);
-  const consentGranted = usePrivacyStore((state) => state.consentGranted);
-  const hydrateConsent = usePrivacyStore((state) => state.hydrateConsent);
-  const setConsent = usePrivacyStore((state) => state.setConsent);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [consentError, setConsentError] = useState("");
-  const [consentChecked, setConsentChecked] = useState(false);
-  const [authError, setAuthError] = useState("");
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const buttonScale = useRef(new Animated.Value(1)).current;
+  // State สำหรับควบคุมการโชว์ Modal
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
-  useEffect(() => {
-    void hydrateConsent();
-  }, [hydrateConsent]);
-
-  const animatePress = (toValue: number) => {
-    Animated.timing(buttonScale, {
-      toValue,
-      duration: 120,
-      useNativeDriver: true,
-    }).start();
+  const handleChange = (field: "email" | "password", value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const onChangeEmail = (value: string) => {
-    setEmail(value);
-    if (authError) {
-      setAuthError("");
+  const onSubmit = async () => {
+    if (isSubmitting) return;
+
+    const normalizedEmail = formData.email.trim();
+    const normalizedPassword = formData.password;
+
+    // ถ้าไม่ได้กรอกอะไรเลย ให้เด้ง Modal เลย (ไม่โชว์ Error ใต้ช่องแล้ว)
+    if (!normalizedEmail || !normalizedPassword) {
+      setShowErrorModal(true);
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        normalizedEmail,
+        normalizedPassword,
+      );
+      await login(userCredential.user);
+    } catch (error) {
+      // ไม่ว่าจะ Error อะไร (รหัสผิด, ไม่มีเมล์) ให้โชว์ Modal ตัวนี้
+      setShowErrorModal(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const onChangePassword = (value: string) => {
-    setPassword(value);
-    if (authError) {
-      setAuthError("");
-    }
-  };
-
-  const onSubmit = () => {
-    if (isSubmitting) {
-      return;
-    }
-
-    setAuthError("");
-    const normalizedEmail = email.trim();
-
-    if (!normalizedEmail && !password) {
-      setAuthError("Please enter your email and password.");
-      return;
-    }
-
-    if (!normalizedEmail) {
-      setAuthError("Email is required.");
-      return;
-    }
-
-    if (!password) {
-      setAuthError("Password is required.");
-      return;
-    }
-
-    if (!EMAIL_PATTERN.test(normalizedEmail)) {
-      setAuthError("Please enter a valid email address.");
-      return;
-    }
-
-    if (!consentGranted && !consentChecked) {
-      setConsentError(t("consentRequired"));
-      return;
-    }
-
-    setConsentError("");
-
-    void (async () => {
-      try {
-        setIsSubmitting(true);
-
-        if (!consentGranted && consentChecked) {
-          await setConsent(true);
-        }
-
-        await signInWithEmailAndPassword(auth, normalizedEmail, password);
-        await login();
-      } catch {
-        setAuthError("Invalid email or password.");
-      } finally {
-        setIsSubmitting(false);
-      }
-    })();
+  const onGoToRegister = () => {
+    setShowErrorModal(false);
+    navigation.navigate(StackRoutes.Register);
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <PastelBackground />
       <View style={styles.screenBody}>
         <KeyboardAvoidingView
           style={styles.keyboardWrap}
@@ -254,157 +207,66 @@ export function LoginScreen() {
                 ]}
               >
                 <View style={styles.formFieldsGroup}>
-                  <View style={styles.fieldWrap}>
-                    <TextInput
-                      value={email}
-                      onChangeText={onChangeEmail}
-                      placeholder={t("email")}
-                      placeholderTextColor={INPUT_PLACEHOLDER}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      autoComplete="email"
-                      textContentType="emailAddress"
-                      keyboardType="email-address"
-                      returnKeyType="next"
-                      selectionColor={colors.primary}
-                      accessibilityLabel={t("email")}
-                      editable={!isSubmitting}
-                      style={[styles.input, isCompact && styles.inputCompact]}
-                    />
-                  </View>
+                  {/* ถอด props `error` ออกทั้งหมด */}
+                  <FormInput
+                    value={formData.email}
+                    onChangeText={(value) => handleChange("email", value)}
+                    placeholder={t("email")}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    keyboardType="email-address"
+                    returnKeyType="next"
+                    selectionColor={colors.primary}
+                    accessibilityLabel={t("email")}
+                    editable={!isSubmitting}
+                    compact={isCompact}
+                  />
 
-                  <View style={styles.fieldWrap}>
-                    <View style={styles.passwordFieldWrap}>
-                      <TextInput
-                        value={password}
-                        onChangeText={onChangePassword}
-                        placeholder={t("passwordPlaceholder")}
-                        placeholderTextColor={INPUT_PLACEHOLDER}
-                        secureTextEntry={!showPassword}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        autoComplete="password"
-                        textContentType="password"
-                        returnKeyType="done"
-                        selectionColor={colors.primary}
-                        accessibilityLabel={t("passwordInput")}
-                        editable={!isSubmitting}
-                        style={[
-                          styles.input,
-                          styles.passwordInput,
-                          isCompact && styles.inputCompact,
-                        ]}
-                      />
-                      <Pressable
-                        onPress={() => setShowPassword((prev) => !prev)}
-                        style={styles.eyeButton}
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                          showPassword ? t("hidePassword") : t("showPassword")
-                        }
-                      >
-                        <Ionicons
-                          name={
-                            showPassword ? "eye-off-outline" : "eye-outline"
-                          }
-                          size={20}
-                          color={BRAND_ACCENT}
-                        />
-                      </Pressable>
-                    </View>
-
-                    <View style={styles.errorSlot}>
-                      {authError ? (
-                        <AppText style={styles.errorText}>{authError}</AppText>
-                      ) : null}
-                    </View>
-                  </View>
+                  <FormInput
+                    value={formData.password}
+                    onChangeText={(value) => handleChange("password", value)}
+                    placeholder={t("passwordPlaceholder")}
+                    isPassword
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="password"
+                    textContentType="password"
+                    returnKeyType="done"
+                    selectionColor={colors.primary}
+                    accessibilityLabel={t("passwordInput")}
+                    editable={!isSubmitting}
+                    compact={isCompact}
+                    showPasswordLabel={t("showPassword")}
+                    hidePasswordLabel={t("hidePassword")}
+                  />
                 </View>
 
-                <Animated.View
-                  style={[
-                    styles.actionArea,
-                    { transform: [{ scale: buttonScale }] },
-                  ]}
-                >
-                  {!consentGranted ? (
-                    <View style={styles.consentRow}>
-                      <Pressable
-                        onPress={() => {
-                          setConsentChecked((prev) => !prev);
-                          if (consentError) {
-                            setConsentError("");
-                          }
-                        }}
-                        style={styles.consentCheckbox}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: consentChecked }}
-                        accessibilityLabel={t("consentLabel")}
-                      >
-                        {consentChecked ? (
-                          <Ionicons
-                            name="checkmark"
-                            size={16}
-                            color={BRAND_PRIMARY}
-                          />
-                        ) : null}
-                      </Pressable>
-                      <Pressable
-                        onPress={() =>
-                          navigation.navigate(StackRoutes.PrivacyPolicy)
-                        }
-                        accessibilityRole="button"
-                        accessibilityLabel={t("privacyPolicy")}
-                      >
-                        <AppText style={styles.consentText}>
-                          {t("consentLabel")}
-                        </AppText>
-                      </Pressable>
-                    </View>
-                  ) : null}
-
-                  {!consentGranted ? (
-                    <View style={styles.errorSlot}>
-                      {consentError ? (
-                        <AppText style={styles.errorText}>
-                          {consentError}
-                        </AppText>
-                      ) : null}
-                    </View>
-                  ) : null}
-
-                  <Pressable
-                    style={[
-                      styles.loginButton,
-                      isCompact && styles.loginButtonCompact,
-                      isSubmitting && styles.loginButtonDisabled,
-                    ]}
+                <View style={styles.actionArea}>
+                  <AppButton
+                    title={t("signIn")}
                     onPress={onSubmit}
-                    onPressIn={() => animatePress(0.98)}
-                    onPressOut={() => animatePress(1)}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("login")}
-                    disabled={isSubmitting}
-                  >
-                    <AppText style={styles.loginText}>
-                      {isSubmitting ? "SIGNING IN..." : "Sign In"}
-                    </AppText>
-                  </Pressable>
+                    isLoading={isSubmitting}
+                    loadingLabel={t("loginSigningIn")}
+                    size={isCompact ? "compact" : "default"}
+                    accessibilityLabel={t("signIn")}
+                  />
 
                   <Pressable
                     onPress={() =>
                       navigation.navigate(StackRoutes.ForgotPassword)
                     }
                     accessibilityRole="button"
-                    accessibilityLabel="Forgot password"
+                    accessibilityLabel={t("forgotPassword")}
                     style={styles.forgotInlineButton}
                     disabled={isSubmitting}
                   >
                     <AppText style={styles.forgotInlineText}>
-                      Forgot password?
+                      {t("forgotPassword")}
                     </AppText>
                   </Pressable>
-                </Animated.View>
+                </View>
               </View>
             </View>
           </ScrollView>
@@ -414,7 +276,7 @@ export function LoginScreen() {
           <Pressable
             onPress={() => navigation.navigate(StackRoutes.Register)}
             accessibilityRole="button"
-            accessibilityLabel="Create new account"
+            accessibilityLabel={t("createNewAccount")}
             style={({ pressed }) => [
               styles.createAccountButton,
               pressed && styles.createAccountButtonPressed,
@@ -422,31 +284,58 @@ export function LoginScreen() {
             disabled={isSubmitting}
           >
             <AppText style={styles.createAccountText}>
-              Create new account
+              {t("createNewAccount")}
             </AppText>
           </Pressable>
         </View>
       </View>
+      <Modal
+        visible={showErrorModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowErrorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <AppText style={styles.modalTitle}>
+              {t("loginAccountNotFoundTitle")}
+            </AppText>
+            <AppText style={styles.modalBody}>
+              {t("loginAccountNotFoundBody")}
+            </AppText>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={styles.modalSecondaryBtn}
+                onPress={onGoToRegister}
+              >
+                <AppText style={styles.modalSecondaryBtnText}>
+                  {t("registerSignUp")}
+                </AppText>
+              </Pressable>
+
+              <Pressable
+                style={styles.modalPrimaryBtn}
+                onPress={() => setShowErrorModal(false)}
+              >
+                <AppText style={styles.modalPrimaryBtnText}>
+                  {t("retry")}
+                </AppText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: BG_WARM,
-  },
-  keyboardWrap: {
-    flex: 1,
-  },
-  screenBody: {
-    flex: 1,
-    position: "relative",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "flex-start",
-  },
+  // ... Styles เดิมทั้งหมด (safeArea จนถึง bottomLinkText)
+  safeArea: { flex: 1, backgroundColor: BG_WARM },
+  keyboardWrap: { flex: 1 },
+  screenBody: { flex: 1, position: "relative" },
+  scrollContent: { flexGrow: 1, justifyContent: "flex-start" },
   container: {
     flexGrow: 1,
     position: "relative",
@@ -455,109 +344,33 @@ const styles = StyleSheet.create({
     paddingTop: spacing.l,
     paddingBottom: spacing.xxl,
   },
-  containerCompact: {
-    paddingHorizontal: spacing.l,
-    paddingTop: spacing.m,
-  },
-  containerWide: {
-    paddingHorizontal: spacing.xxxl,
-    paddingTop: spacing.xl,
-  },
+  containerCompact: { paddingHorizontal: spacing.l, paddingTop: spacing.m },
+  containerWide: { paddingHorizontal: spacing.xxxl, paddingTop: spacing.xl },
   logoBlock: {
     alignItems: "center",
     marginTop: spacing.xxxl,
     marginBottom: spacing.xxl,
   },
-  logoBlockCompact: {
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xxl,
-  },
-  logoBlockWide: {
-    marginTop: spacing.xxxxl,
-    marginBottom: spacing.xxxl,
-  },
+  logoBlockCompact: { marginTop: spacing.xxl, marginBottom: spacing.xxl },
+  logoBlockWide: { marginTop: spacing.xxxxl, marginBottom: spacing.xxxl },
   title: {
     color: BRAND_PRIMARY,
-    letterSpacing: 0.6,
+    letterSpacing: loginTokens.titleLetterSpacing,
     fontWeight: typography.weight.bold,
     marginTop: spacing.m,
   },
-  titleCompact: {
-    marginTop: spacing.s,
-  },
-  titleWide: {
-    marginTop: spacing.l,
-  },
-  subtitle: {
-    marginTop: spacing.xs,
-    color: colors.textSecondary,
-    letterSpacing: 0.2,
-    textAlign: "center",
-  },
+  titleCompact: { marginTop: spacing.s },
+  titleWide: { marginTop: spacing.l },
   formArea: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: loginTokens.formAreaMaxWidth,
     alignSelf: "center",
     gap: spacing.xl,
   },
-  formAreaCompact: {
-    maxWidth: 360,
-  },
-  formAreaWide: {
-    maxWidth: 460,
-  },
-  fieldWrap: {
-    gap: spacing.xxs,
-  },
-  formFieldsGroup: {
-    gap: spacing.s,
-  },
-  input: {
-    minHeight: 50,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: BRAND_LIGHT,
-    backgroundColor: colors.surface,
-    color: BRAND_PRIMARY,
-    fontSize: typography.size.s,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-  },
-  inputCompact: {
-    minHeight: 46,
-    fontSize: typography.size.xs,
-  },
-  passwordFieldWrap: {
-    position: "relative",
-  },
-  passwordInput: {
-    paddingRight: 52,
-  },
-  eyeButton: {
-    position: "absolute",
-    right: 10,
-    top: "50%",
-    marginTop: -16,
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  inputFocused: {
-    borderColor: colors.primary,
-  },
-  inputInvalid: {
-    borderColor: colors.danger,
-  },
-  errorSlot: {
-    minHeight: 22,
-    justifyContent: "center",
-    paddingHorizontal: spacing.xs,
-    paddingTop: spacing.xxs,
-  },
-  actionArea: {
-    gap: spacing.xxs,
-  },
+  formAreaCompact: { maxWidth: loginTokens.formAreaCompactMaxWidth },
+  formAreaWide: { maxWidth: loginTokens.formAreaWideMaxWidth },
+  formFieldsGroup: { gap: spacing.s },
+  actionArea: { gap: spacing.xxs },
   forgotInlineButton: {
     marginTop: spacing.xs,
     alignItems: "center",
@@ -569,38 +382,6 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     fontSize: typography.size.s,
   },
-  helperText: {
-    color: colors.textSecondary,
-    fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.compact,
-  },
-  errorText: {
-    color: colors.danger,
-  },
-  loginButton: {
-    marginTop: 0,
-    minHeight: 48,
-    borderRadius: radius.xxl,
-    backgroundColor: colors.buttonBg,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.02,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 0,
-  },
-  loginButtonCompact: {
-    minHeight: 44,
-  },
-  loginButtonDisabled: {
-    opacity: 0.5,
-  },
-  secondaryActionButton: {
-    marginTop: spacing.s,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
   bottomSecondaryArea: {
     position: "absolute",
     left: spacing.xl,
@@ -611,61 +392,94 @@ const styles = StyleSheet.create({
   },
   createAccountButton: {
     width: "100%",
-    maxWidth: 420,
-    minHeight: 47,
+    maxWidth: loginTokens.formAreaMaxWidth,
+    minHeight: loginTokens.createAccountButtonMinHeight,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: BRAND_PRIMARY,
     borderRadius: radius.xxl,
     marginTop: spacing.s,
   },
   createAccountButtonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
+    opacity: loginTokens.createAccountButtonPressedOpacity,
+    transform: [{ scale: loginTokens.createAccountButtonPressedScale }],
   },
   createAccountText: {
-    color: colors.primary,
+    color: BRAND_PRIMARY,
     textDecorationLine: "none",
     fontSize: typography.size.s,
     fontWeight: typography.weight.medium,
-    letterSpacing: 0.2,
+    letterSpacing: loginTokens.createAccountLetterSpacing,
   },
-  consentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.s,
-    marginVertical: spacing.s,
-  },
-  consentCheckbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: BRAND_ACCENT,
-    alignItems: "center",
+  // --- Styles สำหรับ Modal (Minimal Pastel) ---
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: loginTokens.modalOverlayBackground,
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
   },
-  consentText: {
-    color: colors.textSecondary,
-    textDecorationLine: "underline",
+  modalContent: {
+    width: "100%",
+    maxWidth: loginTokens.modalContentMaxWidth,
+    backgroundColor: loginTokens.modalContentBackground,
+    borderRadius: radius.xxl,
+    padding: spacing.xl,
+    alignItems: "center",
+    shadowColor: BRAND_PRIMARY,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: loginTokens.modalShadowOpacity,
+    shadowRadius: 24,
+    elevation: 8,
   },
-  loginText: {
-    color: colors.buttonText,
+  modalTitle: {
+    color: BRAND_PRIMARY,
     fontSize: typography.size.s,
-    fontWeight: typography.weight.semibold,
-    letterSpacing: 0.2,
+    fontWeight: typography.weight.bold,
+    marginBottom: spacing.s,
+    textAlign: "center",
   },
-  bottomLinkButton: {
-    marginTop: spacing.s,
+  modalBody: {
+    color: colors.textSecondary,
+    fontSize: typography.size.s,
+    textAlign: "center",
+    lineHeight: typography.lineHeight.compact,
+    marginBottom: spacing.xxl,
+  },
+  modalActions: {
+    flexDirection: "row",
+    width: "100%",
+    gap: spacing.m,
+  },
+  modalPrimaryBtn: {
+    flex: 1,
+    backgroundColor: BRAND_PRIMARY,
+    paddingVertical: spacing.m,
+    borderRadius: radius.xxl,
     alignItems: "center",
     justifyContent: "center",
   },
-  bottomLinkText: {
-    color: colors.textSecondary,
-    textDecorationLine: "underline",
+  modalPrimaryBtnText: {
+    color: loginTokens.modalPrimaryTextColor,
+    fontWeight: typography.weight.bold,
+    fontSize: typography.size.s,
+  },
+  modalSecondaryBtn: {
+    flex: 1,
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: BRAND_PRIMARY,
+    paddingVertical: spacing.m,
+    borderRadius: radius.xxl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalSecondaryBtnText: {
+    color: BRAND_PRIMARY,
+    fontWeight: typography.weight.bold,
+    fontSize: typography.size.s,
   },
 });

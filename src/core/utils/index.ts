@@ -15,6 +15,8 @@ export {
     sortDeadlinesByDueAt
 } from "./deadline-utils";
 
+export type { DeadlineStatus } from "./deadline-utils";
+
 export {
     getLanguage,
     initLanguage,

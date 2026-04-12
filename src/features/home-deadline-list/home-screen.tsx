@@ -1,7 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Animated,
   FlatList,
   Pressable,
   RefreshControl,
@@ -10,10 +14,11 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Card, Toast } from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation";
+import { AppText, PastelBackground, Toast } from "@/src/components";
+import { StackRoutes, TabRoutes } from "@/src/core/navigation/route-names";
 import {
   formatDueLabel,
   getDeadlineStatus,
@@ -25,7 +30,17 @@ import { DeadlineCard } from "@/src/features/shared/components";
 import { auth } from "@/src/firebase";
 import type { Deadline } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import {
+  colors,
+  radius,
+  screenSharedTokens,
+  spacing,
+  typography,
+} from "@/src/theme";
+import {
+  homeDeadlineListTokens,
+  homeDeadlineStatusGradients,
+} from "@/src/theme/tokens";
 
 type HomeFilter = "all" | "overdue" | "urgent" | "soon" | "onTrack";
 type DeadlineListRow = { id: string; item: Deadline; isOverdue: boolean };
@@ -70,6 +85,26 @@ function statusColorFromItem(
     : getDeadlineStatusDisplayColor(status);
 }
 
+function getGradientColorsFromItem(
+  item: Deadline,
+  isOverdue: boolean,
+): readonly [string, string] {
+  const status = isOverdue ? "overdue" : getDeadlineStatus(item.dueAt);
+
+  switch (status) {
+    case "overdue":
+      return homeDeadlineStatusGradients.overdue;
+    case "urgent":
+      return homeDeadlineStatusGradients.urgent;
+    case "soon":
+      return homeDeadlineStatusGradients.soon;
+    case "onTrack":
+      return homeDeadlineStatusGradients.onTrack;
+    default:
+      return homeDeadlineStatusGradients.default;
+  }
+}
+
 type FilterChipProps = {
   label: string;
   active: boolean;
@@ -96,10 +131,61 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
   );
 }
 
+type SwipeActionsProps = {
+  onEdit: () => void;
+  onDelete: () => void;
+  onDone: () => void;
+};
+
+function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
+  return (
+    <View style={styles.swipeActionsWrap}>
+      <Pressable
+        style={[styles.swipeActionBtn, styles.doneAction]}
+        onPress={onDone}
+      >
+        <Ionicons
+          name="checkmark"
+          size={homeDeadlineListTokens.swipeActionIconSize}
+          color={colors.buttonText}
+        />
+        <AppText variant="caption" style={styles.swipeActionText}>
+          {t("done")}
+        </AppText>
+      </Pressable>
+      <Pressable
+        style={[styles.swipeActionBtn, styles.editAction]}
+        onPress={onEdit}
+      >
+        <Ionicons
+          name="create-outline"
+          size={homeDeadlineListTokens.swipeActionIconSize}
+          color={colors.buttonText}
+        />
+        <AppText variant="caption" style={styles.swipeActionText}>
+          {t("edit")}
+        </AppText>
+      </Pressable>
+      <Pressable
+        style={[styles.swipeActionBtn, styles.deleteAction]}
+        onPress={onDelete}
+      >
+        <Ionicons
+          name="trash-outline"
+          size={homeDeadlineListTokens.swipeActionIconSize}
+          color={colors.buttonText}
+        />
+        <AppText variant="caption" style={styles.swipeActionText}>
+          {t("delete")}
+        </AppText>
+      </Pressable>
+    </View>
+  );
+}
+
 export function HomeScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 375;
-  const isWide = width >= 430;
+  const isCompact = width < screenSharedTokens.compactWidthThreshold;
   const navigation = useHomeNavigation();
   const deadlines = useDeadlineStore((state) => state.deadlines);
   const loadDeadlines = useDeadlineStore((state) => state.loadDeadlines);
@@ -107,12 +193,16 @@ export function HomeScreen() {
     (state) => state.isLoadingDeadlines,
   );
   const completeDeadline = useDeadlineStore((state) => state.completeDeadline);
+  const deleteDeadline = useDeadlineStore((state) => state.deleteDeadline);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [filter, setFilter] = useState<HomeFilter>("all");
   const [search, setSearch] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heroGlow = useRef(
+    new Animated.Value(homeDeadlineListTokens.heroGlowMinOpacity),
+  ).current;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -125,6 +215,23 @@ export function HomeScreen() {
 
     return unsubscribe;
   }, [loadDeadlines]);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(heroGlow, {
+          toValue: homeDeadlineListTokens.heroGlowMaxOpacity,
+          duration: homeDeadlineListTokens.heroGlowPulseDurationMs,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroGlow, {
+          toValue: homeDeadlineListTokens.heroGlowMinOpacity,
+          duration: homeDeadlineListTokens.heroGlowPulseDurationMs,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [heroGlow]);
 
   useEffect(() => {
     return () => {
@@ -145,7 +252,20 @@ export function HomeScreen() {
 
     toastTimerRef.current = setTimeout(() => {
       setShowToast(false);
-    }, 1800);
+    }, homeDeadlineListTokens.toastDurationMs);
+  };
+
+  const onDelete = (id: string) => {
+    Alert.alert(t("deleteDeadlineTitle"), t("deleteDeadlineConfirm"), [
+      { text: t("cancel"), style: "cancel" },
+      {
+        text: t("delete"),
+        style: "destructive",
+        onPress: () => {
+          void deleteDeadline(id);
+        },
+      },
+    ]);
   };
 
   const dueTodayCount = deadlines.filter((item) =>
@@ -157,6 +277,7 @@ export function HomeScreen() {
   const urgentCount = deadlines.filter(
     (item) => getDeadlineStatus(item.dueAt) === "urgent",
   ).length;
+
   const activeFilteredItems = useMemo(() => {
     const normalized = search.trim().toLowerCase();
 
@@ -172,7 +293,6 @@ export function HomeScreen() {
     });
   }, [deadlines, search]);
 
-  // Get filtered list based on selected filter
   const filteredItems = useMemo<Deadline[]>(() => {
     if (filter === "overdue") {
       return activeFilteredItems.filter(
@@ -211,49 +331,51 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <View
-        style={[
-          styles.container,
-          isCompact && styles.containerCompact,
-          isWide && styles.containerWide,
-        ]}
-      >
-        <View
-          style={[
-            styles.headerRow,
-            isCompact && styles.headerRowCompact,
-            isWide && styles.headerRowWide,
-          ]}
-        >
+      <PastelBackground />
+      <Animated.View style={[styles.heroOrb, { opacity: heroGlow }]} />
+      <View style={styles.violetOrb} />
+
+      <View style={[styles.container, isCompact && styles.containerCompact]}>
+        <View style={styles.headerRow}>
           <AppText variant="title" style={styles.headerTitle}>
             {t("myDeadlines")}
           </AppText>
         </View>
 
-        <Card style={styles.summaryCard}>
+        <BlurView
+          intensity={homeDeadlineListTokens.summaryBlurIntensity}
+          tint="light"
+          style={styles.summaryGlass}
+        >
           <View style={styles.summaryRow}>
-            <View style={styles.summaryItem}>
-              <AppText variant="caption">{t("overdue")}</AppText>
+            <View style={[styles.summaryItem, styles.summaryItemCoral]}>
+              <AppText variant="caption" style={styles.summaryLabelCoral}>
+                {t("overdue")}
+              </AppText>
               <AppText variant="sectionTitle" style={styles.summaryValue}>
                 {String(overdueCount)}
               </AppText>
             </View>
             <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <AppText variant="caption">{t("summaryDueToday")}</AppText>
+            <View style={[styles.summaryItem, styles.summaryItemViolet]}>
+              <AppText variant="caption" style={styles.summaryLabelViolet}>
+                {t("summaryDueToday")}
+              </AppText>
               <AppText variant="sectionTitle" style={styles.summaryValue}>
                 {String(dueTodayCount)}
               </AppText>
             </View>
             <View style={styles.summaryDivider} />
-            <View style={styles.summaryItem}>
-              <AppText variant="caption">{t("summaryUrgent")}</AppText>
+            <View style={[styles.summaryItem, styles.summaryItemAmber]}>
+              <AppText variant="caption" style={styles.summaryLabelAmber}>
+                {t("summaryUrgent")}
+              </AppText>
               <AppText variant="sectionTitle" style={styles.summaryValue}>
                 {String(urgentCount)}
               </AppText>
             </View>
           </View>
-        </Card>
+        </BlurView>
 
         <View style={styles.filterRow}>
           {[
@@ -272,23 +394,27 @@ export function HomeScreen() {
           ))}
         </View>
 
-        <View style={styles.searchWrap}>
-          {!search && !isSearchFocused ? (
-            <AppText variant="caption" style={styles.searchPlaceholderText}>
-              {t("searchDeadlinePlaceholder")}
-            </AppText>
-          ) : null}
+        <BlurView
+          intensity={homeDeadlineListTokens.searchBlurIntensity}
+          tint="light"
+          style={styles.searchWrap}
+        >
+          <Ionicons
+            name="search-outline"
+            size={homeDeadlineListTokens.searchIconSize}
+            color={homeDeadlineListTokens.searchIcon}
+          />
           <TextInput
             value={search}
             onChangeText={setSearch}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            placeholder=""
-            placeholderTextColor={colors.textMuted}
+            placeholder={isSearchFocused ? "" : t("searchDeadlinePlaceholder")}
+            placeholderTextColor={homeDeadlineListTokens.searchPlaceholder}
             style={styles.searchInput}
             accessibilityLabel={t("searchDeadlinePlaceholder")}
           />
-        </View>
+        </BlurView>
 
         <View style={styles.listSection}>
           {isLoadingDeadlines ? (
@@ -299,36 +425,59 @@ export function HomeScreen() {
               </AppText>
             </View>
           ) : (
-            <>
-              <FlatList
-                data={listRows}
-                keyExtractor={(row) => row.id}
-                contentContainerStyle={styles.listContent}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={isLoadingDeadlines}
-                    onRefresh={() => {
-                      if (!auth.currentUser) {
-                        return;
-                      }
+            <FlatList
+              data={listRows}
+              keyExtractor={(row) => row.id}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isLoadingDeadlines}
+                  onRefresh={() => {
+                    if (!auth.currentUser) {
+                      return;
+                    }
 
-                      void loadDeadlines();
-                    }}
-                    tintColor={colors.primaryStrong}
-                  />
-                }
-                renderItem={({ item: row }) => {
-                  const item = row.item;
-                  const isOverdue = row.isOverdue;
-                  return (
+                    void loadDeadlines();
+                  }}
+                  tintColor={colors.primaryStrong}
+                />
+              }
+              renderItem={({ item: row }) => {
+                const item = row.item;
+                const isOverdue = row.isOverdue;
+                const cardGradients = getGradientColorsFromItem(
+                  item,
+                  isOverdue,
+                );
+
+                return (
+                  <Swipeable
+                    friction={homeDeadlineListTokens.swipeableFriction}
+                    rightThreshold={
+                      homeDeadlineListTokens.swipeableRightThreshold
+                    }
+                    overshootRight={false}
+                    renderRightActions={() => (
+                      <SwipeActions
+                        onDone={() => onDone(item.id)}
+                        onEdit={() => {
+                          navigation.navigate(StackRoutes.MainTabs, {
+                            screen: TabRoutes.AddDeadline,
+                            params: { mode: "edit", id: item.id },
+                          });
+                        }}
+                        onDelete={() => onDelete(item.id)}
+                      />
+                    )}
+                  >
                     <View style={styles.cardWrapper}>
                       <DeadlineCard
                         assignmentName={item.assignmentName}
                         courseName={item.courseName}
-                        dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)} • ${statusLabelFromItem(item, isOverdue)}`}
+                        dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)}`}
+                        statusLabel={statusLabelFromItem(item, isOverdue)}
                         urgencyColor={statusColorFromItem(item, isOverdue)}
-                        actionLabel={t("done")}
-                        onPressAction={() => onDone(item.id)}
+                        gradientColors={cardGradients}
                         onPressCard={() => {
                           navigation.navigate(StackRoutes.DeadlineDetail, {
                             id: item.id,
@@ -337,27 +486,31 @@ export function HomeScreen() {
                         cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
                       />
                     </View>
-                  );
-                }}
-                ListEmptyComponent={
-                  <Card style={styles.emptyStateCard}>
-                    <AppText
-                      variant="sectionTitle"
-                      style={styles.emptyStateTitle}
-                    >
-                      {filter === "all"
-                        ? t("allCaughtUp")
-                        : t("noTasksInCategoryYet")}
-                    </AppText>
-                    <AppText variant="caption" style={styles.emptyStateHint}>
-                      {filter === "all"
-                        ? t("homeEmptyHint")
-                        : t("searchDeadlinePlaceholder")}
-                    </AppText>
-                  </Card>
-                }
-              />
-            </>
+                  </Swipeable>
+                );
+              }}
+              ListEmptyComponent={
+                <BlurView
+                  intensity={homeDeadlineListTokens.emptyStateBlurIntensity}
+                  tint="light"
+                  style={styles.emptyStateCard}
+                >
+                  <AppText
+                    variant="sectionTitle"
+                    style={styles.emptyStateTitle}
+                  >
+                    {filter === "all"
+                      ? t("allCaughtUp")
+                      : t("noTasksInCategoryYet")}
+                  </AppText>
+                  <AppText variant="caption" style={styles.emptyStateHint}>
+                    {filter === "all"
+                      ? t("homeEmptyHint")
+                      : t("searchDeadlinePlaceholder")}
+                  </AppText>
+                </BlurView>
+              }
+            />
           )}
         </View>
 
@@ -368,149 +521,227 @@ export function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
+  safeArea: {
+    flex: 1,
+    backgroundColor: homeDeadlineListTokens.safeAreaBackground,
+  },
+  heroOrb: {
+    position: "absolute",
+    width: homeDeadlineListTokens.heroOrbSize,
+    height: homeDeadlineListTokens.heroOrbSize,
+    borderRadius: homeDeadlineListTokens.heroOrbSize,
+    right: homeDeadlineListTokens.heroOrbRight,
+    top: homeDeadlineListTokens.heroOrbTop,
+    backgroundColor: homeDeadlineListTokens.heroOrbBackground,
+  },
+  violetOrb: {
+    position: "absolute",
+    width: homeDeadlineListTokens.violetOrbSize,
+    height: homeDeadlineListTokens.violetOrbSize,
+    borderRadius: homeDeadlineListTokens.violetOrbSize,
+    left: homeDeadlineListTokens.violetOrbLeft,
+    top: homeDeadlineListTokens.violetOrbTop,
+    backgroundColor: homeDeadlineListTokens.violetOrbBackground,
+  },
   container: {
     flex: 1,
     paddingHorizontal: spacing.l,
     paddingTop: spacing.l,
   },
   containerCompact: {
-    paddingHorizontal: spacing.m,
-  },
-  containerWide: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.l,
   },
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    marginBottom: spacing.xl,
-  },
-  headerRowCompact: {
-    marginBottom: spacing.l,
-  },
-  headerRowWide: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.s,
   },
   headerTitle: {
-    textAlign: "center",
+    color: homeDeadlineListTokens.titleColor,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
+    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
-  summaryCard: {
-    marginBottom: spacing.xl,
-    backgroundColor: colors.cardHighlight,
+  summaryGlass: {
+    borderRadius: radius.xl,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: homeDeadlineListTokens.summaryBorder,
+    backgroundColor: homeDeadlineListTokens.summaryBackground,
+    marginBottom: spacing.m,
+    shadowColor: homeDeadlineListTokens.summaryShadow,
+    shadowOpacity: homeDeadlineListTokens.summaryShadowOpacity,
+    shadowRadius: homeDeadlineListTokens.summaryShadowRadius,
+    shadowOffset: {
+      width: 0,
+      height: homeDeadlineListTokens.summaryShadowOffsetY,
+    },
+    elevation: homeDeadlineListTokens.summaryShadowElevation,
   },
   summaryRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: homeDeadlineListTokens.summaryItemGap,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
   },
   summaryItem: {
     flex: 1,
+    height: homeDeadlineListTokens.summaryDividerHeight,
+    gap: spacing.xxs,
+    borderRadius: radius.m,
     paddingVertical: spacing.s,
     alignItems: "center",
-    gap: spacing.xxs,
-  },
-  summaryDivider: {
-    width: 1,
-    height: 42,
-    backgroundColor: colors.border,
-  },
-  summaryValue: {
-    color: colors.textPrimary,
-    lineHeight: typography.lineHeight.relaxed,
-  },
-  searchWrap: {
-    marginTop: spacing.l,
-    marginBottom: spacing.xl,
-    position: "relative",
     justifyContent: "center",
   },
-  searchInput: {
-    minHeight: 38,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfacePink,
-    paddingHorizontal: spacing.l,
-    color: colors.textPrimary,
-    fontSize: typography.size.m,
+  summaryItemCoral: {
+    backgroundColor: homeDeadlineListTokens.summaryItemBackground,
   },
-  searchPlaceholderText: {
-    position: "absolute",
-    left: spacing.l,
-    zIndex: 1,
-    color: colors.textMuted,
-    fontSize: typography.size.s,
+  summaryItemViolet: {
+    backgroundColor: homeDeadlineListTokens.summaryItemBackground,
+  },
+  summaryItemAmber: {
+    backgroundColor: homeDeadlineListTokens.summaryItemBackground,
+  },
+  summaryDivider: {
+    width: homeDeadlineListTokens.summaryDividerWidth,
+    height: homeDeadlineListTokens.summaryDividerHeight,
+    backgroundColor: homeDeadlineListTokens.summaryDivider,
+  },
+  summaryValue: {
+    color: homeDeadlineListTokens.titleColor,
+    lineHeight: homeDeadlineListTokens.summaryValueLineHeight,
+    fontSize: typography.size.section,
+    textAlign: "center",
+  },
+  summaryLabelCoral: {
+    color: homeDeadlineListTokens.titleColor,
+    textAlign: "center",
+  },
+  summaryLabelViolet: {
+    color: homeDeadlineListTokens.titleColor,
+    textAlign: "center",
+  },
+  summaryLabelAmber: {
+    color: homeDeadlineListTokens.titleColor,
+    textAlign: "center",
   },
   filterRow: {
     flexDirection: "row",
-    gap: spacing.xxs,
-    paddingHorizontal: spacing.xs,
+    gap: homeDeadlineListTokens.filterChipRowGap,
+    marginBottom: spacing.m,
   },
   filterChip: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.xxs,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    alignItems: "center",
+    minHeight: homeDeadlineListTokens.filterChipMinHeight,
+    paddingHorizontal: homeDeadlineListTokens.filterChipHorizontalPadding,
+    paddingVertical: homeDeadlineListTokens.filterChipVerticalPadding,
+    borderRadius: homeDeadlineListTokens.filterChipBorderRadius,
+    borderWidth: homeDeadlineListTokens.filterChipBorderWidth,
+    borderColor: homeDeadlineListTokens.filterChipBorder,
+    backgroundColor: homeDeadlineListTokens.filterChipBackground,
     justifyContent: "center",
-    minWidth: 0,
+    alignItems: "center",
   },
   filterChipActive: {
     backgroundColor: colors.chipBgActive,
     borderColor: colors.border,
   },
   filterChipText: {
-    color: colors.textSecondary,
-    fontSize: typography.size.xs,
-    textAlign: "center",
+    color: homeDeadlineListTokens.titleColor,
+    fontFamily: typography.family.medium,
+    fontSize: homeDeadlineListTokens.filterChipTextSize,
+    lineHeight: homeDeadlineListTokens.filterChipTextLineHeight,
   },
   filterChipTextActive: {
-    color: colors.textPrimary,
+    color: homeDeadlineListTokens.titleColor,
   },
-  listContent: {
-    gap: spacing.l,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.xxl,
+  searchWrap: {
+    marginTop: spacing.xs,
+    marginBottom: spacing.m,
+    borderRadius: radius.xl,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: homeDeadlineListTokens.searchBorder,
+    backgroundColor: homeDeadlineListTokens.searchBackground,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.m,
+    minHeight: homeDeadlineListTokens.searchMinHeight,
+  },
+  searchInput: {
+    flex: 1,
+    color: homeDeadlineListTokens.titleColor,
+    marginLeft: spacing.m,
+    fontSize: homeDeadlineListTokens.searchInputSize,
+    fontFamily: typography.family.regular,
   },
   listSection: {
     flex: 1,
-    gap: spacing.s,
-  },
-  cardWrapper: {
-    borderWidth: 0,
-    borderColor: colors.borderSoft,
-    borderRadius: radius.xxl,
-    backgroundColor: "transparent",
-    padding: 0,
-    overflow: "hidden",
   },
   loadingWrap: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
     gap: spacing.s,
   },
   loadingText: {
-    color: colors.textSecondary,
+    color: homeDeadlineListTokens.titleColor,
+  },
+  listContent: {
+    paddingBottom:
+      spacing.xxxxl + homeDeadlineListTokens.listBottomPaddingExtra,
+    gap: spacing.m,
+  },
+  cardWrapper: {
+    marginBottom: spacing.s,
+    borderWidth: homeDeadlineListTokens.cardWrapperBorderWidth,
+    borderColor: colors.border,
+    borderRadius: radius.xxl,
+    backgroundColor: colors.surface,
+    padding: homeDeadlineListTokens.cardWrapperPadding,
+    overflow: "hidden",
   },
   emptyStateCard: {
-    marginTop: spacing.xxxl,
+    marginTop: spacing.xl,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: homeDeadlineListTokens.emptyCardBorder,
+    backgroundColor: homeDeadlineListTokens.emptyCardBackground,
+    padding: spacing.xl,
     alignItems: "center",
-    backgroundColor: colors.surfaceWarm,
-    borderColor: colors.borderSoft,
+    gap: spacing.s,
   },
   emptyStateTitle: {
     textAlign: "center",
-    color: colors.textSecondary,
+    color: homeDeadlineListTokens.titleColor,
   },
   emptyStateHint: {
-    marginTop: spacing.xs,
     textAlign: "center",
-    color: colors.textMuted,
+    color: homeDeadlineListTokens.titleColor,
+  },
+  swipeActionsWrap: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    marginBottom: spacing.m,
+    borderRadius: radius.xxl,
+    overflow: "hidden",
+  },
+  swipeActionBtn: {
+    width: homeDeadlineListTokens.swipeActionWidth,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing.xxs,
+  },
+  swipeActionText: {
+    color: colors.buttonText,
+    fontFamily: typography.family.semibold,
+  },
+  doneAction: {
+    backgroundColor: homeDeadlineListTokens.doneActionBackground,
+  },
+  editAction: {
+    backgroundColor: homeDeadlineListTokens.editActionBackground,
+  },
+  deleteAction: {
+    backgroundColor: homeDeadlineListTokens.deleteActionBackground,
   },
 });

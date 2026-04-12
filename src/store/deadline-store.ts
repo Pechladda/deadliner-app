@@ -2,27 +2,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
 import {
-  getDeadlineStatus,
-  getDeadlineStatusColor,
-  getFirestoreErrorMessage,
-  sanitizeDeadlineInput,
-  sortDeadlinesByDueAt,
-  validateDeadlineInput,
+    getDeadlineStatus,
+    getDeadlineStatusColor,
+    getFirestoreErrorMessage,
+    sanitizeDeadlineInput,
+    sortDeadlinesByDueAt,
+    t,
+    validateDeadlineInput,
 } from "@/src/core/utils";
 import { Deadline } from "@/src/models/deadline";
 import {
-  createDeadline,
-  deleteAllDeadlines,
-  deleteDeadlineDoc,
-  fetchDeadlines,
-  updateDeadlineDoc,
+    createDeadline,
+    deleteAllDeadlines,
+    deleteDeadlineDoc,
+    fetchDeadlines,
+    updateDeadlineDoc,
 } from "@/src/services/deadline-service";
 import {
-  cancelAllNotifications,
-  cancelNotification,
-  hasNotificationPermission,
-  requestPermission,
-  scheduleDeadlineNotification,
+    cancelAllNotifications,
+    cancelNotification,
+    hasNotificationPermission,
+    requestPermission,
+    scheduleDeadlineNotification,
 } from "@/src/services/notification-service";
 
 const NOTIFICATIONS_ENABLED_STORAGE_KEY = "@deadliner/notifications-enabled";
@@ -192,7 +193,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       console.info("[AddDeadline] sanitized input:", sanitizedInput);
       if (!validateDeadlineInput(sanitizedInput)) {
         console.error("[AddDeadline] validation failed in store");
-        set({ deadlinesError: "Please complete all required fields." });
+        set({ deadlinesError: t("fillAllFieldsError") });
         return false;
       }
 

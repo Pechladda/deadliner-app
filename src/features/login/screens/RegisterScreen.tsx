@@ -1,39 +1,47 @@
-import { AppText, IconButton } from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation";
+import {
+    AppButton,
+    AppText,
+    FormInput,
+    IconButton,
+    PastelBackground,
+} from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation/route-names";
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth, db } from "@/src/firebase";
+import { t } from "@/src/i18n";
 import { useAuthStore } from "@/src/store/auth-store";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import {
+    colors,
+    loginTokens,
+    screenSharedTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { FirebaseError } from "firebase/app";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import {
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  useWindowDimensions,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const BRAND_PRIMARY = colors.textPrimary;
-const BRAND_LIGHT = colors.border;
 const BG_WARM = colors.background;
-const INPUT_PLACEHOLDER = colors.textSecondary;
 
 const USERNAME_PATTERN = /^[A-Za-z0-9]+$/;
 const THAI_CHAR_PATTERN = /[\u0E00-\u0E7F]/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_DEFAULT_HELPER =
-  "8–30 characters, including uppercase, lowercase, numbers, and at least one symbol (@, _ or .).";
+const PASSWORD_DEFAULT_HELPER = t("registerPasswordHelper");
 
-const SUCCESS_MESSAGE = "Account created successfully.";
+const SUCCESS_MESSAGE = t("registerSuccess");
 
 type FieldErrors = {
   username: string;
@@ -53,22 +61,22 @@ function validateUsername(username: string): string {
   const normalized = username;
 
   if (!normalized.trim()) {
-    return "Username is required.";
+    return t("registerUsernameRequired");
   }
 
   if (/\s/.test(normalized)) {
-    return "Username cannot contain spaces.";
+    return t("registerUsernameNoSpaces");
   }
 
   if (normalized.length > 20) {
-    return "Use English letters and numbers (maximum 20 characters).";
+    return t("registerUsernameFormat");
   }
 
   if (
     THAI_CHAR_PATTERN.test(normalized) ||
     !USERNAME_PATTERN.test(normalized)
   ) {
-    return "Use English letters and numbers (maximum 20 characters).";
+    return t("registerUsernameFormat");
   }
 
   return "";
@@ -78,11 +86,11 @@ function validateEmail(email: string): string {
   const normalized = email.trim();
 
   if (!normalized) {
-    return "Email is required.";
+    return t("registerEmailRequired");
   }
 
   if (!EMAIL_PATTERN.test(normalized)) {
-    return "Please enter a valid email address.";
+    return t("registerEmailInvalid");
   }
 
   return "";
@@ -92,31 +100,31 @@ function validatePassword(password: string): string {
   const normalized = password;
 
   if (!normalized) {
-    return "Password is required.";
+    return t("registerPasswordRequired");
   }
 
   if (normalized.length < 8) {
-    return "Password must be at least 8 characters.";
+    return t("registerPasswordMinLength");
   }
 
   if (normalized.length > 30) {
-    return "Password must not exceed 30 characters.";
+    return t("registerPasswordMaxLength");
   }
 
   if (!/[A-Z]/.test(normalized)) {
-    return "Include at least 1 uppercase letter";
+    return t("registerPasswordUppercase");
   }
 
   if (!/[a-z]/.test(normalized)) {
-    return "Include at least 1 lowercase letter";
+    return t("registerPasswordLowercase");
   }
 
   if (!/\d/.test(normalized)) {
-    return "Include at least 1 number";
+    return t("registerPasswordNumber");
   }
 
   if (!/[@_.]/.test(normalized)) {
-    return "Include at least 1 of these: @ _ .";
+    return t("registerPasswordSymbol");
   }
 
   return "";
@@ -127,11 +135,11 @@ function validateConfirmPassword(
   confirmPassword: string,
 ): string {
   if (!confirmPassword) {
-    return "Please confirm your password.";
+    return t("registerConfirmPasswordRequired");
   }
 
   if (confirmPassword !== password) {
-    return "Password does not match.";
+    return t("registerConfirmPasswordMismatch");
   }
 
   return "";
@@ -139,8 +147,8 @@ function validateConfirmPassword(
 
 export function RegisterScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 375;
-  const isWide = width >= 430;
+  const isCompact = width < loginTokens.compactWidthThreshold;
+  const isWide = width >= loginTokens.wideWidthThreshold;
   const navigation = useLoginNavigation();
   const login = useAuthStore((state) => state.login);
 
@@ -148,8 +156,6 @@ export function RegisterScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({
     username: "",
     email: "",
@@ -168,16 +174,6 @@ export function RegisterScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [consentError, setConsentError] = useState("");
-
-  const buttonScale = useRef(new Animated.Value(1)).current;
-
-  const animatePress = (toValue: number) => {
-    Animated.timing(buttonScale, {
-      toValue,
-      duration: 120,
-      useNativeDriver: true,
-    }).start();
-  };
 
   const buildErrors = (
     nextUsername: string,
@@ -256,17 +252,6 @@ export function RegisterScreen() {
     }
   };
 
-  const validationPreview = useMemo(
-    () => buildErrors(username, email, password, confirmPassword),
-    [username, email, password, confirmPassword],
-  );
-
-  const isFormValid =
-    !validationPreview.username &&
-    !validationPreview.email &&
-    !validationPreview.password &&
-    !validationPreview.confirmPassword;
-
   const showUsernameError =
     (submitAttempted || touched.username) && Boolean(errors.username);
   const showEmailError =
@@ -275,7 +260,7 @@ export function RegisterScreen() {
     (submitAttempted || touched.confirmPassword) &&
     Boolean(errors.confirmPassword);
 
-  const isSignUpDisabled = !isFormValid || !consentChecked || isSubmitting;
+  const isSignUpDisabled = isSubmitting;
 
   const onSubmit = () => {
     setSubmitAttempted(true);
@@ -283,12 +268,12 @@ export function RegisterScreen() {
     setSuccessMessage("");
 
     if (!consentChecked) {
-      setConsentError("You must agree to the Privacy Policy to continue.");
+      setConsentError(t("registerConsentRequired"));
       return;
     }
 
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
-      setSubmitError("Please complete all required fields.");
+      setSubmitError(t("registerCompleteRequiredFields"));
     }
 
     const nextErrors = buildErrors(username, email, password, confirmPassword);
@@ -310,6 +295,8 @@ export function RegisterScreen() {
     }
 
     void (async () => {
+      let createdUserId: string | null = null;
+
       try {
         setIsSubmitting(true);
 
@@ -318,6 +305,7 @@ export function RegisterScreen() {
           email.trim(),
           password,
         );
+        createdUserId = credential.user.uid;
 
         const nowIso = new Date().toISOString();
 
@@ -337,15 +325,23 @@ export function RegisterScreen() {
         await login();
         setSuccessMessage(SUCCESS_MESSAGE);
       } catch (error) {
+        if (createdUserId && auth.currentUser?.uid === createdUserId) {
+          try {
+            await deleteUser(auth.currentUser);
+          } catch {
+            // Best-effort rollback. Keep the original submission error visible.
+          }
+        }
+
         const code =
           error instanceof FirebaseError ? error.code : "unknown-error";
 
         if (code === "auth/email-already-in-use") {
-          setSubmitError("This email is already registered.");
+          setSubmitError(t("registerEmailAlreadyUsed"));
         } else if (code === "auth/invalid-email") {
-          setSubmitError("Please enter a valid email address.");
+          setSubmitError(t("registerEmailInvalid"));
         } else {
-          setSubmitError("Unable to create account. Please try again.");
+          setSubmitError(t("registerCreateFailed"));
         }
       } finally {
         setIsSubmitting(false);
@@ -355,6 +351,7 @@ export function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <PastelBackground />
       <KeyboardAvoidingView
         style={styles.keyboardWrap}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -375,17 +372,17 @@ export function RegisterScreen() {
               <IconButton
                 icon="chevron-back"
                 onPress={() => navigation.goBack()}
-                accessibilityLabel="Back"
+                accessibilityLabel={t("goBack")}
               />
               <View style={styles.headerSpacer} />
             </View>
 
             <View style={styles.copyBlock}>
               <AppText variant="title" style={styles.title}>
-                Create an Account
+                {t("registerTitle")}
               </AppText>
               <AppText variant="caption" style={styles.subtitle}>
-                Please enter your details to create a new account.
+                {t("registerSubtitle")}
               </AppText>
             </View>
 
@@ -396,173 +393,87 @@ export function RegisterScreen() {
                 isWide && styles.formAreaWide,
               ]}
             >
-              <View style={styles.fieldWrap}>
-                <TextInput
-                  value={username}
-                  onChangeText={onChangeUsername}
-                  onBlur={() => onBlurField("username")}
-                  placeholder="Username"
-                  placeholderTextColor={INPUT_PLACEHOLDER}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="username"
-                  textContentType="username"
-                  returnKeyType="next"
-                  selectionColor={colors.primary}
-                  accessibilityLabel="Username"
-                  editable={!isSubmitting}
-                  style={[
-                    styles.input,
-                    isCompact && styles.inputCompact,
-                    (submitAttempted || touched.username) && !!errors.username
-                      ? styles.inputInvalid
-                      : null,
-                  ]}
-                />
-                <View style={styles.errorSlot}>
-                  {showUsernameError ? (
-                    <AppText style={[styles.helperText, styles.errorText]}>
-                      {errors.username}
-                    </AppText>
-                  ) : null}
-                </View>
-              </View>
+              <FormInput
+                value={username}
+                onChangeText={onChangeUsername}
+                onBlur={() => onBlurField("username")}
+                placeholder={t("usernamePlaceholder")}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="username"
+                textContentType="username"
+                returnKeyType="next"
+                selectionColor={colors.primary}
+                accessibilityLabel={t("usernameInput")}
+                editable={!isSubmitting}
+                compact={isCompact}
+                error={showUsernameError ? errors.username : ""}
+                showFeedbackSlot
+              />
 
-              <View style={styles.fieldWrap}>
-                <TextInput
-                  value={email}
-                  onChangeText={onChangeEmail}
-                  onBlur={() => onBlurField("email")}
-                  placeholder="Email"
-                  placeholderTextColor={INPUT_PLACEHOLDER}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="email"
-                  textContentType="emailAddress"
-                  keyboardType="email-address"
-                  returnKeyType="next"
-                  selectionColor={colors.primary}
-                  accessibilityLabel="Email"
-                  editable={!isSubmitting}
-                  style={[
-                    styles.input,
-                    isCompact && styles.inputCompact,
-                    (submitAttempted || touched.email) && !!errors.email
-                      ? styles.inputInvalid
-                      : null,
-                  ]}
-                />
-                <View style={styles.errorSlot}>
-                  {showEmailError ? (
-                    <AppText style={[styles.helperText, styles.errorText]}>
-                      {errors.email}
-                    </AppText>
-                  ) : null}
-                </View>
-              </View>
+              <FormInput
+                value={email}
+                onChangeText={onChangeEmail}
+                onBlur={() => onBlurField("email")}
+                placeholder={t("email")}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                textContentType="emailAddress"
+                keyboardType="email-address"
+                returnKeyType="next"
+                selectionColor={colors.primary}
+                accessibilityLabel={t("email")}
+                editable={!isSubmitting}
+                compact={isCompact}
+                error={showEmailError ? errors.email : ""}
+                showFeedbackSlot
+              />
 
-              <View style={styles.fieldWrap}>
-                <View style={styles.passwordFieldWrap}>
-                  <TextInput
-                    value={password}
-                    onChangeText={onChangePassword}
-                    onBlur={() => onBlurField("password")}
-                    placeholder="Password"
-                    placeholderTextColor={INPUT_PLACEHOLDER}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="password-new"
-                    textContentType="newPassword"
-                    returnKeyType="next"
-                    selectionColor={colors.primary}
-                    accessibilityLabel="Password"
-                    editable={!isSubmitting}
-                    style={[
-                      styles.input,
-                      styles.passwordInput,
-                      isCompact && styles.inputCompact,
-                      (submitAttempted || touched.password) && !!errors.password
-                        ? styles.inputInvalid
-                        : null,
-                    ]}
-                  />
-                  <Pressable
-                    onPress={() => setShowPassword((prev) => !prev)}
-                    style={styles.eyeButton}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
-                      size={20}
-                      color={colors.primaryStrong}
-                    />
-                  </Pressable>
-                </View>
-                <View style={styles.errorSlot}>
-                  <AppText style={styles.helperText}>
-                    {PASSWORD_DEFAULT_HELPER}
-                  </AppText>
-                </View>
-              </View>
+              <FormInput
+                value={password}
+                onChangeText={onChangePassword}
+                onBlur={() => onBlurField("password")}
+                placeholder={t("passwordPlaceholder")}
+                isPassword
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="password-new"
+                textContentType="newPassword"
+                returnKeyType="next"
+                selectionColor={colors.primary}
+                accessibilityLabel={t("passwordInput")}
+                editable={!isSubmitting}
+                compact={isCompact}
+                error={
+                  submitAttempted || touched.password ? errors.password : ""
+                }
+                helperText={
+                  (submitAttempted || touched.password) && errors.password
+                    ? ""
+                    : PASSWORD_DEFAULT_HELPER
+                }
+                showFeedbackSlot
+              />
 
-              <View style={styles.fieldWrap}>
-                <View style={styles.passwordFieldWrap}>
-                  <TextInput
-                    value={confirmPassword}
-                    onChangeText={onChangeConfirmPassword}
-                    onBlur={() => onBlurField("confirmPassword")}
-                    placeholder="Confirm Password"
-                    placeholderTextColor={INPUT_PLACEHOLDER}
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="password-new"
-                    textContentType="newPassword"
-                    returnKeyType="done"
-                    selectionColor={colors.primary}
-                    accessibilityLabel="Confirm Password"
-                    editable={!isSubmitting}
-                    style={[
-                      styles.input,
-                      styles.passwordInput,
-                      isCompact && styles.inputCompact,
-                      (submitAttempted || touched.confirmPassword) &&
-                      !!errors.confirmPassword
-                        ? styles.inputInvalid
-                        : null,
-                    ]}
-                  />
-                  <Pressable
-                    onPress={() => setShowConfirmPassword((prev) => !prev)}
-                    style={styles.eyeButton}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      showConfirmPassword
-                        ? "Hide confirm password"
-                        : "Show confirm password"
-                    }
-                  >
-                    <Ionicons
-                      name={
-                        showConfirmPassword ? "eye-off-outline" : "eye-outline"
-                      }
-                      size={20}
-                      color={colors.primaryStrong}
-                    />
-                  </Pressable>
-                </View>
-                <View style={styles.errorSlot}>
-                  {showConfirmPasswordError ? (
-                    <AppText style={[styles.helperText, styles.errorText]}>
-                      {errors.confirmPassword}
-                    </AppText>
-                  ) : null}
-                </View>
-              </View>
+              <FormInput
+                value={confirmPassword}
+                onChangeText={onChangeConfirmPassword}
+                onBlur={() => onBlurField("confirmPassword")}
+                placeholder={t("registerConfirmPasswordPlaceholder")}
+                isPassword
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="password-new"
+                textContentType="newPassword"
+                returnKeyType="done"
+                selectionColor={colors.primary}
+                accessibilityLabel={t("registerConfirmPasswordInput")}
+                editable={!isSubmitting}
+                compact={isCompact}
+                error={showConfirmPasswordError ? errors.confirmPassword : ""}
+                showFeedbackSlot
+              />
 
               <View style={styles.consentWrap}>
                 <View style={styles.consentRow}>
@@ -576,35 +487,35 @@ export function RegisterScreen() {
                     style={styles.consentCheckbox}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: consentChecked }}
-                    accessibilityLabel="I agree to the Privacy Policy and Terms of Service"
+                    accessibilityLabel={t("registerConsentFull")}
                   >
                     {consentChecked ? (
                       <Ionicons
                         name="checkmark"
                         size={16}
-                        color={colors.primaryStrong}
+                        color={colors.textPrimary}
                       />
                     ) : null}
                   </Pressable>
 
                   <View style={styles.consentTextWrap}>
                     <AppText style={styles.consentText}>
-                      I agree to the{" "}
+                      {t("registerConsentPrefix")}{" "}
                     </AppText>
                     <Pressable
                       onPress={() =>
                         navigation.navigate(StackRoutes.PrivacyPolicy)
                       }
                       accessibilityRole="button"
-                      accessibilityLabel="Privacy Policy"
+                      accessibilityLabel={t("privacyPolicy")}
                     >
                       <AppText style={styles.consentLinkText}>
-                        Privacy Policy
+                        {t("privacyPolicy")}
                       </AppText>
                     </Pressable>
                     <AppText style={styles.consentText}>
                       {" "}
-                      and Terms of Service
+                      {t("registerConsentSuffix")}
                     </AppText>
                   </View>
                 </View>
@@ -618,35 +529,27 @@ export function RegisterScreen() {
                 </View>
               </View>
 
-              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                <Pressable
-                  style={[
-                    styles.submitButton,
-                    isCompact && styles.submitButtonCompact,
-                    isSignUpDisabled && styles.submitButtonDisabled,
-                  ]}
-                  onPress={onSubmit}
-                  onPressIn={() => animatePress(0.98)}
-                  onPressOut={() => animatePress(1)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Register"
-                  disabled={isSignUpDisabled}
-                >
-                  <AppText style={styles.submitText}>
-                    {isSubmitting ? "SIGNING UP..." : "Sign Up"}
-                  </AppText>
-                </Pressable>
-              </Animated.View>
+              <AppButton
+                title={
+                  isSubmitting ? t("registerSigningUp") : t("registerSignUp")
+                }
+                onPress={onSubmit}
+                isLoading={isSubmitting}
+                loadingLabel={t("registerSigningUp")}
+                size={isCompact ? "compact" : "default"}
+                accessibilityLabel={t("registerScreenAccessibility")}
+                disabled={isSignUpDisabled}
+              />
 
               <Pressable
                 onPress={() => navigation.navigate(StackRoutes.Login)}
                 accessibilityRole="button"
-                accessibilityLabel="Back to Sign In"
+                accessibilityLabel={t("registerBackToSignIn")}
                 style={styles.backToLoginButton}
                 disabled={isSubmitting}
               >
                 <AppText style={styles.backToLoginText}>
-                  Back to Sign In
+                  {t("registerBackToSignIn")}
                 </AppText>
               </Pressable>
 
@@ -707,73 +610,37 @@ const styles = StyleSheet.create({
   },
   copyBlock: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: loginTokens.formAreaMaxWidth,
     alignSelf: "center",
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
   },
   title: {
     color: BRAND_PRIMARY,
-    letterSpacing: 0.6,
+    letterSpacing: loginTokens.titleLetterSpacing,
     fontWeight: typography.weight.bold,
-    fontSize: typography.size.xxl,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
     textAlign: "left",
   },
   subtitle: {
     marginTop: spacing.xs,
     color: colors.textSecondary,
-    letterSpacing: 0.2,
+    letterSpacing: loginTokens.createAccountLetterSpacing,
     textAlign: "left",
     lineHeight: typography.lineHeight.compact,
   },
   formArea: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: loginTokens.formAreaMaxWidth,
     alignSelf: "center",
     gap: spacing.l,
   },
   formAreaCompact: {
-    maxWidth: 360,
+    maxWidth: loginTokens.formAreaCompactMaxWidth,
   },
   formAreaWide: {
-    maxWidth: 460,
-  },
-  fieldWrap: {
-    gap: spacing.xxs,
-  },
-  input: {
-    minHeight: 50,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: BRAND_LIGHT,
-    backgroundColor: colors.surface,
-    color: BRAND_PRIMARY,
-    fontSize: typography.size.s,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-  },
-  inputCompact: {
-    minHeight: 46,
-    fontSize: typography.size.xs,
-  },
-  passwordFieldWrap: {
-    position: "relative",
-  },
-  passwordInput: {
-    paddingRight: 52,
-  },
-  eyeButton: {
-    position: "absolute",
-    right: 10,
-    top: "50%",
-    marginTop: -16,
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  inputInvalid: {
-    borderColor: colors.danger,
+    maxWidth: loginTokens.formAreaWideMaxWidth,
   },
   errorSlot: {
     minHeight: 22,
@@ -788,26 +655,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.danger,
-  },
-  submitButton: {
-    marginTop: 0,
-    minHeight: 48,
-    borderRadius: radius.xxl,
-    backgroundColor: colors.buttonBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonCompact: {
-    minHeight: 44,
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitText: {
-    color: colors.buttonText,
-    fontSize: typography.size.s,
-    fontWeight: typography.weight.semibold,
-    letterSpacing: 0.2,
   },
   consentWrap: {
     gap: spacing.xxs,

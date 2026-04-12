@@ -1,39 +1,47 @@
-import { AppText, IconButton } from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation";
+import {
+    AppButton,
+    AppText,
+    FormInput,
+    IconButton,
+    PastelBackground,
+} from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation/route-names";
+import { t } from "@/src/core/utils";
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth } from "@/src/firebase";
-import { colors, radius, spacing, typography } from "@/src/theme";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { useRef, useState } from "react";
 import {
-    Animated,
+    colors,
+    loginTokens,
+    screenSharedTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { useState } from "react";
+import {
     KeyboardAvoidingView,
     Platform,
     Pressable,
     ScrollView,
     StyleSheet,
-    TextInput,
     useWindowDimensions,
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const BRAND_PRIMARY = colors.textPrimary;
-const BRAND_LIGHT = colors.border;
 const BG_WARM = colors.background;
-const INPUT_PLACEHOLDER = colors.textSecondary;
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function validateEmail(email: string): string {
   const normalized = email.trim();
 
   if (!normalized) {
-    return "Email is required";
+    return t("registerEmailRequired");
   }
 
   if (!EMAIL_PATTERN.test(normalized)) {
-    return "Please enter a valid email address.";
+    return t("registerEmailInvalid");
   }
 
   return "";
@@ -41,8 +49,8 @@ function validateEmail(email: string): string {
 
 export function ForgotPasswordScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 375;
-  const isWide = width >= 430;
+  const isCompact = width < loginTokens.compactWidthThreshold;
+  const isWide = width >= loginTokens.wideWidthThreshold;
   const navigation = useLoginNavigation();
 
   const [email, setEmail] = useState("");
@@ -53,22 +61,22 @@ export function ForgotPasswordScreen() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const buttonScale = useRef(new Animated.Value(1)).current;
+  const onChangeEmail = (value: string) => {
+    setEmail(value);
+    if (submitError) setSubmitError("");
 
-  const animatePress = (toValue: number) => {
-    Animated.timing(buttonScale, {
-      toValue,
-      duration: 120,
-      useNativeDriver: true,
-    }).start();
+    if (submitAttempted || touched) {
+      setEmailError(validateEmail(value));
+    }
   };
 
-  const isFormValid = !validateEmail(email);
+  const onBlurEmail = () => {
+    setTouched(true);
+    setEmailError(validateEmail(email));
+  };
 
-  const onSubmit = () => {
-    if (isSubmitting) {
-      return;
-    }
+  const onSubmit = async () => {
+    if (isSubmitting) return;
 
     setSubmitAttempted(true);
     setSubmitError("");
@@ -78,25 +86,22 @@ export function ForgotPasswordScreen() {
     setEmailError(nextError);
     setTouched(true);
 
-    if (nextError) {
-      return;
-    }
+    if (nextError) return;
 
-    void (async () => {
-      try {
-        setIsSubmitting(true);
-        await sendPasswordResetEmail(auth, email.trim());
-        setSuccessMessage("Password reset link has been sent to your email.");
-      } catch {
-        setSubmitError("Unable to send reset link. Please try again.");
-      } finally {
-        setIsSubmitting(false);
-      }
-    })();
+    try {
+      setIsSubmitting(true);
+      await sendPasswordResetEmail(auth, email.trim());
+      setSuccessMessage(t("forgotPasswordResetSuccess"));
+    } catch {
+      setSubmitError(t("forgotPasswordResetError"));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <PastelBackground />
       <KeyboardAvoidingView
         style={styles.keyboardWrap}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -117,18 +122,17 @@ export function ForgotPasswordScreen() {
               <IconButton
                 icon="chevron-back"
                 onPress={() => navigation.goBack()}
-                accessibilityLabel="Back"
+                accessibilityLabel={t("goBack")}
               />
               <View style={styles.headerSpacer} />
             </View>
 
             <View style={styles.copyBlock}>
               <AppText variant="title" style={styles.title}>
-                Reset Password
+                {t("forgotPasswordTitle")}
               </AppText>
               <AppText variant="caption" style={styles.subtitle}>
-                Enter your email address and we will send you a password reset
-                link.
+                {t("forgotPasswordSubtitle")}
               </AppText>
             </View>
 
@@ -140,23 +144,11 @@ export function ForgotPasswordScreen() {
               ]}
             >
               <View style={styles.fieldWrap}>
-                <TextInput
+                <FormInput
                   value={email}
-                  onChangeText={(value) => {
-                    setEmail(value);
-                    if (submitError) {
-                      setSubmitError("");
-                    }
-                    if (submitAttempted || touched) {
-                      setEmailError(validateEmail(value));
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched(true);
-                    setEmailError(validateEmail(email));
-                  }}
-                  placeholder="Email address"
-                  placeholderTextColor={INPUT_PLACEHOLDER}
+                  onChangeText={onChangeEmail}
+                  onBlur={onBlurEmail}
+                  placeholder={t("forgotPasswordEmailPlaceholder")}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="email"
@@ -164,53 +156,32 @@ export function ForgotPasswordScreen() {
                   keyboardType="email-address"
                   returnKeyType="done"
                   selectionColor={colors.primary}
-                  accessibilityLabel="Email"
+                  accessibilityLabel={t("email")}
                   editable={!isSubmitting}
-                  style={[
-                    styles.input,
-                    isCompact && styles.inputCompact,
-                    (submitAttempted || touched) && !!emailError
-                      ? styles.inputInvalid
-                      : null,
-                  ]}
+                  compact={isCompact}
+                  error={submitAttempted || touched ? emailError : ""}
+                  showFeedbackSlot
                 />
-                <View style={styles.errorSlot}>
-                  {(submitAttempted || touched) && emailError ? (
-                    <AppText style={styles.errorText}>{emailError}</AppText>
-                  ) : null}
-                </View>
               </View>
 
-              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                <Pressable
-                  style={[
-                    styles.submitButton,
-                    isCompact && styles.submitButtonCompact,
-                    (!email.trim() || !isFormValid || isSubmitting) &&
-                      styles.submitButtonDisabled,
-                  ]}
-                  onPress={onSubmit}
-                  onPressIn={() => animatePress(0.98)}
-                  onPressOut={() => animatePress(1)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Send Reset Link"
-                  disabled={isSubmitting}
-                >
-                  <AppText style={styles.submitText}>
-                    {isSubmitting ? "SENDING..." : "Send Reset Link"}
-                  </AppText>
-                </Pressable>
-              </Animated.View>
+              <AppButton
+                title={t("forgotPasswordSendResetLink")}
+                onPress={onSubmit}
+                isLoading={isSubmitting}
+                loadingLabel={t("forgotPasswordSending")}
+                size={isCompact ? "compact" : "default"}
+                accessibilityLabel={t("forgotPasswordSendResetLink")}
+              />
 
               <Pressable
                 onPress={() => navigation.navigate(StackRoutes.Login)}
                 accessibilityRole="button"
-                accessibilityLabel="Back to Sign In"
+                accessibilityLabel={t("registerBackToSignIn")}
                 style={styles.backToLoginButton}
                 disabled={isSubmitting}
               >
                 <AppText style={styles.backToLoginText}>
-                  Back to Sign In
+                  {t("registerBackToSignIn")}
                 </AppText>
               </Pressable>
 
@@ -271,63 +242,40 @@ const styles = StyleSheet.create({
   },
   copyBlock: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: loginTokens.formAreaMaxWidth,
     alignSelf: "center",
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
   },
   title: {
     color: BRAND_PRIMARY,
-    letterSpacing: 0.6,
+    letterSpacing: loginTokens.titleLetterSpacing,
     fontWeight: typography.weight.bold,
-    fontSize: typography.size.xxl,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
     textAlign: "left",
   },
   subtitle: {
     marginTop: spacing.xs,
     color: colors.textSecondary,
-    letterSpacing: 0.2,
+    letterSpacing: loginTokens.createAccountLetterSpacing,
     textAlign: "left",
     lineHeight: typography.lineHeight.compact,
   },
   formArea: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: loginTokens.formAreaMaxWidth,
     alignSelf: "center",
     gap: spacing.l,
   },
   formAreaCompact: {
-    maxWidth: 360,
+    maxWidth: loginTokens.formAreaCompactMaxWidth,
   },
   formAreaWide: {
-    maxWidth: 460,
+    maxWidth: loginTokens.formAreaWideMaxWidth,
   },
   fieldWrap: {
     gap: spacing.xxs,
-  },
-  input: {
-    minHeight: 50,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: BRAND_LIGHT,
-    backgroundColor: colors.surface,
-    color: BRAND_PRIMARY,
-    fontSize: typography.size.s,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-  },
-  inputCompact: {
-    minHeight: 46,
-    fontSize: typography.size.xs,
-  },
-  inputInvalid: {
-    borderColor: colors.danger,
-  },
-  errorSlot: {
-    minHeight: 22,
-    justifyContent: "center",
-    paddingHorizontal: spacing.xs,
-    paddingTop: spacing.xxs,
   },
   helperText: {
     color: colors.textSecondary,
@@ -336,26 +284,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.danger,
-  },
-  submitButton: {
-    marginTop: 0,
-    minHeight: 48,
-    borderRadius: radius.xxl,
-    backgroundColor: colors.buttonBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  submitButtonCompact: {
-    minHeight: 44,
-  },
-  submitButtonDisabled: {
-    opacity: 0.5,
-  },
-  submitText: {
-    color: colors.buttonText,
-    fontSize: typography.size.s,
-    fontWeight: typography.weight.semibold,
-    letterSpacing: 0.2,
   },
   backToLoginButton: {
     alignItems: "center",
@@ -374,7 +302,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   successText: {
-    color: colors.success,
+    color: colors.textSecondary,
     fontSize: typography.size.s,
     textAlign: "center",
   },

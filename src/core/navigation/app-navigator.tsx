@@ -1,32 +1,32 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
-  NavigationContainer,
-  NavigatorScreenParams,
+    NavigationContainer,
+    NavigatorScreenParams,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { BlurView } from "expo-blur";
 import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 
 import { t } from "@/src/core/utils";
 import { AddDeadlineScreen } from "@/src/features/add-deadline";
 import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
 import {
-  ForgotPasswordScreen,
-  LoginScreen,
-  RegisterScreen,
+    ForgotPasswordScreen,
+    LoginScreen,
+    RegisterScreen,
 } from "@/src/features/login";
 import { SettingsScreen } from "@/src/features/settings";
 import {
-  AboutAppScreen,
-  HistoryScreen,
-  PrivacyPolicyScreen,
-  ProfileScreen,
+    AboutAppScreen,
+    HistoryScreen,
+    PrivacyPolicyScreen,
+    ProfileScreen,
 } from "@/src/features/settings/screens";
 import { useAuthStore } from "@/src/store/auth-store";
-import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors } from "@/src/theme";
+import { colors, screenSharedTokens } from "@/src/theme";
 
 import { StackRoutes, TabRoutes } from "./route-names";
 
@@ -53,17 +53,50 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
+type AnimatedTabIconProps = {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+  size: number;
+};
+
+function AnimatedTabIcon({ name, focused, color, size }: AnimatedTabIconProps) {
+  return <Ionicons name={name} size={size} color={color} />;
+}
+
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: colors.textPrimary,
+        tabBarActiveTintColor: screenSharedTokens.navigationTabActiveTint,
         tabBarInactiveTintColor: colors.textSecondary,
+        tabBarHideOnKeyboard: true,
+        tabBarBackground: () => (
+          <BlurView
+            intensity={45}
+            tint="light"
+            style={StyleSheet.absoluteFill}
+          />
+        ),
         tabBarStyle: {
-          borderTopColor: colors.border,
-          backgroundColor: colors.surface,
+          height: 68,
+          paddingBottom: 8,
+          paddingTop: 6,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderColor: colors.background,
+          backgroundColor: colors.background,
+          shadowColor: colors.shadow,
+          shadowOpacity: 0,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 10 },
+          elevation: 0,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 6,
+          alignItems: "center",
+          justifyContent: "center",
         },
       }}
     >
@@ -72,8 +105,13 @@ function MainTabs() {
         component={HomeScreen}
         options={{
           title: t("tabHome"),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon
+              name={focused ? "home" : "home-outline"}
+              size={size + 2}
+              color={color}
+              focused={focused}
+            />
           ),
         }}
       />
@@ -82,9 +120,13 @@ function MainTabs() {
         component={AddDeadlineScreen}
         options={{
           title: t("tabAdd"),
-          tabBarStyle: { display: "none" },
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon
+              name={focused ? "add-circle" : "add-circle-outline"}
+              size={size + 6}
+              color={color}
+              focused={focused}
+            />
           ),
         }}
       />
@@ -93,8 +135,13 @@ function MainTabs() {
         component={SettingsScreen}
         options={{
           title: t("tabSettings"),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon
+              name={focused ? "settings" : "settings-outline"}
+              size={size + 2}
+              color={color}
+              focused={focused}
+            />
           ),
         }}
       />
@@ -104,35 +151,14 @@ function MainTabs() {
 
 export function AppNavigator() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isHydrated = useAuthStore((state) => state.isHydrated);
-  const hydrateAuth = useAuthStore((state) => state.hydrateAuth);
   const syncAuthFromFirebase = useAuthStore(
     (state) => state.syncAuthFromFirebase,
   );
-  const hydrateNotificationsSetting = useDeadlineStore(
-    (state) => state.hydrateNotificationsSetting,
-  );
-
-  useEffect(() => {
-    void hydrateAuth();
-  }, [hydrateAuth]);
 
   useEffect(() => {
     const unsubscribe = syncAuthFromFirebase();
     return unsubscribe;
   }, [syncAuthFromFirebase]);
-
-  useEffect(() => {
-    void hydrateNotificationsSetting();
-  }, [hydrateNotificationsSetting]);
-
-  if (!isHydrated) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator color={colors.textPrimary} />
-      </View>
-    );
-  }
 
   return (
     <NavigationContainer>
@@ -187,12 +213,3 @@ export function AppNavigator() {
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-  },
-});

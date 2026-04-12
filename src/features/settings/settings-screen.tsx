@@ -12,16 +12,25 @@ import {
     useWindowDimensions,
     View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+    SafeAreaView,
+    useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { AppButton, AppText, Toast } from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation";
+import { AppButton, AppText, PastelBackground, Toast } from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation/route-names";
 import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { useLanguage } from "@/src/providers/language-provider";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, radius, spacing } from "@/src/theme";
+import {
+    colors,
+    radius,
+    screenSharedTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
 
 type SettingsRowProps = {
   label: string;
@@ -48,8 +57,9 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
 
 export function SettingsScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 375;
-  const isWide = width >= 430;
+  const insets = useSafeAreaInsets();
+  const isCompact = width < screenSharedTokens.compactWidthThreshold;
+  const isWide = width >= screenSharedTokens.wideWidthThreshold;
   const navigation = useSettingsNavigation();
   const { language, setAppLanguage } = useLanguage();
   const [pendingLanguage, setPendingLanguage] = useState<"en" | "th" | null>(
@@ -149,13 +159,17 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <PastelBackground />
       <ScrollView
         style={[
           styles.container,
           isCompact && styles.containerCompact,
           isWide && styles.containerWide,
         ]}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: insets.bottom + 12 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View
@@ -175,7 +189,7 @@ export function SettingsScreen() {
 
           <View style={styles.sectionBlock}>
             <AppText variant="sectionTitle" style={styles.sectionTitle}>
-              Account
+              {t("settingsAccountSection")}
             </AppText>
             <View style={styles.section}>
               <SettingsRow
@@ -188,7 +202,7 @@ export function SettingsScreen() {
 
           <View style={styles.sectionBlock}>
             <AppText variant="sectionTitle" style={styles.sectionTitle}>
-              Preferences
+              {t("settingsPreferencesSection")}
             </AppText>
             <View style={styles.section}>
               <View style={styles.toggleRow}>
@@ -215,7 +229,7 @@ export function SettingsScreen() {
                   thumbColor={
                     hasNotificationPermission
                       ? colors.surface
-                      : colors.textMuted
+                      : colors.textSecondary
                   }
                   ios_backgroundColor={colors.borderSoft}
                   accessibilityLabel={t("enableNotifications")}
@@ -280,7 +294,7 @@ export function SettingsScreen() {
 
           <View style={styles.sectionBlock}>
             <AppText variant="sectionTitle" style={styles.sectionTitle}>
-              Support and Privacy
+              {t("settingsSupportPrivacySection")}
             </AppText>
             <View style={styles.section}>
               <SettingsRow
@@ -309,7 +323,7 @@ export function SettingsScreen() {
 
           <View style={styles.accountActionWrap}>
             <AppButton
-              label="Sign Out"
+              label={t("signOut")}
               onPress={onLogout}
               variant="outline"
               iconName="log-out-outline"
@@ -345,33 +359,37 @@ const styles = StyleSheet.create({
   },
   contentInner: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: screenSharedTokens.contentMaxWidth,
     alignSelf: "center",
   },
   contentInnerCompact: {
-    maxWidth: 360,
+    maxWidth: screenSharedTokens.contentCompactMaxWidth,
   },
   contentInnerWide: {
-    maxWidth: 460,
+    maxWidth: screenSharedTokens.contentWideMaxWidth,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     marginBottom: spacing.s,
   },
   headerRowCompact: {
     marginBottom: spacing.l,
   },
   screenTitle: {
-    textAlign: "center",
+    textAlign: "left",
+    color: screenSharedTokens.screenTitleColor,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
+    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   sectionTitle: {
     marginBottom: spacing.s,
     paddingHorizontal: spacing.s,
     color: colors.textSecondary,
     fontWeight: "600",
-    letterSpacing: 0.2,
+    letterSpacing: screenSharedTokens.settingsSectionTitleLetterSpacing,
   },
   sectionBlock: {
     marginTop: spacing.xl2,
@@ -428,7 +446,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.l,
     padding: spacing.m,
     gap: spacing.s,
-    backgroundColor: colors.surfacePink,
+    backgroundColor: colors.surface,
   },
   dataSummaryWrap: {
     paddingHorizontal: spacing.l,
@@ -456,7 +474,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.surfacePink,
+    backgroundColor: colors.surface,
   },
   languageButtonActive: {
     borderColor: colors.primary,
@@ -475,7 +493,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.l,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surfacePink,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.m,
     alignItems: "flex-start",
     justifyContent: "center",

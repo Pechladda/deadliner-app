@@ -1,7 +1,9 @@
+import { t } from "@/src/core/utils";
+import type { Deadline, ReminderOption } from "@/src/models/deadline";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-
-import type { Deadline, ReminderOption } from "@/src/models/deadline";
 
 const reminderOffsets: Record<ReminderOption, number> = {
   "5m": 5 * 60 * 1000,
@@ -11,6 +13,28 @@ const reminderOffsets: Record<ReminderOption, number> = {
 };
 
 let channelReady = false;
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+function getEasProjectId(): string | null {
+  const fromExpoConfig = Constants.expoConfig?.extra?.eas?.projectId;
+  const fromEasConfig = Constants.easConfig?.projectId;
+  const projectId =
+    typeof fromExpoConfig === "string" && fromExpoConfig.trim().length > 0
+      ? fromExpoConfig.trim()
+      : typeof fromEasConfig === "string" && fromEasConfig.trim().length > 0
+        ? fromEasConfig.trim()
+        : null;
+
+  return projectId;
+}
 
 export async function hasNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
@@ -60,6 +84,36 @@ export async function requestPermission(): Promise<boolean> {
   );
 }
 
+export async function registerForPushNotificationsAsync(): Promise<
+  string | null
+> {
+  if (!Device.isDevice) {
+    console.warn(t("notificationPhysicalDeviceWarning"));
+    return null;
+  }
+
+  await ensureAndroidChannel();
+
+  const granted = await requestPermission();
+  if (!granted) {
+    return null;
+  }
+
+  const projectId = getEasProjectId();
+  if (!projectId) {
+    console.warn(t("notificationMissingProjectIdWarning"));
+    return null;
+  }
+
+  try {
+    const token = await Notifications.getExpoPushTokenAsync({ projectId });
+    return token.data;
+  } catch (error) {
+    console.warn(t("notificationFetchTokenWarning"), error);
+    return null;
+  }
+}
+
 export async function scheduleDeadlineNotification(
   deadline: Pick<Deadline, "assignmentName" | "dueAt" | "reminder">,
 ): Promise<string | null> {
@@ -86,8 +140,10 @@ export async function scheduleDeadlineNotification(
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: "⏰ Due soon",
-      body: `${deadline.assignmentName} is due soon. Tap to review.`,
+      title: t("notificationDueSoonTitle"),
+      body: t("notificationDueSoonBody", {
+        assignmentName: deadline.assignmentName,
+      }),
       sound: true,
     },
     trigger: {

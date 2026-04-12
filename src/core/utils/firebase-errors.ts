@@ -1,3 +1,5 @@
+import { t } from "@/src/i18n";
+
 type MaybeFirebaseError = {
   code?: string;
 };
@@ -6,62 +8,62 @@ export function getAuthErrorMessage(error: unknown): string {
   const code = (error as MaybeFirebaseError | null)?.code ?? "";
 
   if (code === "auth/invalid-email") {
-    return "Please enter a valid email address.";
+    return t("authInvalidEmail");
   }
 
   if (code === "auth/user-disabled") {
-    return "This account has been disabled. Please contact support.";
+    return t("authUserDisabled");
   }
 
   if (code === "auth/user-not-found") {
-    return "No account was found for this email.";
+    return t("authUserNotFound");
   }
 
   if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
-    return "Invalid email or password.";
+    return t("authInvalidCredentials");
   }
 
   if (code === "auth/email-already-in-use") {
-    return "This email is already in use. Please log in instead.";
+    return t("authEmailAlreadyInUse");
   }
 
   if (code === "auth/weak-password") {
-    return "Password is too weak. Please choose a stronger password.";
+    return t("authWeakPassword");
   }
 
   if (code === "auth/too-many-requests") {
-    return "Too many attempts. Please wait a moment and try again.";
+    return t("authTooManyRequests");
   }
 
   if (code === "auth/network-request-failed") {
-    return "Network error. Please check your connection and try again.";
+    return t("authNetworkError");
   }
 
-  return "Something went wrong. Please try again.";
+  return t("authUnknownError");
 }
 
 export function getFirestoreErrorMessage(error: unknown): string {
   const code = (error as MaybeFirebaseError | null)?.code ?? "";
 
   if (code === "permission-denied") {
-    return "Session expired. Please sign in again.";
+    return t("firestoreSessionExpired");
   }
 
   if (code === "unavailable" || code === "deadline-exceeded") {
-    return "Service is temporarily unavailable. Please try again shortly.";
+    return t("firestoreTemporarilyUnavailable");
   }
 
   if (code === "not-found") {
-    return "Requested data was not found.";
+    return t("firestoreDataNotFound");
   }
 
   if (code === "failed-precondition") {
-    return "The operation cannot be completed right now. Please retry.";
+    return t("firestoreRetryLater");
   }
 
   if (code === "network-request-failed") {
-    return "Network error. Please check your connection and try again.";
+    return t("firestoreNetworkError");
   }
 
-  return "Unable to complete this action right now. Please try again.";
+  return t("firestoreUnknownError");
 }

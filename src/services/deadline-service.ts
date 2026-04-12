@@ -11,6 +11,7 @@ import {
     writeBatch,
 } from "firebase/firestore";
 
+import { t } from "@/src/core/utils";
 import { auth, db } from "@/src/firebase";
 import { Deadline } from "@/src/models/deadline";
 
@@ -20,7 +21,7 @@ const usersCollection = "users";
 type FirebaseLikeError = Error & { code?: string };
 
 function buildAuthRequiredError(): FirebaseLikeError {
-  const error = new Error("Please sign in again.") as FirebaseLikeError;
+  const error = new Error(t("firestoreSessionExpired")) as FirebaseLikeError;
   error.code = "permission-denied";
   return error;
 }

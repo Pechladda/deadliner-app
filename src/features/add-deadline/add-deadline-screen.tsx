@@ -1,33 +1,121 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
-  DateTimePickerEvent,
+    DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { useEffect, useState } from "react";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef, useState } from "react";
 import {
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    Animated,
+    Modal,
+    Platform,
+    Pressable,
+    StyleSheet,
+    TextInput,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppButton, AppText, Card, IconButton, Input } from "@/src/components";
-import { TabRoutes } from "@/src/core/navigation";
+import {
+    AppButton,
+    AppText,
+    IconButton,
+    PastelBackground,
+} from "@/src/components";
+import {
+    ANDROID_DATE_PICKER_LOCALE,
+    DATE_DISPLAY_LOCALE,
+    DATE_DISPLAY_OPTIONS,
+    IOS_DATE_PICKER_LOCALE,
+    TIME_DISPLAY_LOCALE,
+    TIME_DISPLAY_OPTIONS,
+} from "@/src/core/config";
+import { TabRoutes } from "@/src/core/navigation/route-names";
 import { getDeadlineStatus, getDeadlineStatusColor, t } from "@/src/core/utils";
 import {
-  useAddDeadlineNavigation,
-  useAddDeadlineRoute,
+    useAddDeadlineNavigation,
+    useAddDeadlineRoute,
 } from "@/src/features/add-deadline/hooks/use-add-deadline-screen";
 import { PickerMode } from "@/src/features/add-deadline/types";
 import { validateDeadlineForm } from "@/src/features/add-deadline/utils/validate-deadline-form";
 import { ReminderOption } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import {
+    addDeadlineTokens,
+    colors,
+    radius,
+    screenSharedTokens,
+    shadows,
+    spacing,
+    typography,
+} from "@/src/theme";
 
 const PICKER_LOCALE =
-  Platform.OS === "ios" ? "en_US" : "en-US-u-ca-gregory-nu-latn";
+  Platform.OS === "ios" ? IOS_DATE_PICKER_LOCALE : ANDROID_DATE_PICKER_LOCALE;
+
+type FloatingInputProps = {
+  label: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  accessibilityLabel: string;
+  placeholder: string;
+};
+
+function FloatingInput({
+  label,
+  value,
+  onChangeText,
+  accessibilityLabel,
+  placeholder,
+}: FloatingInputProps) {
+  const [focused, setFocused] = useState(false);
+  const progress = useRef(new Animated.Value(value ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: focused || value ? 1 : 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [focused, value, progress]);
+
+  const labelTop = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, 8],
+  });
+
+  const labelSize = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [15, 12],
+  });
+
+  return (
+    <View style={styles.floatingWrap}>
+      <Animated.Text
+        style={[
+          styles.floatingLabel,
+          {
+            top: labelTop,
+            fontSize: labelSize,
+          },
+        ]}
+      >
+        {label}
+      </Animated.Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder={focused ? placeholder : ""}
+        placeholderTextColor={colors.textSecondary}
+        style={styles.floatingInput}
+        accessibilityLabel={accessibilityLabel}
+      />
+    </View>
+  );
+}
 
 type DateTimeFieldProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -38,41 +126,38 @@ type DateTimeFieldProps = {
 
 function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
   return (
-    <View style={styles.fieldGroup}>
-      <Pressable
-        onPress={onPress}
-        style={styles.dateTimeField}
-        accessibilityRole="button"
-        accessibilityLabel={
-          label === t("date") ? t("openDatePicker") : t("openTimePicker")
-        }
+    <Pressable
+      onPress={onPress}
+      style={styles.dateTimeField}
+      accessibilityRole="button"
+      accessibilityLabel={
+        label === t("date") ? t("openDatePicker") : t("openTimePicker")
+      }
+    >
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <AppText
+        variant="body"
+        color={value === label ? "textSecondary" : "textPrimary"}
+        style={styles.dateTimeText}
       >
-        <Ionicons name={icon} size={16} color={colors.textSecondary} />
-        <AppText
-          variant="body"
-          color={value === label ? "textSecondary" : "textPrimary"}
-        >
-          {value}
-        </AppText>
-      </Pressable>
-    </View>
+        {value}
+      </AppText>
+    </Pressable>
   );
 }
 
 function formatDateDisplay(date: Date): string {
-  return new Intl.DateTimeFormat("en-US-u-ca-gregory-nu-latn", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    DATE_DISPLAY_LOCALE,
+    DATE_DISPLAY_OPTIONS,
+  ).format(date);
 }
 
 function formatTimeDisplay(date: Date): string {
-  return new Intl.DateTimeFormat("en-GB-u-ca-gregory-nu-latn", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
+  return new Intl.DateTimeFormat(
+    TIME_DISPLAY_LOCALE,
+    TIME_DISPLAY_OPTIONS,
+  ).format(date);
 }
 
 function getDateDisplayForOS(
@@ -105,14 +190,12 @@ function ReminderSelection({ value, onChange }: ReminderSelectionProps) {
 
   return (
     <View style={styles.reminderWrap}>
-      <AppText variant="body" style={styles.inputLabelText}>
+      <AppText variant="caption" style={styles.sectionLabel}>
         {t("reminder")}
       </AppText>
-
       <View style={styles.reminderOptionsRow}>
         {reminderOptions.map((option) => {
           const isActive = option.value === value;
-
           return (
             <Pressable
               key={option.value ?? "none"}
@@ -137,8 +220,7 @@ function ReminderSelection({ value, onChange }: ReminderSelectionProps) {
 
 export function AddDeadlineScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 375;
-  const isWide = width >= 430;
+  const isCompact = width < screenSharedTokens.compactWidthThreshold;
   const route = useAddDeadlineRoute();
   const navigation = useAddDeadlineNavigation();
 
@@ -159,6 +241,11 @@ export function AddDeadlineScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const params = route.params;
+  const editId =
+    params?.mode === "edit" && params?.id ? String(params.id) : null;
+  const isEditMode = Boolean(editId);
+
   const resetForm = () => {
     setCourseName("");
     setAssignmentName("");
@@ -170,11 +257,6 @@ export function AddDeadlineScreen() {
     setReminder(null);
     setErrorMessage(null);
   };
-
-  const params = route.params;
-  const editId =
-    params?.mode === "edit" && params?.id ? String(params.id) : null;
-  const isEditMode = Boolean(editId);
 
   useEffect(() => {
     if (!editId) {
@@ -247,7 +329,6 @@ export function AddDeadlineScreen() {
 
     if (Platform.OS === "ios") {
       if (!value) return;
-
       if (pickerMode === "date") {
         applyDate(value);
         return;
@@ -285,9 +366,6 @@ export function AddDeadlineScreen() {
       hasPickedTime,
     });
 
-    console.info("[AddDeadlineScreen] validation result:", validationError);
-    console.info("[AddDeadlineScreen] selectedDate:", selectedDate);
-
     if (validationError) {
       setErrorMessage(validationError);
       return;
@@ -313,18 +391,10 @@ export function AddDeadlineScreen() {
       updatedAt: nowIso,
     };
 
-    console.info("[AddDeadlineScreen] values payload:", values);
-
     const isSuccess =
       isEditMode && editId
         ? await updateDeadline(editId, values)
         : await addDeadline(values);
-
-    if (isEditMode && editId) {
-      console.info("[AddDeadlineScreen] updateDeadline result:", isSuccess);
-    } else {
-      console.info("[AddDeadlineScreen] addDeadline result:", isSuccess);
-    }
 
     if (!isSuccess) {
       const latestError = useDeadlineStore.getState().deadlinesError;
@@ -346,14 +416,9 @@ export function AddDeadlineScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <View
-        style={[
-          styles.container,
-          isCompact && styles.containerCompact,
-          isWide && styles.containerWide,
-        ]}
-      >
-        <View style={[styles.headerRow, isCompact && styles.headerRowCompact]}>
+      <PastelBackground />
+      <View style={[styles.container, isCompact && styles.containerCompact]}>
+        <View style={styles.headerRow}>
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
@@ -362,42 +427,29 @@ export function AddDeadlineScreen() {
           <AppText variant="title" style={styles.screenTitleText}>
             {isEditMode ? t("editDeadline") : t("newDeadline")}
           </AppText>
-          <View style={styles.headerSpacer} />
         </View>
 
-        <View
-          style={[
-            styles.form,
-            isCompact && styles.formCompact,
-            isWide && styles.formWide,
-          ]}
-        >
-          <Card style={styles.sectionCard}>
-            <Input
-              label="Course Name"
-              value={courseName}
-              onChangeText={setCourseName}
-              placeholder="Enter course name"
-              accessibilityLabel={t("courseNameInput")}
-              labelStyle={styles.inputLabelText}
-              inputStyle={styles.inputFieldText}
-            />
-            <Input
-              label="Assignment Title"
-              value={assignmentName}
-              onChangeText={setAssignmentName}
-              placeholder="Enter assignment title"
-              accessibilityLabel={t("assignmentNameInput")}
-              labelStyle={styles.inputLabelText}
-              inputStyle={styles.inputFieldText}
-            />
-          </Card>
+        <BlurView intensity={26} tint="light" style={styles.formCard}>
+          <FloatingInput
+            label={t("courseName")}
+            value={courseName}
+            onChangeText={setCourseName}
+            placeholder={t("courseNamePlaceholder")}
+            accessibilityLabel={t("courseNameInput")}
+          />
+          <FloatingInput
+            label={t("assignmentName")}
+            value={assignmentName}
+            onChangeText={setAssignmentName}
+            placeholder={t("assignmentNamePlaceholder")}
+            accessibilityLabel={t("assignmentNameInput")}
+          />
 
-          <Card style={styles.sectionCard}>
+          <View style={styles.sectionWrap}>
             <AppText variant="caption" style={styles.sectionLabel}>
               {t("due")}
             </AppText>
-            <View style={[styles.row, isCompact && styles.rowCompact]}>
+            <View style={styles.row}>
               <DateTimeField
                 label={t("date")}
                 icon="calendar-outline"
@@ -411,53 +463,43 @@ export function AddDeadlineScreen() {
                 onPress={() => openPicker("time")}
               />
             </View>
-          </Card>
+          </View>
 
-          <Card style={styles.sectionCard}>
-            <ReminderSelection value={reminder} onChange={setReminder} />
-          </Card>
+          <ReminderSelection value={reminder} onChange={setReminder} />
 
           {errorMessage ? (
             <AppText color="danger" style={styles.errorText}>
               {errorMessage}
             </AppText>
           ) : null}
-        </View>
+        </BlurView>
 
-        <View
-          style={[
-            styles.saveButtonWrap,
-            isCompact && styles.saveButtonWrapCompact,
-            isWide && styles.saveButtonWrapWide,
-          ]}
-        >
-          <Pressable
+        <View style={styles.saveButtonWrap}>
+          <AppButton
+            label={isSaving ? t("saving") : t("save")}
             onPress={() => {
               void onSave();
             }}
-            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-            accessibilityRole="button"
-            accessibilityLabel={t("saveDeadline")}
             disabled={isSaving}
-          >
-            <AppText variant="button" style={styles.saveButtonText}>
-              {isSaving ? "..." : t("save")}
-            </AppText>
-          </Pressable>
+            iconName="sparkles-outline"
+          />
         </View>
       </View>
 
       {Platform.OS === "ios" && iosPickerMode ? (
         <Modal
           transparent
-          animationType="slide"
+          animationType="fade"
           visible={Boolean(iosPickerMode)}
           onRequestClose={() => setIosPickerMode(null)}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalSheet}>
+          <BlurView intensity={28} tint="light" style={styles.modalOverlay}>
+            <LinearGradient
+              colors={addDeadlineTokens.iosModalGradient}
+              style={styles.modalSheet}
+            >
               <View style={styles.modalHeader}>
-                <AppText variant="sectionTitle" style={styles.brownText}>
+                <AppText variant="sectionTitle" style={styles.modalTitle}>
                   {iosPickerMode === "date" ? t("pickDate") : t("pickTime")}
                 </AppText>
                 <AppButton
@@ -474,8 +516,8 @@ export function AddDeadlineScreen() {
                 is24Hour
                 themeVariant="light"
               />
-            </View>
-          </View>
+            </LinearGradient>
+          </BlurView>
         </Modal>
       ) : null}
 
@@ -498,63 +540,89 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.l,
+    paddingHorizontal: spacing.l,
+    paddingTop: spacing.s,
     paddingBottom: spacing.l,
   },
   containerCompact: {
-    paddingHorizontal: spacing.l,
-    paddingTop: spacing.m,
-  },
-  containerWide: {
-    paddingHorizontal: spacing.xxxl,
-    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.m,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.s,
+    justifyContent: "flex-start",
+    gap: spacing.s,
+    marginBottom: spacing.m,
   },
-  headerRowCompact: {
-    marginBottom: spacing.l,
+  screenTitleText: {
+    textAlign: "left",
+    color: screenSharedTokens.screenTitleColor,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
+    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
-  headerSpacer: { width: 36, height: 36 },
-  form: {
-    width: "100%",
-    maxWidth: 420,
-    alignSelf: "center",
-    gap: spacing.l,
-  },
-  formCompact: {
-    maxWidth: 360,
-  },
-  formWide: {
-    maxWidth: 460,
-  },
-  sectionCard: {
-    backgroundColor: colors.surface,
-    gap: spacing.l,
+  formCard: {
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.l,
+    gap: spacing.m,
+    overflow: "hidden",
+    ...shadows.shadowCard,
+  },
+  floatingWrap: {
+    minHeight: 58,
+    borderRadius: radius.l,
+    backgroundColor: addDeadlineTokens.floatingFieldBackground,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.m,
+    justifyContent: "center",
+    shadowColor: addDeadlineTokens.floatingFieldShadowColor,
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 3 },
+  },
+  floatingLabel: {
+    position: "absolute",
+    left: spacing.m,
+    color: colors.textSecondary,
+    fontFamily: typography.family.medium,
+  },
+  floatingInput: {
+    marginTop: 12,
+    color: colors.textPrimary,
+    fontSize: typography.size.m,
+    fontFamily: typography.family.regular,
+  },
+  sectionWrap: {
+    gap: spacing.s,
   },
   sectionLabel: {
-    fontWeight: typography.weight.semibold,
     color: colors.textSecondary,
+    letterSpacing: screenSharedTokens.addDeadlineSectionLabelLetterSpacing,
   },
   row: {
     flexDirection: "row",
-    gap: spacing.l,
-  },
-  rowCompact: {
-    flexDirection: "column",
     gap: spacing.s,
   },
-  fieldGroup: {
+  dateTimeField: {
     flex: 1,
-    gap: spacing.xxs,
+    minHeight: 56,
+    borderRadius: radius.l,
+    backgroundColor: addDeadlineTokens.dateTimeFieldBackground,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s,
+    paddingHorizontal: spacing.m,
+  },
+  dateTimeText: {
+    flex: 1,
   },
   reminderWrap: {
-    gap: spacing.m,
+    gap: spacing.s,
   },
   reminderOptionsRow: {
     flexDirection: "row",
@@ -562,107 +630,46 @@ const styles = StyleSheet.create({
     gap: spacing.s,
   },
   reminderOption: {
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.s,
+    borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.m,
-    paddingVertical: 6,
     backgroundColor: colors.surface,
   },
   reminderOptionActive: {
-    borderColor: colors.border,
+    borderColor: colors.primary,
     backgroundColor: colors.chipBgActive,
   },
   reminderOptionText: {
-    color: colors.textPrimary,
-  },
-  dateTimeField: {
-    minHeight: 50,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.m,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.s,
+    color: colors.textSecondary,
   },
   errorText: {
     marginTop: spacing.xs,
   },
-  brownText: {
-    color: colors.textPrimary,
-  },
-  screenTitleText: {
-    color: colors.textPrimary,
-    flex: 1,
-    textAlign: "center",
-  },
-  inputLabelText: {
-    fontSize: typography.size.s,
-  },
-  inputFieldText: {
-    minHeight: 50,
-    borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
-    fontSize: typography.size.s,
-  },
   saveButtonWrap: {
-    marginTop: "auto",
-    marginBottom: spacing.l,
-    width: "100%",
-    maxWidth: 420,
-    alignSelf: "center",
-  },
-  saveButtonWrapCompact: {
-    maxWidth: 360,
-  },
-  saveButtonWrapWide: {
-    maxWidth: 460,
-  },
-  saveButton: {
-    minHeight: 48,
-    borderRadius: radius.xxl,
-    backgroundColor: colors.buttonBg,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 3,
-  },
-  saveButtonDisabled: {
-    opacity: 0.55,
-  },
-  saveButtonText: {
-    color: colors.buttonText,
-    fontSize: typography.size.s,
-    fontWeight: typography.weight.semibold,
-    letterSpacing: 0.2,
+    marginTop: spacing.l,
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: colors.overlay,
+    justifyContent: "center",
+    paddingHorizontal: spacing.l,
   },
   modalSheet: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.l,
-    paddingTop: spacing.l,
-    paddingBottom: spacing.xxl,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    gap: spacing.m,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    borderColor: colors.background,
+    overflow: "hidden",
+    padding: spacing.l,
+    gap: spacing.s,
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.m,
+    marginBottom: spacing.s,
+  },
+  modalTitle: {
+    color: colors.textPrimary,
   },
 });

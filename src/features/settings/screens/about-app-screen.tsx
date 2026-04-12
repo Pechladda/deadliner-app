@@ -1,16 +1,18 @@
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Card, IconButton } from "@/src/components";
+import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
+import { APP_VERSION } from "@/src/core/config";
 import { t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
-import { colors, spacing, typography } from "@/src/theme";
+import { colors, screenSharedTokens, spacing, typography } from "@/src/theme";
 
 export function AboutAppScreen() {
   const navigation = useSettingsNavigation();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <PastelBackground />
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <IconButton
@@ -18,8 +20,9 @@ export function AboutAppScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">{t("aboutApp")}</AppText>
-          <View style={styles.headerSpacer} />
+          <AppText variant="title" style={styles.screenTitle}>
+            {t("aboutApp")}
+          </AppText>
         </View>
 
         <Card style={styles.card}>
@@ -31,7 +34,7 @@ export function AboutAppScreen() {
             color="textSecondary"
             style={styles.centerText}
           >
-            {t("version")}
+            {t("version", { version: APP_VERSION })}
           </AppText>
           <AppText variant="body" style={styles.description}>
             {t("appDescription")}
@@ -51,16 +54,23 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: spacing.s,
     marginBottom: spacing.xl2,
   },
-  headerSpacer: { width: 36, height: 36 },
+  screenTitle: {
+    textAlign: "left",
+    color: screenSharedTokens.screenTitleColor,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
+    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+  },
   card: {
     alignSelf: "center",
     width: "100%",
-    maxWidth: 360,
+    maxWidth: screenSharedTokens.contentCompactMaxWidth,
     borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceWarm,
+    backgroundColor: colors.surface,
     paddingHorizontal: spacing.xl2,
     paddingVertical: spacing.xl2,
     gap: spacing.m,

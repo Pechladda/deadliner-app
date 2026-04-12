@@ -11,10 +11,10 @@ type BadgeProps = {
 };
 
 const toneMap = {
-  danger: { bg: colors.priorityRed, text: colors.buttonText },
+  danger: { bg: colors.priorityOverdue, text: colors.buttonText },
   warning: { bg: colors.priorityYellow, text: colors.textPrimary },
   success: { bg: colors.priorityGreen, text: colors.textPrimary },
-  neutral: { bg: colors.backgroundSecondary, text: colors.textPrimary },
+  neutral: { bg: colors.surface, text: colors.textPrimary },
 } as const;
 
 export function Badge({ label, tone = "neutral" }: BadgeProps) {

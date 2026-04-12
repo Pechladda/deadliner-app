@@ -3,18 +3,20 @@ import { useRef } from "react";
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 import {
-  colors,
-  motion,
-  radius,
-  shadows,
-  spacing,
-  typography,
+    colors,
+    motion,
+    radius,
+    shadows,
+    sharedComponentTokens,
+    spacing,
+    typography,
 } from "@/src/theme";
 
 import { AppText } from "./app-text";
 
 type AppButtonProps = {
-  label: string;
+  title?: string;
+  label?: string;
   onPress: () => void;
   variant?: "solid" | "outline";
   size?: "default" | "compact";
@@ -22,10 +24,14 @@ type AppButtonProps = {
   iconColorToken?: keyof typeof colors;
   labelColorToken?: keyof typeof colors;
   disabled?: boolean;
+  isLoading?: boolean;
   loading?: boolean;
+  loadingLabel?: string;
+  accessibilityLabel?: string;
 };
 
 export function AppButton({
+  title,
   label,
   onPress,
   variant = "solid",
@@ -34,11 +40,16 @@ export function AppButton({
   iconColorToken,
   labelColorToken,
   disabled = false,
+  isLoading,
   loading = false,
+  loadingLabel,
+  accessibilityLabel,
 }: AppButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const isOutline = variant === "outline";
-  const isDisabled = disabled || loading;
+  const resolvedLabel = title ?? label ?? "";
+  const resolvedLoading = isLoading ?? loading;
+  const isDisabled = disabled || resolvedLoading;
   const iconColor = iconColorToken
     ? colors[iconColorToken]
     : isOutline
@@ -71,11 +82,16 @@ export function AppButton({
         onPressIn={() => animateTo(motion.scalePressed, motion.quick)}
         onPressOut={() => animateTo(1, motion.normal)}
         accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
         disabled={isDisabled}
       >
         <View style={styles.inner}>
           {iconName ? (
-            <Ionicons name={iconName} size={18} color={iconColor} />
+            <Ionicons
+              name={iconName}
+              size={sharedComponentTokens.appButtonDefaultIconSize}
+              color={iconColor}
+            />
           ) : null}
           <AppText
             variant="button"
@@ -84,7 +100,7 @@ export function AppButton({
               { color: labelColor },
             ]}
           >
-            {loading ? "..." : label}
+            {resolvedLoading ? (loadingLabel ?? resolvedLabel) : resolvedLabel}
           </AppText>
         </View>
       </Pressable>
@@ -94,7 +110,7 @@ export function AppButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 54,
+    minHeight: sharedComponentTokens.appButtonMinHeight,
     borderRadius: radius.pill,
     justifyContent: "center",
     alignItems: "center",
@@ -103,7 +119,7 @@ const styles = StyleSheet.create({
     ...shadows.shadowLight,
   },
   baseCompact: {
-    minHeight: 48,
+    minHeight: sharedComponentTokens.appButtonCompactMinHeight,
   },
   solid: {
     backgroundColor: colors.buttonBg,
@@ -114,7 +130,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   disabled: {
-    opacity: 0.55,
+    opacity: sharedComponentTokens.appButtonDisabledOpacity,
   },
   inner: {
     flexDirection: "row",
@@ -124,7 +140,7 @@ const styles = StyleSheet.create({
   solidLabel: {
     color: colors.buttonText,
     fontWeight: typography.weight.bold,
-    letterSpacing: 0.2,
+    letterSpacing: sharedComponentTokens.appButtonSolidLabelLetterSpacing,
   },
   outlineLabel: {
     color: colors.textPrimary,

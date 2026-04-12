@@ -1,5 +1,5 @@
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import type { RootStackParamList } from "@/src/core/navigation";
+import type { RootStackParamList } from "@/src/core/navigation/app-navigator";
 
 export type LoginNav = NativeStackNavigationProp<RootStackParamList>;

@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRef } from "react";
 import {
     Animated,
@@ -11,6 +13,7 @@ import {
 import { AppText } from "@/src/components";
 import {
     colors,
+    deadlineCardTokens,
     motion,
     radius,
     shadows,
@@ -25,6 +28,7 @@ type DeadlineCardProps = {
   assignmentName: string;
   courseName: string;
   dueLabel: string;
+  statusLabel?: string;
   urgencyColor: UrgencyColor;
   completedLabel?: string;
   onPressAction?: () => void;
@@ -34,6 +38,7 @@ type DeadlineCardProps = {
   actionStyle?: ActionStyle;
   muted?: boolean;
   style?: ViewStyle;
+  gradientColors?: readonly [string, string, ...string[]];
 };
 
 const urgencyColorMap: Record<UrgencyColor, string> = {
@@ -44,10 +49,19 @@ const urgencyColorMap: Record<UrgencyColor, string> = {
   gray: colors.borderSoft,
 };
 
+const urgencyGlowMap: Record<UrgencyColor, [string, string]> = {
+  red: ["#FFFFFF", "#FFFFFF"],
+  orange: ["#FFFFFF", "#FFFFFF"],
+  yellow: ["#FFFFFF", "#FFFFFF"],
+  green: ["#FFFFFF", "#FFFFFF"],
+  gray: ["#FFFFFF", "#FFFFFF"],
+};
+
 export function DeadlineCard({
   assignmentName,
   courseName,
   dueLabel,
+  statusLabel,
   urgencyColor,
   completedLabel,
   onPressAction,
@@ -57,8 +71,11 @@ export function DeadlineCard({
   actionStyle = "text",
   muted = false,
   style,
+  gradientColors,
 }: DeadlineCardProps) {
-  const animation = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  const glow = useRef(new Animated.Value(0.25)).current;
+  const cardBaseColors = [colors.background, colors.background] as const;
 
   const handlePressAction = () => {
     if (!onPressAction) {
@@ -66,150 +83,241 @@ export function DeadlineCard({
     }
 
     Animated.sequence([
-      Animated.parallel([
-        Animated.timing(animation, {
-          toValue: motion.scalePressed,
-          duration: motion.quick,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(animation, {
-          toValue: 0,
-          duration: motion.normal,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(scale, {
+        toValue: motion.scalePressed,
+        duration: motion.quick,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 0.92,
+        duration: motion.normal,
+        useNativeDriver: true,
+      }),
     ]).start(({ finished }) => {
       if (finished) {
         onPressAction();
-        animation.setValue(1);
+        scale.setValue(1);
       }
     });
+  };
+
+  const pulse = () => {
+    Animated.sequence([
+      Animated.timing(glow, {
+        toValue: 0.5,
+        duration: 260,
+        useNativeDriver: true,
+      }),
+      Animated.timing(glow, {
+        toValue: 0.25,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   return (
     <Animated.View
       style={[
-        styles.card,
+        styles.cardShell,
         muted && styles.cardMuted,
         style,
-        { opacity: animation, transform: [{ scale: animation }] },
+        { transform: [{ scale }] },
       ]}
     >
-      <View
+      <Animated.View
+        pointerEvents="none"
         style={[
-          styles.urgencyBar,
-          { backgroundColor: urgencyColorMap[urgencyColor] },
+          styles.glow,
+          {
+            backgroundColor: urgencyColorMap[urgencyColor],
+            opacity: glow,
+          },
         ]}
       />
 
-      <Pressable
-        style={styles.content}
-        onPress={onPressCard}
-        disabled={!onPressCard}
-        accessibilityRole={onPressCard ? "button" : undefined}
-        accessibilityLabel={cardAccessibilityLabel}
+      <LinearGradient
+        colors={cardBaseColors}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.card}
       >
-        <AppText
-          variant="cardTitle"
-          style={styles.assignmentName}
-          numberOfLines={1}
-        >
-          {assignmentName}
-        </AppText>
-        <AppText style={styles.courseName} numberOfLines={1}>
-          {courseName}
-        </AppText>
-        <AppText variant="caption" style={styles.dueLabel} numberOfLines={1}>
-          {dueLabel}
-        </AppText>
-        {completedLabel ? (
-          <AppText
-            variant="caption"
-            style={styles.completedLabel}
-            numberOfLines={1}
-          >
-            {completedLabel}
-          </AppText>
-        ) : null}
-      </Pressable>
+        <BlurView intensity={26} tint="light" style={StyleSheet.absoluteFill} />
+        <View style={styles.innerBorder} />
 
-      {onPressAction && actionLabel ? (
         <Pressable
-          onPress={handlePressAction}
-          style={
-            actionStyle === "check" ? styles.checkButton : styles.doneButton
-          }
-          accessibilityRole="button"
-          accessibilityLabel={actionLabel}
+          style={styles.content}
+          onPress={() => {
+            pulse();
+            onPressCard?.();
+          }}
+          disabled={!onPressCard}
+          accessibilityRole={onPressCard ? "button" : undefined}
+          accessibilityLabel={cardAccessibilityLabel}
         >
-          {actionStyle === "check" ? (
-            <Ionicons
-              name="checkmark-circle"
-              size={24}
-              color={colors.priorityGreen}
-            />
-          ) : actionStyle === "trash" ? (
-            <Ionicons
-              name="trash-outline"
-              size={18}
-              color={colors.textSecondary}
-            />
-          ) : (
-            <AppText variant="caption" style={styles.doneButtonText}>
-              {actionLabel}
+          <View style={styles.textGroupTop}>
+            <AppText
+              variant="cardTitle"
+              style={styles.assignmentName}
+              numberOfLines={1}
+            >
+              {assignmentName}
             </AppText>
-          )}
+            <AppText style={styles.courseName} numberOfLines={1}>
+              {courseName}
+            </AppText>
+          </View>
+
+          <View style={styles.dueRow}>
+            <AppText
+              variant="caption"
+              style={styles.dueLabel}
+              numberOfLines={1}
+            >
+              {dueLabel}
+            </AppText>
+            {statusLabel ? (
+              <>
+                <AppText variant="caption" style={styles.statusSeparator}>
+                  •
+                </AppText>
+                <AppText
+                  variant="caption"
+                  style={[
+                    styles.statusText,
+                    { color: urgencyColorMap[urgencyColor] },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {statusLabel}
+                </AppText>
+              </>
+            ) : null}
+          </View>
+
+          {completedLabel ? (
+            <AppText
+              variant="caption"
+              style={styles.completedLabel}
+              numberOfLines={1}
+            >
+              {completedLabel}
+            </AppText>
+          ) : null}
         </Pressable>
-      ) : null}
+
+        {onPressAction && actionLabel ? (
+          <Pressable
+            onPress={handlePressAction}
+            style={
+              actionStyle === "check" ? styles.checkButton : styles.doneButton
+            }
+            accessibilityRole="button"
+            accessibilityLabel={actionLabel}
+          >
+            {actionStyle === "check" ? (
+              <Ionicons
+                name="checkmark-circle"
+                size={24}
+                color={colors.priorityGreen}
+              />
+            ) : actionStyle === "trash" ? (
+              <Ionicons
+                name="trash-outline"
+                size={18}
+                color={colors.textSecondary}
+              />
+            ) : (
+              <AppText variant="caption" style={styles.doneButtonText}>
+                {actionLabel}
+              </AppText>
+            )}
+          </Pressable>
+        ) : null}
+      </LinearGradient>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  cardShell: {
+    borderRadius: radius.xl,
+    overflow: "visible",
+  },
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: radius.xxl,
+    backgroundColor: "transparent",
+    borderRadius: radius.xl,
     overflow: "hidden",
-    borderWidth: 0,
+    borderWidth: 1,
     borderColor: colors.borderSoft,
-    ...shadows.shadowCard,
+    ...shadows.shadowSoft,
+  },
+  glow: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    top: 8,
+    bottom: 6,
+    borderRadius: radius.xl,
+    zIndex: -1,
+  },
+  innerBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderColor: deadlineCardTokens.innerBorder,
+    borderRadius: radius.xl,
   },
   cardMuted: {
     opacity: 0.72,
   },
-  urgencyBar: {
-    width: 8,
-    height: 80,
-    borderRadius: radius.pill,
-    marginLeft: spacing.s,
-    marginRight: spacing.s,
-  },
   content: {
     flex: 1,
-    paddingLeft: spacing.s,
+    paddingLeft: spacing.m,
     paddingRight: spacing.m,
-    paddingVertical: spacing.l,
+    paddingVertical: spacing.m,
     justifyContent: "space-between",
-    minHeight: 104,
+    minHeight: 98,
+  },
+  textGroupTop: {
+    gap: spacing.xxs,
+  },
+  dueRow: {
+    marginTop: spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xxs,
   },
   assignmentName: {
     lineHeight: typography.lineHeight.relaxed,
+    color: colors.textPrimary,
   },
   courseName: {
-    marginTop: spacing.xs,
-    color: colors.textSecondary,
+    marginTop: spacing.xxs,
+    color: colors.textPrimary,
+    fontSize: typography.size.s,
+    lineHeight: 18,
+    fontFamily: typography.family.medium,
   },
   dueLabel: {
-    marginTop: spacing.s,
+    color: colors.textPrimary,
+    fontSize: typography.size.xs,
+    lineHeight: 16,
+  },
+  statusSeparator: {
     color: colors.textSecondary,
+    fontSize: typography.size.xs,
+    lineHeight: 16,
+  },
+  statusText: {
+    fontSize: typography.size.xs,
+    lineHeight: 16,
+    fontFamily: typography.family.semibold,
   },
   completedLabel: {
     marginTop: spacing.xs,
-    color: colors.textMuted,
+    color: colors.textPrimary,
   },
   doneButton: {
     marginRight: spacing.s,
@@ -220,7 +328,7 @@ const styles = StyleSheet.create({
     minHeight: 30,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.surfaceWarm,
+    backgroundColor: deadlineCardTokens.actionButtonBackground,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -232,7 +340,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surfaceWarm,
+    backgroundColor: deadlineCardTokens.actionButtonBackground,
     borderWidth: 1,
     borderColor: colors.borderSoft,
   },

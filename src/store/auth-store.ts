@@ -4,7 +4,8 @@ import { create } from "zustand";
 
 import { auth } from "@/src/firebase";
 
-const AUTH_STORAGE_KEY = "@deadliner/authenticated";
+const LOGIN_KEY = "isLoggedIn";
+const USER_ID_KEY = "userId";
 
 type AuthState = {
   currentUser: User | null;
@@ -12,18 +13,21 @@ type AuthState = {
   isHydrated: boolean;
   hydrateAuth: () => Promise<void>;
   syncAuthFromFirebase: () => () => void;
-  login: () => Promise<void>;
+  login: (user?: User | null) => Promise<void>;
   logout: () => Promise<void>;
 };
 
 async function persistAuthState(user: User | null) {
   try {
     if (user) {
-      await AsyncStorage.setItem(AUTH_STORAGE_KEY, "true");
+      await AsyncStorage.multiSet([
+        [LOGIN_KEY, "true"],
+        [USER_ID_KEY, user.uid],
+      ]);
       return;
     }
 
-    await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+    await AsyncStorage.multiRemove([LOGIN_KEY, USER_ID_KEY]);
   } catch {
     // Ignore persistence errors to keep auth flow usable.
   }
@@ -46,10 +50,27 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     try {
-      const storedAuth = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+      const [[, storedAuth], [, storedUserId]] = await AsyncStorage.multiGet([
+        LOGIN_KEY,
+        USER_ID_KEY,
+      ]);
+
+      // Firebase remains the source of truth. If local flag is stale, clear it.
+      if (storedAuth === "true" && !auth.currentUser) {
+        await AsyncStorage.multiRemove([LOGIN_KEY, USER_ID_KEY]);
+        set({
+          currentUser: null,
+          isAuthenticated: false,
+          isHydrated: true,
+        });
+        return;
+      }
+
       set({
         currentUser: auth.currentUser,
-        isAuthenticated: storedAuth === "true",
+        isAuthenticated:
+          Boolean(auth.currentUser) ||
+          (storedAuth === "true" && Boolean(storedUserId)),
         isHydrated: true,
       });
     } catch {
@@ -73,8 +94,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     return unsubscribe;
   },
-  login: async () => {
-    const currentUser = auth.currentUser;
+  login: async (user) => {
+    const currentUser = user ?? auth.currentUser;
     set({ currentUser, isAuthenticated: Boolean(currentUser) });
     await persistAuthState(currentUser ?? null);
   },

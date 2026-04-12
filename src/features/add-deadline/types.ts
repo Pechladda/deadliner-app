@@ -1,8 +1,8 @@
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { RouteProp } from "@react-navigation/native";
 
-import type { TabParamList } from "@/src/core/navigation";
-import { TabRoutes } from "@/src/core/navigation";
+import type { TabParamList } from "@/src/core/navigation/app-navigator";
+import { TabRoutes } from "@/src/core/navigation/route-names";
 
 export type PickerMode = "date" | "time";
 

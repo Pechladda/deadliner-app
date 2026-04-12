@@ -9,12 +9,18 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Card, IconButton } from "@/src/components";
-import { t } from "@/src/core/utils";
+import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
+import { getFirestoreErrorMessage, t } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { auth, db } from "@/src/firebase";
 import { useAuthStore } from "@/src/store/auth-store";
-import { colors, spacing } from "@/src/theme";
+import {
+    colors,
+    profileScreenTokens,
+    screenSharedTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -23,12 +29,13 @@ type UserProfile = {
   name?: string;
 };
 
-const PROFILE_LOAD_ERROR = "Unable to load profile. Please sign in again.";
+const PROFILE_ACCENT = profileScreenTokens.accent;
+const PROFILE_ACCENT_STRONG = profileScreenTokens.accentStrong;
 
 export function ProfileScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 375;
-  const isWide = width >= 430;
+  const isCompact = width < screenSharedTokens.compactWidthThreshold;
+  const isWide = width >= screenSharedTokens.wideWidthThreshold;
   const navigation = useSettingsNavigation();
   const currentUser = useAuthStore((state) => state.currentUser);
   const isHydrated = useAuthStore((state) => state.isHydrated);
@@ -40,25 +47,13 @@ export function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
 
   const displayLoadError = useMemo(() => {
-    const normalized = loadError.toLowerCase();
-
-    if (
-      normalized.includes("permission denied") ||
-      normalized.includes("sign in again") ||
-      normalized.includes("session expired")
-    ) {
-      return "Unable to load profile. Please sign in again.";
-    }
-
-    return loadError || PROFILE_LOAD_ERROR;
+    return loadError || t("profileLoadError");
   }, [loadError]);
 
   const showSignInAgain = useMemo(() => {
-    const normalized = loadError.toLowerCase();
     return (
-      normalized.includes("permission denied") ||
-      normalized.includes("sign in again") ||
-      normalized.includes("session expired")
+      loadError === t("profileSignInAgain") ||
+      loadError === t("firestoreSessionExpired")
     );
   }, [loadError]);
 
@@ -69,14 +64,14 @@ export function ProfileScreen() {
 
     if (!isAuthenticated) {
       console.warn("[Profile] auth is missing after hydration");
-      setLoadError("Please sign in again.");
+      setLoadError(t("profileSignInAgain"));
       setIsLoading(false);
       return;
     }
 
     if (!currentUser) {
       console.warn("[Profile] currentUser is null after hydration");
-      setLoadError("Please sign in again.");
+      setLoadError(t("profileSignInAgain"));
       setIsLoading(false);
       return;
     }
@@ -102,7 +97,7 @@ export function ProfileScreen() {
       setUsername(nextUsername);
     } catch (error) {
       console.error("[Profile] failed:", error);
-      setLoadError(PROFILE_LOAD_ERROR);
+      setLoadError(getFirestoreErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -118,6 +113,7 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <PastelBackground />
       <View
         style={[
           styles.container,
@@ -131,8 +127,9 @@ export function ProfileScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={t("goBack")}
           />
-          <AppText variant="title">{t("profile")}</AppText>
-          <View style={styles.headerSpacer} />
+          <AppText variant="title" style={styles.screenTitle}>
+            {t("profile")}
+          </AppText>
         </View>
 
         <View
@@ -149,7 +146,7 @@ export function ProfileScreen() {
           <Card style={styles.formCard}>
             {isLoading ? (
               <View style={styles.loadingWrap}>
-                <ActivityIndicator color={colors.primaryStrong} />
+                <ActivityIndicator color={PROFILE_ACCENT_STRONG} />
               </View>
             ) : null}
 
@@ -172,11 +169,11 @@ export function ProfileScreen() {
                       void signOut(auth);
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Sign in again"
+                    accessibilityLabel={t("profileSignInAgain")}
                     style={styles.errorActionButton}
                   >
                     <AppText style={styles.errorActionText}>
-                      Sign in again
+                      {t("profileSignInAgain")}
                     </AppText>
                   </Pressable>
                 ) : null}
@@ -226,37 +223,44 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
+    gap: spacing.s,
     marginBottom: spacing.s,
   },
-  headerSpacer: { width: 38, height: 38 },
+  screenTitle: {
+    textAlign: "left",
+    color: screenSharedTokens.screenTitleColor,
+    fontSize: typography.size.xl,
+    lineHeight: screenSharedTokens.screenTitleLineHeight,
+    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+  },
   contentInner: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: screenSharedTokens.contentMaxWidth,
     alignSelf: "center",
     gap: spacing.m,
   },
   contentInnerCompact: {
-    maxWidth: 360,
+    maxWidth: screenSharedTokens.contentCompactMaxWidth,
   },
   contentInnerWide: {
-    maxWidth: 460,
+    maxWidth: screenSharedTokens.contentWideMaxWidth,
   },
   avatar: {
     alignSelf: "center",
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: profileScreenTokens.avatarSize,
+    height: profileScreenTokens.avatarSize,
+    borderRadius: profileScreenTokens.avatarRadius,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surfaceWarm,
+    backgroundColor: colors.surface,
     marginBottom: -spacing.s,
   },
   formCard: {
     borderColor: colors.borderSoft,
-    backgroundColor: colors.surfaceWarm,
+    backgroundColor: colors.surface,
     gap: spacing.m,
     padding: spacing.l,
   },
@@ -264,14 +268,14 @@ const styles = StyleSheet.create({
   readOnlyRow: {
     borderWidth: 1,
     borderColor: colors.borderSoft,
-    borderRadius: 12,
+    borderRadius: profileScreenTokens.readOnlyRowRadius,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,
-    backgroundColor: colors.surfaceMint,
+    backgroundColor: colors.surface,
     gap: spacing.xxs,
   },
   readOnlyLabel: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   readOnlyValue: {
     color: colors.textPrimary,
@@ -282,8 +286,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.s,
   },
   errorBanner: {
-    borderRadius: 14,
-    backgroundColor: colors.surfacePink,
+    borderRadius: profileScreenTokens.errorBannerRadius,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     paddingHorizontal: spacing.m,
@@ -298,14 +302,14 @@ const styles = StyleSheet.create({
   errorBannerText: {
     color: colors.danger,
     flexShrink: 1,
-    lineHeight: 16,
+    lineHeight: profileScreenTokens.errorBannerTextLineHeight,
   },
   errorActionButton: {
     alignSelf: "flex-start",
-    paddingVertical: 2,
+    paddingVertical: profileScreenTokens.errorActionButtonPaddingVertical,
   },
   errorActionText: {
-    color: colors.primary,
+    color: PROFILE_ACCENT,
     textDecorationLine: "underline",
   },
 });
