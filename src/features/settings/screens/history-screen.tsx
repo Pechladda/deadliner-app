@@ -10,7 +10,7 @@ import {
     PastelBackground,
     Toast,
 } from "@/src/components";
-import { t } from "@/src/core/utils";
+
 import {
     formatCompletedLabel,
     formatDueLabel,
@@ -46,7 +46,7 @@ export function HistoryScreen() {
 
   const onDelete = (id: string) => {
     void deleteDeadline(id).then((isSuccess) => {
-      setToastMessage(isSuccess ? t("deletedDeadline") : t("deleteFailed"));
+      setToastMessage(isSuccess ? "Deadline deleted" : "Could not delete this deadline. Please try again.");
       setShowToast(true);
 
       if (toastTimerRef.current) {
@@ -71,10 +71,10 @@ export function HistoryScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel={t("goBack")}
+            accessibilityLabel={"Go back"}
           />
           <AppText variant="title" style={styles.screenTitle}>
-            {t("history")}
+            {"History"}
           </AppText>
         </View>
 
@@ -87,10 +87,10 @@ export function HistoryScreen() {
               <DeadlineCard
                 assignmentName={item.assignmentName}
                 courseName={item.courseName}
-                dueLabel={`${t("originalDue")}: ${formatDueLabel(item.dueAt)}`}
-                completedLabel={`${t("completedOn")}: ${formatCompletedLabel(item.completedAt)}`}
+                dueLabel={`${"Original due"}: ${formatDueLabel(item.dueAt)}`}
+                completedLabel={`${"Completed"}: ${formatCompletedLabel(item.completedAt)}`}
                 urgencyColor="gray"
-                actionLabel={t("delete")}
+                actionLabel={"Delete"}
                 actionStyle="trash"
                 onPressAction={() => onDelete(item.id)}
                 muted
@@ -100,11 +100,11 @@ export function HistoryScreen() {
           ListEmptyComponent={
             <Card style={styles.emptyCard}>
               <AppText variant="sectionTitle" style={styles.emptyText}>
-                {t("noHistoryYet")}
+                {"No completed deadlines yet."}
               </AppText>
               <View style={styles.emptyActionWrap}>
                 <AppButton
-                  label={t("goBack")}
+                  label={"Go back"}
                   onPress={onGoBack}
                   variant="outline"
                   iconName="arrow-back-outline"
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   cardWrapper: {
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     borderRadius: radius.xxl,
     backgroundColor: colors.surface,

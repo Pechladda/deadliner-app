@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
-import { getFirestoreErrorMessage, t } from "@/src/core/utils";
+import { getFirestoreErrorMessage } from "@/src/core/utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { auth, db } from "@/src/firebase";
 import { useAuthStore } from "@/src/store/auth-store";
@@ -47,13 +47,13 @@ export function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
 
   const displayLoadError = useMemo(() => {
-    return loadError || t("profileLoadError");
+    return loadError || "Unable to load profile. Please sign in again.";
   }, [loadError]);
 
   const showSignInAgain = useMemo(() => {
     return (
-      loadError === t("profileSignInAgain") ||
-      loadError === t("firestoreSessionExpired")
+      loadError === "Sign in again" ||
+      loadError === "Session expired. Please sign in again."
     );
   }, [loadError]);
 
@@ -64,14 +64,14 @@ export function ProfileScreen() {
 
     if (!isAuthenticated) {
       console.warn("[Profile] auth is missing after hydration");
-      setLoadError(t("profileSignInAgain"));
+      setLoadError("Sign in again");
       setIsLoading(false);
       return;
     }
 
     if (!currentUser) {
       console.warn("[Profile] currentUser is null after hydration");
-      setLoadError(t("profileSignInAgain"));
+      setLoadError("Sign in again");
       setIsLoading(false);
       return;
     }
@@ -125,10 +125,10 @@ export function ProfileScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel={t("goBack")}
+            accessibilityLabel={"Go back"}
           />
           <AppText variant="title" style={styles.screenTitle}>
-            {t("profile")}
+            {"Profile"}
           </AppText>
         </View>
 
@@ -169,11 +169,11 @@ export function ProfileScreen() {
                       void signOut(auth);
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel={t("profileSignInAgain")}
+                    accessibilityLabel={"Sign in again"}
                     style={styles.errorActionButton}
                   >
                     <AppText style={styles.errorActionText}>
-                      {t("profileSignInAgain")}
+                      {"Sign in again"}
                     </AppText>
                   </Pressable>
                 ) : null}
@@ -183,7 +183,7 @@ export function ProfileScreen() {
             <View style={styles.formWrap}>
               <View style={styles.readOnlyRow}>
                 <AppText variant="caption" style={styles.readOnlyLabel}>
-                  {t("usernamePlaceholder")}
+                  {"Username"}
                 </AppText>
                 <AppText style={styles.readOnlyValue}>
                   {username || "-"}
@@ -192,7 +192,7 @@ export function ProfileScreen() {
 
               <View style={styles.readOnlyRow}>
                 <AppText variant="caption" style={styles.readOnlyLabel}>
-                  {t("email")}
+                  {"Email"}
                 </AppText>
                 <AppText style={styles.readOnlyValue}>{email || "-"}</AppText>
               </View>
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     width: profileScreenTokens.avatarSize,
     height: profileScreenTokens.avatarSize,
     borderRadius: profileScreenTokens.avatarRadius,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.borderSoft,
     alignItems: "center",
     justifyContent: "center",
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   },
   formWrap: { gap: spacing.s },
   readOnlyRow: {
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.borderSoft,
     borderRadius: profileScreenTokens.readOnlyRowRadius,
     paddingHorizontal: spacing.m,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   errorBanner: {
     borderRadius: profileScreenTokens.errorBannerRadius,
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.borderSoft,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,

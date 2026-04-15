@@ -1,10 +1,8 @@
 import {
     COMPLETED_LABEL_OPTIONS,
     DATE_DISPLAY_LOCALE,
-    DATE_LOCALE_BY_LANGUAGE,
     DUE_LABEL_OPTIONS,
 } from "@/src/core/config";
-import { getLanguage, t } from "@/src/i18n";
 
 const msPerMinute = 60 * 1000;
 const msPerHour = 60 * msPerMinute;
@@ -60,7 +58,7 @@ export function parseDueAt(
   const timeMatch = dueTime.match(/^(\d{1,2}):(\d{2})$/);
 
   if (!dateMatch || !timeMatch) {
-    throw new Error(t("invalidDueDateOrTimeFormat"));
+    throw new Error("Invalid due date or time format.");
   }
 
   const year = Number(dateMatch[1]);
@@ -70,7 +68,7 @@ export function parseDueAt(
   const minute = Number(timeMatch[2]);
 
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-    throw new Error(t("invalidDueTimeValue"));
+    throw new Error("Invalid due time value.");
   }
 
   if (!timezone) {
@@ -78,7 +76,7 @@ export function parseDueAt(
       `${dueDate}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`,
     );
     if (Number.isNaN(localIso.getTime())) {
-      throw new Error(t("invalidDueDateValue"));
+      throw new Error("Invalid due date value.");
     }
     return localIso.toISOString();
   }
@@ -152,18 +150,18 @@ export function getDeadlineStatusDisplayColor(
 
 export function getDeadlineStatusLabel(status: DeadlineStatus): string {
   if (status === "overdue") {
-    return t("overdue");
+    return "Overdue";
   }
 
   if (status === "urgent") {
-    return t("urgent");
+    return "URGENT";
   }
 
   if (status === "soon") {
-    return t("soon");
+    return "SOON";
   }
 
-  return t("onTrack");
+  return "On Track";
 }
 
 export function getUrgencyPriority(
@@ -189,11 +187,11 @@ export function formatDueLabel(iso: string): string {
     return iso;
   }
 
-  const locale =
-    DATE_LOCALE_BY_LANGUAGE?.[getLanguage()] ?? DATE_DISPLAY_LOCALE;
   const formatOptions = DUE_LABEL_OPTIONS ?? dueLabelFallbackOptions;
 
-  return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+  return new Intl.DateTimeFormat(DATE_DISPLAY_LOCALE, formatOptions).format(
+    date,
+  );
 }
 
 export function formatCountdownLong(iso: string, now = new Date()): string {
@@ -204,7 +202,7 @@ export function formatRemaining(dueAtISO: string, now = new Date()): string {
   const diffMs = getRemainingMs(dueAtISO, now);
 
   if (diffMs <= 0) {
-    return t("countdownOverdue");
+    return "Overdue";
   }
 
   const totalMinutes = Math.floor(diffMs / msPerMinute);
@@ -213,14 +211,14 @@ export function formatRemaining(dueAtISO: string, now = new Date()): string {
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `${days} ${t(days === 1 ? "day" : "days")}, ${hours} ${t(hours === 1 ? "hour" : "hours")} ${t("left")}`;
+    return `${days} ${days === 1 ? "day" : "days"}, ${hours} ${hours === 1 ? "hour" : "hours"} left`;
   }
 
   if (hours > 0) {
-    return `${hours} ${t(hours === 1 ? "hour" : "hours")}, ${minutes} ${t(minutes === 1 ? "minute" : "minutes")} ${t("left")}`;
+    return `${hours} ${hours === 1 ? "hour" : "hours"}, ${minutes} ${minutes === 1 ? "minute" : "minutes"} left`;
   }
 
-  return `${minutes} ${t(minutes === 1 ? "minute" : "minutes")} ${t("left")}`;
+  return `${minutes} ${minutes === 1 ? "minute" : "minutes"} left`;
 }
 
 export function computeColorStatus(
@@ -276,7 +274,7 @@ export function sortDeadlinesByDueAt<T extends { dueAt: string }>(
 export function formatCountdownShort(iso: string, now = new Date()): string {
   const diffMs = getRemainingMs(iso, now);
   if (diffMs <= 0) {
-    return t("countdownOverdue");
+    return "Overdue";
   }
 
   const totalMinutes = Math.floor(diffMs / msPerMinute);
@@ -285,14 +283,14 @@ export function formatCountdownShort(iso: string, now = new Date()): string {
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `${days}d ${hours}h ${t("left")}`;
+    return `${days}d ${hours}h ${"left"}`;
   }
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m ${t("left")}`;
+    return `${hours}h ${minutes}m ${"left"}`;
   }
 
-  return `${minutes}m ${t("left")}`;
+  return `${minutes}m ${"left"}`;
 }
 
 export function formatCompletedLabel(iso?: string | null): string {
@@ -305,8 +303,7 @@ export function formatCompletedLabel(iso?: string | null): string {
     return "";
   }
 
-  const locale =
-    DATE_LOCALE_BY_LANGUAGE?.[getLanguage()] ?? DATE_DISPLAY_LOCALE;
+  const locale = DATE_DISPLAY_LOCALE;
   const formatOptions =
     COMPLETED_LABEL_OPTIONS ?? completedLabelFallbackOptions;
 

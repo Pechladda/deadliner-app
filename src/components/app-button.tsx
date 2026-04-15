@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
-    borderWidth: 1,
+    borderWidth: 0,
     ...shadows.shadowLight,
   },
   baseCompact: {

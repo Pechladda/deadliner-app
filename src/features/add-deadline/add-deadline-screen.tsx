@@ -1,54 +1,54 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
-    DateTimePickerEvent,
+  DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    TextInput,
-    useWindowDimensions,
-    View,
+  Animated,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-    AppButton,
-    AppText,
-    IconButton,
-    PastelBackground,
+  AppButton,
+  AppText,
+  IconButton,
+  PastelBackground,
 } from "@/src/components";
 import {
-    ANDROID_DATE_PICKER_LOCALE,
-    DATE_DISPLAY_LOCALE,
-    DATE_DISPLAY_OPTIONS,
-    IOS_DATE_PICKER_LOCALE,
-    TIME_DISPLAY_LOCALE,
-    TIME_DISPLAY_OPTIONS,
+  ANDROID_DATE_PICKER_LOCALE,
+  DATE_DISPLAY_LOCALE,
+  DATE_DISPLAY_OPTIONS,
+  IOS_DATE_PICKER_LOCALE,
+  TIME_DISPLAY_LOCALE,
+  TIME_DISPLAY_OPTIONS,
 } from "@/src/core/config";
 import { TabRoutes } from "@/src/core/navigation/route-names";
-import { getDeadlineStatus, getDeadlineStatusColor, t } from "@/src/core/utils";
+import { getDeadlineStatus, getDeadlineStatusColor } from "@/src/core/utils";
 import {
-    useAddDeadlineNavigation,
-    useAddDeadlineRoute,
+  useAddDeadlineNavigation,
+  useAddDeadlineRoute,
 } from "@/src/features/add-deadline/hooks/use-add-deadline-screen";
 import { PickerMode } from "@/src/features/add-deadline/types";
 import { validateDeadlineForm } from "@/src/features/add-deadline/utils/validate-deadline-form";
 import { ReminderOption } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
-    addDeadlineTokens,
-    colors,
-    radius,
-    screenSharedTokens,
-    shadows,
-    spacing,
-    typography,
+  addDeadlineTokens,
+  colors,
+  radius,
+  screenSharedTokens,
+  shadows,
+  spacing,
+  typography,
 } from "@/src/theme";
 
 const PICKER_LOCALE =
@@ -131,7 +131,7 @@ function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
       style={styles.dateTimeField}
       accessibilityRole="button"
       accessibilityLabel={
-        label === t("date") ? t("openDatePicker") : t("openTimePicker")
+        label === "Date" ? "Open date picker" : "Open time picker"
       }
     >
       <Ionicons name={icon} size={18} color={colors.primary} />
@@ -181,17 +181,17 @@ type ReminderSelectionProps = {
 
 function ReminderSelection({ value, onChange }: ReminderSelectionProps) {
   const reminderOptions: { value: ReminderOption | null; label: string }[] = [
-    { value: null, label: t("reminderNone") },
-    { value: "5m", label: t("reminder5m") },
-    { value: "30m", label: t("reminder30m") },
-    { value: "1h", label: t("reminder1h") },
-    { value: "1d", label: t("reminder1d") },
+    { value: null, label: "None" },
+    { value: "5m", label: "5 minutes before" },
+    { value: "30m", label: "30 minutes before" },
+    { value: "1h", label: "1 hour before" },
+    { value: "1d", label: "1 day before" },
   ];
 
   return (
     <View style={styles.reminderWrap}>
       <AppText variant="caption" style={styles.sectionLabel}>
-        {t("reminder")}
+        {"Reminder"}
       </AppText>
       <View style={styles.reminderOptionsRow}>
         {reminderOptions.map((option) => {
@@ -398,7 +398,7 @@ export function AddDeadlineScreen() {
 
     if (!isSuccess) {
       const latestError = useDeadlineStore.getState().deadlinesError;
-      setErrorMessage(latestError ?? deadlinesError ?? t("saveFailed"));
+      setErrorMessage(latestError ?? deadlinesError ?? "Could not save the deadline. Please try again.");
       setIsSaving(false);
       return;
     }
@@ -410,9 +410,9 @@ export function AddDeadlineScreen() {
 
   const pickerValue = selectedDate ?? new Date();
   const dateValue =
-    selectedDate && hasPickedDate ? formatDateDisplay(selectedDate) : t("date");
+    selectedDate && hasPickedDate ? formatDateDisplay(selectedDate) : "Date";
   const timeValue =
-    selectedDate && hasPickedTime ? formatTimeDisplay(selectedDate) : t("time");
+    selectedDate && hasPickedTime ? formatTimeDisplay(selectedDate) : "Time";
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -422,42 +422,42 @@ export function AddDeadlineScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel={t("goBack")}
+            accessibilityLabel={"Go back"}
           />
           <AppText variant="title" style={styles.screenTitleText}>
-            {isEditMode ? t("editDeadline") : t("newDeadline")}
+            {isEditMode ? "Edit Deadline" : "New Deadline"}
           </AppText>
         </View>
 
         <BlurView intensity={26} tint="light" style={styles.formCard}>
           <FloatingInput
-            label={t("courseName")}
+            label={"Course name"}
             value={courseName}
             onChangeText={setCourseName}
-            placeholder={t("courseNamePlaceholder")}
-            accessibilityLabel={t("courseNameInput")}
+            placeholder={"e.g. Software Engineering"}
+            accessibilityLabel={"Course name input"}
           />
           <FloatingInput
-            label={t("assignmentName")}
+            label={"Assignment name"}
             value={assignmentName}
             onChangeText={setAssignmentName}
-            placeholder={t("assignmentNamePlaceholder")}
-            accessibilityLabel={t("assignmentNameInput")}
+            placeholder={"e.g. API Design Sprint"}
+            accessibilityLabel={"Assignment name input"}
           />
 
           <View style={styles.sectionWrap}>
             <AppText variant="caption" style={styles.sectionLabel}>
-              {t("due")}
+              {"Due"}
             </AppText>
             <View style={styles.row}>
               <DateTimeField
-                label={t("date")}
+                label={"Date"}
                 icon="calendar-outline"
                 value={dateValue}
                 onPress={() => openPicker("date")}
               />
               <DateTimeField
-                label={t("time")}
+                label={"Time"}
                 icon="time-outline"
                 value={timeValue}
                 onPress={() => openPicker("time")}
@@ -476,7 +476,7 @@ export function AddDeadlineScreen() {
 
         <View style={styles.saveButtonWrap}>
           <AppButton
-            label={isSaving ? t("saving") : t("save")}
+            label={isSaving ? "Saving..." : "Save"}
             onPress={() => {
               void onSave();
             }}
@@ -500,10 +500,10 @@ export function AddDeadlineScreen() {
             >
               <View style={styles.modalHeader}>
                 <AppText variant="sectionTitle" style={styles.modalTitle}>
-                  {iosPickerMode === "date" ? t("pickDate") : t("pickTime")}
+                  {iosPickerMode === "date" ? "Pick Date" : "Pick Time"}
                 </AppText>
                 <AppButton
-                  label={t("done")}
+                  label={"Done"}
                   onPress={() => setIosPickerMode(null)}
                 />
               </View>
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   },
   formCard: {
     borderRadius: radius.xxl,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     padding: spacing.l,
     gap: spacing.m,
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     minHeight: 58,
     borderRadius: radius.l,
     backgroundColor: addDeadlineTokens.floatingFieldBackground,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     paddingHorizontal: spacing.m,
     justifyContent: "center",
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
     borderRadius: radius.l,
     backgroundColor: addDeadlineTokens.dateTimeFieldBackground,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,
     borderRadius: radius.pill,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
@@ -657,7 +657,7 @@ const styles = StyleSheet.create({
   },
   modalSheet: {
     borderRadius: radius.xxl,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.background,
     overflow: "hidden",
     padding: spacing.l,

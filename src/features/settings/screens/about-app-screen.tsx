@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
 import { APP_VERSION } from "@/src/core/config";
-import { t } from "@/src/core/utils";
+
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, screenSharedTokens, spacing, typography } from "@/src/theme";
 
@@ -18,29 +18,29 @@ export function AboutAppScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel={t("goBack")}
+            accessibilityLabel={"Go back"}
           />
           <AppText variant="title" style={styles.screenTitle}>
-            {t("aboutApp")}
+            {"About App"}
           </AppText>
         </View>
 
         <Card style={styles.card}>
           <AppText variant="sectionTitle" style={styles.centerText}>
-            {t("appName")}
+            {"Deadliner"}
           </AppText>
           <AppText
             variant="body"
             color="textSecondary"
             style={styles.centerText}
           >
-            {t("version", { version: APP_VERSION })}
+            {`Version ${APP_VERSION}`}
           </AppText>
           <AppText variant="body" style={styles.description}>
-            {t("appDescription")}
+            {"Deadliner helps students visualize urgency and never miss important deadlines."}
           </AppText>
           <AppText variant="caption" style={styles.credit}>
-            {t("developedBy")}
+            {"Developed by Maymae"}
           </AppText>
         </Card>
       </View>

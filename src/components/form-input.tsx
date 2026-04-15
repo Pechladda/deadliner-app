@@ -11,7 +11,6 @@ import {
     ViewStyle,
 } from "react-native";
 
-import { t } from "@/src/core/utils";
 import { colors, radius, spacing, typography } from "@/src/theme";
 
 import { AppText } from "./app-text";
@@ -38,8 +37,8 @@ export function FormInput({
   inputStyle,
   feedbackStyle,
   showFeedbackSlot = false,
-  showPasswordLabel = t("showPassword"),
-  hidePasswordLabel = t("hidePassword"),
+  showPasswordLabel = "Show password",
+  hidePasswordLabel = "Hide password",
   editable,
   ...props
 }: FormInputProps) {
@@ -113,17 +112,16 @@ const styles = StyleSheet.create({
   input: {
     minHeight: 50,
     borderRadius: radius.xxl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 0,
     backgroundColor: colors.surface,
     color: colors.textPrimary,
-    fontSize: typography.size.s,
+    fontSize: typography.size.m,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,
   },
   inputCompact: {
     minHeight: 46,
-    fontSize: typography.size.xs,
+    fontSize: typography.size.m,
   },
   passwordInput: {
     paddingRight: 52,
@@ -140,6 +138,7 @@ const styles = StyleSheet.create({
   },
   inputInvalid: {
     borderColor: colors.danger,
+    borderWidth: 0,
   },
   feedbackSlot: {
     minHeight: 22,

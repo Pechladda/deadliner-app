@@ -6,7 +6,7 @@ import {
     PastelBackground,
 } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation/route-names";
-import { t } from "@/src/core/utils";
+
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth } from "@/src/firebase";
 import {
@@ -37,11 +37,11 @@ function validateEmail(email: string): string {
   const normalized = email.trim();
 
   if (!normalized) {
-    return t("registerEmailRequired");
+    return "Email is required.";
   }
 
   if (!EMAIL_PATTERN.test(normalized)) {
-    return t("registerEmailInvalid");
+    return "Please enter a valid email address.";
   }
 
   return "";
@@ -91,9 +91,9 @@ export function ForgotPasswordScreen() {
     try {
       setIsSubmitting(true);
       await sendPasswordResetEmail(auth, email.trim());
-      setSuccessMessage(t("forgotPasswordResetSuccess"));
+      setSuccessMessage("Password reset link has been sent to your email.");
     } catch {
-      setSubmitError(t("forgotPasswordResetError"));
+      setSubmitError("Unable to send reset link. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -122,17 +122,17 @@ export function ForgotPasswordScreen() {
               <IconButton
                 icon="chevron-back"
                 onPress={() => navigation.goBack()}
-                accessibilityLabel={t("goBack")}
+                accessibilityLabel={"Go back"}
               />
               <View style={styles.headerSpacer} />
             </View>
 
             <View style={styles.copyBlock}>
               <AppText variant="title" style={styles.title}>
-                {t("forgotPasswordTitle")}
+                {"Reset Password"}
               </AppText>
               <AppText variant="caption" style={styles.subtitle}>
-                {t("forgotPasswordSubtitle")}
+                {"Enter your email address and we will send you a password reset link."}
               </AppText>
             </View>
 
@@ -148,7 +148,7 @@ export function ForgotPasswordScreen() {
                   value={email}
                   onChangeText={onChangeEmail}
                   onBlur={onBlurEmail}
-                  placeholder={t("forgotPasswordEmailPlaceholder")}
+                  placeholder={"Email address"}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="email"
@@ -156,7 +156,7 @@ export function ForgotPasswordScreen() {
                   keyboardType="email-address"
                   returnKeyType="done"
                   selectionColor={colors.primary}
-                  accessibilityLabel={t("email")}
+                  accessibilityLabel={"Email"}
                   editable={!isSubmitting}
                   compact={isCompact}
                   error={submitAttempted || touched ? emailError : ""}
@@ -165,23 +165,23 @@ export function ForgotPasswordScreen() {
               </View>
 
               <AppButton
-                title={t("forgotPasswordSendResetLink")}
+                title={"Send Reset Link"}
                 onPress={onSubmit}
                 isLoading={isSubmitting}
-                loadingLabel={t("forgotPasswordSending")}
+                loadingLabel={"SENDING..."}
                 size={isCompact ? "compact" : "default"}
-                accessibilityLabel={t("forgotPasswordSendResetLink")}
+                accessibilityLabel={"Send Reset Link"}
               />
 
               <Pressable
                 onPress={() => navigation.navigate(StackRoutes.Login)}
                 accessibilityRole="button"
-                accessibilityLabel={t("registerBackToSignIn")}
+                accessibilityLabel={"Back to Sign In"}
                 style={styles.backToLoginButton}
                 disabled={isSubmitting}
               >
                 <AppText style={styles.backToLoginText}>
-                  {t("registerBackToSignIn")}
+                  {"Back to Sign In"}
                 </AppText>
               </Pressable>
 

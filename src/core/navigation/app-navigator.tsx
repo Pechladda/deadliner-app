@@ -9,7 +9,6 @@ import { BlurView } from "expo-blur";
 import { useEffect } from "react";
 import { StyleSheet } from "react-native";
 
-import { t } from "@/src/core/utils";
 import { AddDeadlineScreen } from "@/src/features/add-deadline";
 import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
 import { HomeScreen } from "@/src/features/home-deadline-list";
@@ -84,7 +83,7 @@ function MainTabs() {
           height: 68,
           paddingBottom: 8,
           paddingTop: 6,
-          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopWidth: 0,
           borderColor: colors.background,
           backgroundColor: colors.background,
           shadowColor: colors.shadow,
@@ -104,7 +103,7 @@ function MainTabs() {
         name={TabRoutes.Home}
         component={HomeScreen}
         options={{
-          title: t("tabHome"),
+          title: "Home",
           tabBarIcon: ({ color, size, focused }) => (
             <AnimatedTabIcon
               name={focused ? "home" : "home-outline"}
@@ -119,7 +118,7 @@ function MainTabs() {
         name={TabRoutes.AddDeadline}
         component={AddDeadlineScreen}
         options={{
-          title: t("tabAdd"),
+          title: "Add",
           tabBarIcon: ({ color, size, focused }) => (
             <AnimatedTabIcon
               name={focused ? "add-circle" : "add-circle-outline"}
@@ -134,7 +133,7 @@ function MainTabs() {
         name={TabRoutes.Settings}
         component={SettingsScreen}
         options={{
-          title: t("tabSettings"),
+          title: "Settings",
           tabBarIcon: ({ color, size, focused }) => (
             <AnimatedTabIcon
               name={focused ? "settings" : "settings-outline"}

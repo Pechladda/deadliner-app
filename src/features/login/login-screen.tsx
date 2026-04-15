@@ -5,7 +5,7 @@ import {
   PastelBackground,
 } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation/route-names";
-import { t } from "@/src/core/utils";
+
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth } from "@/src/firebase";
 import { useAuthStore } from "@/src/store/auth-store";
@@ -146,7 +146,7 @@ export function LoginScreen() {
         normalizedPassword,
       );
       await login(userCredential.user);
-    } catch (error) {
+    } catch {
       // ไม่ว่าจะ Error อะไร (รหัสผิด, ไม่มีเมล์) ให้โชว์ Modal ตัวนี้
       setShowErrorModal(true);
     } finally {
@@ -211,7 +211,7 @@ export function LoginScreen() {
                   <FormInput
                     value={formData.email}
                     onChangeText={(value) => handleChange("email", value)}
-                    placeholder={t("email")}
+                    placeholder={"Email"}
                     autoCapitalize="none"
                     autoCorrect={false}
                     autoComplete="email"
@@ -219,7 +219,7 @@ export function LoginScreen() {
                     keyboardType="email-address"
                     returnKeyType="next"
                     selectionColor={colors.primary}
-                    accessibilityLabel={t("email")}
+                    accessibilityLabel={"Email"}
                     editable={!isSubmitting}
                     compact={isCompact}
                   />
@@ -227,7 +227,7 @@ export function LoginScreen() {
                   <FormInput
                     value={formData.password}
                     onChangeText={(value) => handleChange("password", value)}
-                    placeholder={t("passwordPlaceholder")}
+                    placeholder={"Password"}
                     isPassword
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -235,22 +235,22 @@ export function LoginScreen() {
                     textContentType="password"
                     returnKeyType="done"
                     selectionColor={colors.primary}
-                    accessibilityLabel={t("passwordInput")}
+                    accessibilityLabel={"Password input"}
                     editable={!isSubmitting}
                     compact={isCompact}
-                    showPasswordLabel={t("showPassword")}
-                    hidePasswordLabel={t("hidePassword")}
+                    showPasswordLabel={"Show password"}
+                    hidePasswordLabel={"Hide password"}
                   />
                 </View>
 
                 <View style={styles.actionArea}>
                   <AppButton
-                    title={t("signIn")}
+                    title={"Sign In"}
                     onPress={onSubmit}
                     isLoading={isSubmitting}
-                    loadingLabel={t("loginSigningIn")}
-                    size={isCompact ? "compact" : "default"}
-                    accessibilityLabel={t("signIn")}
+                    loadingLabel={"SIGNING IN..."}
+                    size="compact"
+                    accessibilityLabel={"Sign In"}
                   />
 
                   <Pressable
@@ -258,12 +258,12 @@ export function LoginScreen() {
                       navigation.navigate(StackRoutes.ForgotPassword)
                     }
                     accessibilityRole="button"
-                    accessibilityLabel={t("forgotPassword")}
+                    accessibilityLabel={"Forgot password?"}
                     style={styles.forgotInlineButton}
                     disabled={isSubmitting}
                   >
                     <AppText style={styles.forgotInlineText}>
-                      {t("forgotPassword")}
+                      {"Forgot password?"}
                     </AppText>
                   </Pressable>
                 </View>
@@ -276,7 +276,7 @@ export function LoginScreen() {
           <Pressable
             onPress={() => navigation.navigate(StackRoutes.Register)}
             accessibilityRole="button"
-            accessibilityLabel={t("createNewAccount")}
+            accessibilityLabel={"Create new account"}
             style={({ pressed }) => [
               styles.createAccountButton,
               pressed && styles.createAccountButtonPressed,
@@ -284,7 +284,7 @@ export function LoginScreen() {
             disabled={isSubmitting}
           >
             <AppText style={styles.createAccountText}>
-              {t("createNewAccount")}
+              {"Create new account"}
             </AppText>
           </Pressable>
         </View>
@@ -297,11 +297,11 @@ export function LoginScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <AppText style={styles.modalTitle}>
-              {t("loginAccountNotFoundTitle")}
-            </AppText>
+            <AppText style={styles.modalTitle}>{"Account not found"}</AppText>
             <AppText style={styles.modalBody}>
-              {t("loginAccountNotFoundBody")}
+              {
+                "We couldn't find an account matching these details. If you don't have an account, you can create one."
+              }
             </AppText>
 
             <View style={styles.modalActions}>
@@ -310,7 +310,7 @@ export function LoginScreen() {
                 onPress={onGoToRegister}
               >
                 <AppText style={styles.modalSecondaryBtnText}>
-                  {t("registerSignUp")}
+                  {"Sign Up"}
                 </AppText>
               </Pressable>
 
@@ -318,9 +318,7 @@ export function LoginScreen() {
                 style={styles.modalPrimaryBtn}
                 onPress={() => setShowErrorModal(false)}
               >
-                <AppText style={styles.modalPrimaryBtnText}>
-                  {t("retry")}
-                </AppText>
+                <AppText style={styles.modalPrimaryBtnText}>{"Retry"}</AppText>
               </Pressable>
             </View>
           </View>

@@ -23,7 +23,6 @@ import {
   formatDueLabel,
   getDeadlineStatus,
   getDeadlineStatusDisplayColor,
-  t,
 } from "@/src/core/utils";
 import { useHomeNavigation } from "@/src/features/home-deadline-list/hooks/use-home-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
@@ -60,18 +59,18 @@ function statusLabelFromItem(item: Deadline, isOverdue: boolean): string {
   const status = getDeadlineStatus(item.dueAt);
 
   if (isOverdue) {
-    return t("overdue");
+    return "Overdue";
   }
 
   if (status === "urgent") {
-    return t("filterUrgent");
+    return "Urgent";
   }
 
   if (status === "soon") {
-    return t("filterSoon");
+    return "Soon";
   }
 
-  return t("onTrack");
+  return "On Track";
 }
 
 function statusColorFromItem(
@@ -150,7 +149,7 @@ function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
           color={colors.buttonText}
         />
         <AppText variant="caption" style={styles.swipeActionText}>
-          {t("done")}
+          {"Done"}
         </AppText>
       </Pressable>
       <Pressable
@@ -163,7 +162,7 @@ function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
           color={colors.buttonText}
         />
         <AppText variant="caption" style={styles.swipeActionText}>
-          {t("edit")}
+          {"Edit"}
         </AppText>
       </Pressable>
       <Pressable
@@ -176,7 +175,7 @@ function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
           color={colors.buttonText}
         />
         <AppText variant="caption" style={styles.swipeActionText}>
-          {t("delete")}
+          {"Delete"}
         </AppText>
       </Pressable>
     </View>
@@ -243,7 +242,7 @@ export function HomeScreen() {
 
   const onDone = (id: string) => {
     completeDeadline(id);
-    setToastMessage(t("movedToHistory"));
+    setToastMessage("Moved to History");
     setShowToast(true);
 
     if (toastTimerRef.current) {
@@ -256,10 +255,10 @@ export function HomeScreen() {
   };
 
   const onDelete = (id: string) => {
-    Alert.alert(t("deleteDeadlineTitle"), t("deleteDeadlineConfirm"), [
-      { text: t("cancel"), style: "cancel" },
+    Alert.alert("Delete deadline", "Are you sure you want to delete this assignment?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: t("delete"),
+        text: "Delete",
         style: "destructive",
         onPress: () => {
           void deleteDeadline(id);
@@ -338,7 +337,7 @@ export function HomeScreen() {
       <View style={[styles.container, isCompact && styles.containerCompact]}>
         <View style={styles.headerRow}>
           <AppText variant="title" style={styles.headerTitle}>
-            {t("myDeadlines")}
+            {"My Deadlines"}
           </AppText>
         </View>
 
@@ -350,7 +349,7 @@ export function HomeScreen() {
           <View style={styles.summaryRow}>
             <View style={[styles.summaryItem, styles.summaryItemCoral]}>
               <AppText variant="caption" style={styles.summaryLabelCoral}>
-                {t("overdue")}
+                {"Overdue"}
               </AppText>
               <AppText variant="sectionTitle" style={styles.summaryValue}>
                 {String(overdueCount)}
@@ -359,7 +358,7 @@ export function HomeScreen() {
             <View style={styles.summaryDivider} />
             <View style={[styles.summaryItem, styles.summaryItemViolet]}>
               <AppText variant="caption" style={styles.summaryLabelViolet}>
-                {t("summaryDueToday")}
+                {"Due today"}
               </AppText>
               <AppText variant="sectionTitle" style={styles.summaryValue}>
                 {String(dueTodayCount)}
@@ -368,7 +367,7 @@ export function HomeScreen() {
             <View style={styles.summaryDivider} />
             <View style={[styles.summaryItem, styles.summaryItemAmber]}>
               <AppText variant="caption" style={styles.summaryLabelAmber}>
-                {t("summaryUrgent")}
+                {"Urgent"}
               </AppText>
               <AppText variant="sectionTitle" style={styles.summaryValue}>
                 {String(urgentCount)}
@@ -379,11 +378,11 @@ export function HomeScreen() {
 
         <View style={styles.filterRow}>
           {[
-            { key: "all", label: t("filterAll") },
-            { key: "overdue", label: t("overdue") },
-            { key: "urgent", label: t("filterUrgent") },
-            { key: "soon", label: t("filterSoon") },
-            { key: "onTrack", label: t("onTrack") },
+            { key: "all", label: "All" },
+            { key: "overdue", label: "Overdue" },
+            { key: "urgent", label: "Urgent" },
+            { key: "soon", label: "Soon" },
+            { key: "onTrack", label: "On Track" },
           ].map((item) => (
             <FilterChip
               key={item.key}
@@ -409,10 +408,10 @@ export function HomeScreen() {
             onChangeText={setSearch}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            placeholder={isSearchFocused ? "" : t("searchDeadlinePlaceholder")}
+            placeholder={isSearchFocused ? "" : "Search by assignment or course"}
             placeholderTextColor={homeDeadlineListTokens.searchPlaceholder}
             style={styles.searchInput}
-            accessibilityLabel={t("searchDeadlinePlaceholder")}
+            accessibilityLabel={"Search by assignment or course"}
           />
         </BlurView>
 
@@ -421,7 +420,7 @@ export function HomeScreen() {
             <View style={styles.loadingWrap}>
               <ActivityIndicator color={colors.primaryStrong} />
               <AppText variant="caption" style={styles.loadingText}>
-                {t("loadingDeadlines")}
+                {"Loading your deadlines..."}
               </AppText>
             </View>
           ) : (
@@ -474,7 +473,7 @@ export function HomeScreen() {
                       <DeadlineCard
                         assignmentName={item.assignmentName}
                         courseName={item.courseName}
-                        dueLabel={`${t("duePrefix")} ${formatDueLabel(item.dueAt)}`}
+                        dueLabel={`${"Due:"} ${formatDueLabel(item.dueAt)}`}
                         statusLabel={statusLabelFromItem(item, isOverdue)}
                         urgencyColor={statusColorFromItem(item, isOverdue)}
                         gradientColors={cardGradients}
@@ -483,7 +482,7 @@ export function HomeScreen() {
                             id: item.id,
                           });
                         }}
-                        cardAccessibilityLabel={`${item.assignmentName}, ${t("due")} ${formatDueLabel(item.dueAt)}`}
+                        cardAccessibilityLabel={`${item.assignmentName}, ${"Due"} ${formatDueLabel(item.dueAt)}`}
                       />
                     </View>
                   </Swipeable>
@@ -500,13 +499,13 @@ export function HomeScreen() {
                     style={styles.emptyStateTitle}
                   >
                     {filter === "all"
-                      ? t("allCaughtUp")
-                      : t("noTasksInCategoryYet")}
+                      ? "You're all caught up."
+                      : "No tasks in this category yet."}
                   </AppText>
                   <AppText variant="caption" style={styles.emptyStateHint}>
                     {filter === "all"
-                      ? t("homeEmptyHint")
-                      : t("searchDeadlinePlaceholder")}
+                      ? "Create your first deadline and stay ahead."
+                      : "Search by assignment or course"}
                   </AppText>
                 </BlurView>
               }
@@ -563,7 +562,7 @@ const styles = StyleSheet.create({
   summaryGlass: {
     borderRadius: radius.xl,
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: homeDeadlineListTokens.summaryBorder,
     backgroundColor: homeDeadlineListTokens.summaryBackground,
     marginBottom: spacing.m,
@@ -635,7 +634,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: homeDeadlineListTokens.filterChipHorizontalPadding,
     paddingVertical: homeDeadlineListTokens.filterChipVerticalPadding,
     borderRadius: homeDeadlineListTokens.filterChipBorderRadius,
-    borderWidth: homeDeadlineListTokens.filterChipBorderWidth,
+    borderWidth: 0,
     borderColor: homeDeadlineListTokens.filterChipBorder,
     backgroundColor: homeDeadlineListTokens.filterChipBackground,
     justifyContent: "center",
@@ -659,7 +658,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.m,
     borderRadius: radius.xl,
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: homeDeadlineListTokens.searchBorder,
     backgroundColor: homeDeadlineListTokens.searchBackground,
     flexDirection: "row",
@@ -693,7 +692,7 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginBottom: spacing.s,
-    borderWidth: homeDeadlineListTokens.cardWrapperBorderWidth,
+    borderWidth: 0,
     borderColor: colors.border,
     borderRadius: radius.xxl,
     backgroundColor: colors.surface,
@@ -703,7 +702,7 @@ const styles = StyleSheet.create({
   emptyStateCard: {
     marginTop: spacing.xl,
     borderRadius: radius.xl,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: homeDeadlineListTokens.emptyCardBorder,
     backgroundColor: homeDeadlineListTokens.emptyCardBackground,
     padding: spacing.xl,

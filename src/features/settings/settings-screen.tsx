@@ -19,9 +19,8 @@ import {
 
 import { AppButton, AppText, PastelBackground, Toast } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation/route-names";
-import { t } from "@/src/core/utils";
+
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
-import { useLanguage } from "@/src/providers/language-provider";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
@@ -61,10 +60,6 @@ export function SettingsScreen() {
   const isCompact = width < screenSharedTokens.compactWidthThreshold;
   const isWide = width >= screenSharedTokens.wideWidthThreshold;
   const navigation = useSettingsNavigation();
-  const { language, setAppLanguage } = useLanguage();
-  const [pendingLanguage, setPendingLanguage] = useState<"en" | "th" | null>(
-    null,
-  );
   const logout = useAuthStore((state) => state.logout);
   const notificationsEnabled = useDeadlineStore(
     (state) => state.notificationsEnabled,
@@ -83,20 +78,13 @@ export function SettingsScreen() {
   const [toastVisible, setToastVisible] = useState(false);
   const [toastType, setToastType] = useState<"success" | "error">("success");
 
-  const onChangeLanguage = (nextLanguage: "th" | "en") => {
-    setPendingLanguage(nextLanguage);
-    void setAppLanguage(nextLanguage).finally(() => {
-      setPendingLanguage(null);
-    });
-  };
-
   const onLogout = () => {
     void (async () => {
       try {
         await logout();
-        showToast(t("logoutSuccess"), "success");
+        showToast("Logged out successfully", "success");
       } catch {
-        showToast(t("logoutFailed"), "error");
+        showToast("Unable to log out right now. Please try again.", "error");
       }
     })();
   };
@@ -140,15 +128,15 @@ export function SettingsScreen() {
   };
 
   const onDeleteAllData = () => {
-    Alert.alert(t("deleteAllDataTitle"), t("deleteAllDataConfirm"), [
-      { text: t("cancel"), style: "cancel" },
+    Alert.alert("Delete all app data", "This will permanently remove all deadlines and history. Continue?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: t("delete"),
+        text: "Delete",
         style: "destructive",
         onPress: () => {
           void clearAllData().then((isSuccess) => {
             showToast(
-              isSuccess ? t("allDataDeleted") : t("deleteFailed"),
+              isSuccess ? "All app data deleted" : "Could not delete this deadline. Please try again.",
               isSuccess ? "success" : "error",
             );
           });
@@ -183,17 +171,17 @@ export function SettingsScreen() {
             style={[styles.headerRow, isCompact && styles.headerRowCompact]}
           >
             <AppText variant="title" style={styles.screenTitle}>
-              {t("settings")}
+              {"Settings"}
             </AppText>
           </View>
 
           <View style={styles.sectionBlock}>
             <AppText variant="sectionTitle" style={styles.sectionTitle}>
-              {t("settingsAccountSection")}
+              {"Account"}
             </AppText>
             <View style={styles.section}>
               <SettingsRow
-                label={t("profile")}
+                label={"Profile"}
                 icon="person-outline"
                 onPress={() => navigation.navigate(StackRoutes.Profile)}
               />
@@ -202,7 +190,7 @@ export function SettingsScreen() {
 
           <View style={styles.sectionBlock}>
             <AppText variant="sectionTitle" style={styles.sectionTitle}>
-              {t("settingsPreferencesSection")}
+              {"Preferences"}
             </AppText>
             <View style={styles.section}>
               <View style={styles.toggleRow}>
@@ -212,7 +200,7 @@ export function SettingsScreen() {
                     size={20}
                     color={colors.textSecondary}
                   />
-                  <AppText>{t("enableNotifications")}</AppText>
+                  <AppText>{"Enable Notifications"}</AppText>
                 </View>
                 <Switch
                   value={notificationsEnabled}
@@ -232,21 +220,21 @@ export function SettingsScreen() {
                       : colors.textSecondary
                   }
                   ios_backgroundColor={colors.borderSoft}
-                  accessibilityLabel={t("enableNotifications")}
+                  accessibilityLabel={"Enable Notifications"}
                 />
               </View>
 
               {!hasNotificationPermission ? (
                 <View style={styles.notificationsHintCard}>
                   <AppText variant="body">
-                    {t("notificationsDisabledTitle")}
+                    {"Notifications are disabled"}
                   </AppText>
                   <AppText variant="caption">
-                    {t("notificationsDisabledHint")}
+                    {"Enable in system settings."}
                   </AppText>
                   <View style={styles.settingsButtonWrap}>
                     <AppButton
-                      label={t("openSettings")}
+                      label={"Open Settings"}
                       onPress={onOpenSystemSettings}
                       variant="outline"
                     />
@@ -254,38 +242,8 @@ export function SettingsScreen() {
                 </View>
               ) : null}
 
-              <View style={styles.languageRow}>
-                <AppText>{t("language")}</AppText>
-                <View style={styles.languageButtons}>
-                  <Pressable
-                    onPress={() => onChangeLanguage("en")}
-                    style={[
-                      styles.languageButton,
-                      (pendingLanguage === "en" || language === "en") &&
-                        styles.languageButtonActive,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("english")}
-                  >
-                    <AppText>{t("english")}</AppText>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => onChangeLanguage("th")}
-                    style={[
-                      styles.languageButton,
-                      (pendingLanguage === "th" || language === "th") &&
-                        styles.languageButtonActive,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("thai")}
-                  >
-                    <AppText>{t("thai")}</AppText>
-                  </Pressable>
-                </View>
-              </View>
-
               <SettingsRow
-                label={t("history")}
+                label={"History"}
                 icon="time-outline"
                 onPress={() => navigation.navigate(StackRoutes.History)}
               />
@@ -294,23 +252,23 @@ export function SettingsScreen() {
 
           <View style={styles.sectionBlock}>
             <AppText variant="sectionTitle" style={styles.sectionTitle}>
-              {t("settingsSupportPrivacySection")}
+              {"Support & Privacy"}
             </AppText>
             <View style={styles.section}>
               <SettingsRow
-                label={t("privacyPolicy")}
+                label={"Privacy Policy"}
                 icon="shield-checkmark-outline"
                 onPress={() => navigation.navigate(StackRoutes.PrivacyPolicy)}
               />
               <SettingsRow
-                label={t("aboutApp")}
+                label={"About App"}
                 icon="help-circle-outline"
                 onPress={() => navigation.navigate(StackRoutes.AboutApp)}
               />
 
               <View style={styles.deleteActionWrap}>
                 <AppButton
-                  label={t("deleteAllData")}
+                  label={"Delete All Data"}
                   onPress={onDeleteAllData}
                   variant="outline"
                   iconName="trash-outline"
@@ -323,7 +281,7 @@ export function SettingsScreen() {
 
           <View style={styles.accountActionWrap}>
             <AppButton
-              label={t("signOut")}
+              label={"Sign Out"}
               onPress={onLogout}
               variant="outline"
               iconName="log-out-outline"
@@ -398,7 +356,7 @@ const styles = StyleSheet.create({
   section: {
     borderRadius: radius.xl,
     backgroundColor: colors.surface,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     overflow: "hidden",
   },
@@ -409,7 +367,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.s,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     borderBottomColor: colors.borderSoft,
   },
   rowLeft: {
@@ -420,14 +378,6 @@ const styles = StyleSheet.create({
   toggleRowLeft: {
     flex: 1,
   },
-  languageRow: {
-    minHeight: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.s,
-  },
   toggleRow: {
     minHeight: 50,
     flexDirection: "row",
@@ -435,13 +385,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.s,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     borderBottomColor: colors.borderSoft,
   },
   notificationsHintCard: {
     marginHorizontal: spacing.l,
     marginVertical: spacing.m,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     borderRadius: radius.l,
     padding: spacing.m,
@@ -463,43 +413,11 @@ const styles = StyleSheet.create({
   settingsButtonWrap: {
     marginTop: spacing.s,
   },
-  languageButtons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.s,
-  },
-  languageButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
-  },
-  languageButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.chipBgActive,
-  },
   accountActionWrap: {
-    marginTop: spacing.s,
+    marginTop: spacing.l,
   },
   deleteActionWrap: {
     paddingHorizontal: spacing.l,
     paddingBottom: spacing.l,
-    paddingTop: spacing.s,
-  },
-  deleteActionButton: {
-    minHeight: 48,
-    borderRadius: radius.l,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.m,
-    alignItems: "flex-start",
-    justifyContent: "center",
-  },
-  deleteActionText: {
-    color: colors.danger,
-    fontWeight: "600",
   },
 });

@@ -18,14 +18,6 @@ export {
 export type { DeadlineStatus } from "./deadline-utils";
 
 export {
-    getLanguage,
-    initLanguage,
-    setLanguage,
-    subscribeLanguageChange,
-    t
-} from "./translations";
-
-export {
     getAuthErrorMessage,
     getFirestoreErrorMessage
 } from "./firebase-errors";

@@ -1,32 +1,69 @@
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  useFonts,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    useFonts,
 } from "@expo-google-fonts/inter";
 import "expo-dev-client";
 import { useEffect } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  Platform,
-  StyleSheet,
-  View,
+    ActivityIndicator,
+    Image,
+    Platform,
+    StyleSheet,
+    View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppNavigator } from "@/src/core/navigation";
-import { LanguageProvider } from "@/src/providers/language-provider";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors } from "@/src/theme";
 
 if (Platform.OS === "web") {
-  const injectWebFonts = () => {
+  const injectWebViewportStyles = () => {
+    const styleId = "deadliner-web-viewport-style";
+    if (document.getElementById(styleId)) {
+      return;
+    }
+
     const style = document.createElement("style");
+    style.id = styleId;
+    style.appendChild(
+      document.createTextNode(`
+        html, body, #root {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
+
+        body {
+          overflow: hidden;
+        }
+
+        #root {
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+      `),
+    );
+
+    document.head.appendChild(style);
+  };
+
+  const injectWebFonts = () => {
+    const styleId = "deadliner-web-icon-fonts";
+    if (document.getElementById(styleId)) {
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.id = styleId;
     const fonts = [
       {
         name: "Ionicons",
@@ -61,6 +98,8 @@ if (Platform.OS === "web") {
     style.appendChild(document.createTextNode(cssRules));
     document.head.appendChild(style);
   };
+
+  injectWebViewportStyles();
   injectWebFonts();
 }
 
@@ -100,19 +139,23 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.rootContainer}>
       <SafeAreaProvider>
-        <LanguageProvider>
-          <AppNavigator />
-        </LanguageProvider>
+        <AppNavigator />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
   loadingContainer: {
     flex: 1,
+    width: "100%",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.background,

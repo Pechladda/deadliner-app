@@ -60,8 +60,7 @@ const styles = StyleSheet.create({
   },
   toast: {
     borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderWidth: 0,
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.m,

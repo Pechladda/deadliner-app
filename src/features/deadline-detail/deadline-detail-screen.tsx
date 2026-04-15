@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Alert,
     Animated,
@@ -22,13 +22,12 @@ import {
 } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation/route-names";
 import {
-    formatCountdownLong,
-    formatDueLabel,
-    getDeadlineStatus,
-    getDeadlineStatusDisplayColor,
-    getRemainingMs,
-    getUrgencyMessage,
-    t,
+  formatCountdownLong,
+  formatDueLabel,
+  getDeadlineStatus,
+  getDeadlineStatusDisplayColor,
+  getRemainingMs,
+  getUrgencyMessage,
 } from "@/src/core/utils";
 import {
     useDeadlineDetailNavigation,
@@ -58,13 +57,13 @@ function MissingState({ onPressBack }: MissingStateProps) {
       <IconButton
         icon="chevron-back"
         onPress={onPressBack}
-        accessibilityLabel={t("goBack")}
+        accessibilityLabel={"Go back"}
       />
       <AppText variant="heading" style={styles.missingTitle}>
-        {t("noAssignmentSelected")}
+        {"No assignment selected"}
       </AppText>
       <AppText variant="body" color="textSecondary" style={styles.missingText}>
-        {t("chooseAssignmentHint")}
+        {"Please choose an assignment from Home to see its details."}
       </AppText>
     </View>
   );
@@ -149,27 +148,27 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
           <View style={[styles.statusPill, { backgroundColor: accent }]}>
             <AppText style={styles.statusPillText}>
               {status === "overdue"
-                ? t("overdue")
+                ? "Overdue"
                 : status === "urgent"
-                  ? t("urgent")
+                  ? "URGENT"
                   : status === "soon"
-                    ? t("soon")
-                    : t("onTrack")}
+                    ? "SOON"
+                    : "On Track"}
             </AppText>
           </View>
 
           {urgencyMessage !== "overdue" ? (
             <AppText variant="caption" style={styles.urgencyHelperText}>
               {urgencyMessage === "needsToday"
-                ? t("needsAttentionToday")
+                ? "Needs attention today"
                 : urgencyMessage === "dueSoon"
-                  ? t("dueVerySoon")
-                  : t("safeForNow")}
+                  ? "Due very soon"
+                  : "Safe for now"}
             </AppText>
           ) : null}
 
           <AppText variant="caption" style={styles.dueText}>
-            {t("due")} {formatDueLabel(dueAt)}
+            {"Due"} {formatDueLabel(dueAt)}
           </AppText>
         </View>
       </View>
@@ -182,7 +181,7 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
     <View style={styles.buttonRow}>
       <View style={styles.actionButtonWrap}>
         <AppButton
-          label={t("edit")}
+          label={"Edit"}
           onPress={onEdit}
           variant="solid"
           size="compact"
@@ -191,7 +190,7 @@ function ActionRow({ onEdit, onDelete }: ActionRowProps) {
       </View>
       <View style={styles.actionButtonWrap}>
         <AppButton
-          label={t("delete")}
+          label={"Delete"}
           onPress={onDelete}
           variant="outline"
           size="compact"
@@ -244,18 +243,18 @@ export function DeadlineDetailScreen() {
       return;
     }
 
-    Alert.alert(t("deleteDeadlineTitle"), t("deleteDeadlineConfirm"), [
+    Alert.alert("Delete deadline", "Are you sure you want to delete this assignment?", [
       {
-        text: t("cancel"),
+        text: "Cancel",
         style: "cancel",
       },
       {
-        text: t("delete"),
+        text: "Delete",
         style: "destructive",
         onPress: () => {
           void deleteDeadline(deadline.id).then((isSuccess) => {
             if (!isSuccess) {
-              Alert.alert(t("error"), t("deleteFailed"));
+              Alert.alert("Error", "Could not delete this deadline. Please try again.");
               return;
             }
 
@@ -283,19 +282,15 @@ export function DeadlineDetailScreen() {
   }
 
   const status = getDeadlineStatus(deadline.dueAt, now);
-  const palette = useMemo(() => {
-    const statusColor = getDeadlineStatusDisplayColor(status);
-    if (statusColor === "red") {
-      return deadlineDetailTokens.heroPaletteOverdue;
-    }
-    if (statusColor === "orange") {
-      return deadlineDetailTokens.heroPaletteUrgent;
-    }
-    if (statusColor === "yellow") {
-      return deadlineDetailTokens.heroPaletteSoon;
-    }
-    return deadlineDetailTokens.heroPaletteOnTrack;
-  }, [status]);
+  const statusColor = getDeadlineStatusDisplayColor(status);
+  const palette =
+    statusColor === "red"
+      ? deadlineDetailTokens.heroPaletteOverdue
+      : statusColor === "orange"
+        ? deadlineDetailTokens.heroPaletteUrgent
+        : statusColor === "yellow"
+          ? deadlineDetailTokens.heroPaletteSoon
+          : deadlineDetailTokens.heroPaletteOnTrack;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -311,10 +306,10 @@ export function DeadlineDetailScreen() {
             <IconButton
               icon="chevron-back"
               onPress={onPressFallbackBack}
-              accessibilityLabel={t("goBack")}
+              accessibilityLabel={"Go back"}
             />
             <AppText variant="caption" style={styles.headerCaption}>
-              {t("assignmentDetail")}
+              {"Assignment Detail"}
             </AppText>
             <View style={styles.headerSpacer} />
           </View>
@@ -339,17 +334,17 @@ export function DeadlineDetailScreen() {
 
         <Card style={styles.metaCard}>
           <View style={styles.metaRow}>
-            <AppText variant="caption">{t("reminderInfo")}</AppText>
+            <AppText variant="caption">{"Reminder"}</AppText>
             <AppText variant="body" style={styles.metaValue}>
               {deadline.reminder
                 ? deadline.reminder === "5m"
-                  ? t("reminder5m")
+                  ? "5 minutes before"
                   : deadline.reminder === "30m"
-                    ? t("reminder30m")
+                    ? "30 minutes before"
                     : deadline.reminder === "1h"
-                      ? t("reminder1h")
-                      : t("reminder1d")
-                : t("noReminderSelected")}
+                      ? "1 hour before"
+                      : "1 day before"
+                : "No reminder"}
             </AppText>
           </View>
         </Card>
@@ -386,7 +381,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.m,
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     ...shadows.shadowCard,
   },
@@ -411,7 +406,7 @@ const styles = StyleSheet.create({
   countdownCard: {
     borderRadius: radius.xxl,
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     backgroundColor: deadlineDetailTokens.countdownCardBackground,
     ...shadows.shadowCard,

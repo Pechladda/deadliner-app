@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ReactNode } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
-import { cardTokens, colors, radius, shadows, spacing } from "@/src/theme";
+import { cardTokens, radius, shadows, spacing } from "@/src/theme";
 
 type CardProps = {
   children: ReactNode;
@@ -48,8 +48,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "transparent",
     borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderWidth: 0,
     padding: spacing.xl2,
     overflow: "hidden",
   },
@@ -58,7 +57,7 @@ const styles = StyleSheet.create({
   },
   innerBorder: {
     ...StyleSheet.absoluteFillObject,
-    borderWidth: 1,
+    borderWidth: 0,
     borderRadius: radius.xl,
     borderColor: cardTokens.innerBorder,
   },

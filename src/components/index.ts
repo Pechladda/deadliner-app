@@ -4,7 +4,6 @@ export { Badge } from "./badge";
 export { Card } from "./card";
 export { FormInput } from "./form-input";
 export { IconButton } from "./icon-button";
-export { Input } from "./input";
 export { PastelBackground } from "./pastel-background";
 export { Toast } from "./toast";
 

@@ -23,7 +23,10 @@
     },
     "web": {
       "output": "single",
-      "favicon": "./assets/images/app-icon.png"
+      "favicon": "./assets/images/app-icon.png",
+      "meta": {
+        "viewport": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      }
     },
     "plugins": [
       "expo-dev-client",

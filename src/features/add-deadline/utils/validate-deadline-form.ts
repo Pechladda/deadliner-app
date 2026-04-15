@@ -1,4 +1,4 @@
-import { t } from "@/src/core/utils";
+
 
 export type ValidateDeadlineParams = {
   courseName: string;
@@ -19,27 +19,27 @@ export function validateDeadlineForm({
   hasPickedTime,
 }: ValidateDeadlineParams): string | null {
   if (!courseName.trim() || !assignmentName.trim()) {
-    return t("fieldRequired");
+    return "This field is required.";
   }
 
   if (
     courseName.trim().length > maxTextLength ||
     assignmentName.trim().length > maxTextLength
   ) {
-    return t("fieldTooLong");
+    return "Please keep text under 120 characters.";
   }
 
   if (!selectedDate || !hasPickedDate || !hasPickedTime) {
-    return t("fillAllFieldsError");
+    return "Please fill Course name, Assignment name, Date and Time.";
   }
 
   const dueMs = selectedDate.getTime();
   if (Number.isNaN(dueMs)) {
-    return t("invalidDateTime");
+    return "Please choose a valid date and time.";
   }
 
   if (dueMs <= Date.now() + minDueMsFromNow) {
-    return t("dueAtLeastOneMinute");
+    return "Due time should be at least 1 minute from now.";
   }
 
   return null;

@@ -1,21 +1,21 @@
 import {
-    AppButton,
-    AppText,
-    FormInput,
-    IconButton,
-    PastelBackground,
+  AppButton,
+  AppText,
+  FormInput,
+  IconButton,
+  PastelBackground,
 } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation/route-names";
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth, db } from "@/src/firebase";
-import { t } from "@/src/i18n";
+
 import { useAuthStore } from "@/src/store/auth-store";
 import {
-    colors,
-    loginTokens,
-    screenSharedTokens,
-    spacing,
-    typography,
+  colors,
+  loginTokens,
+  screenSharedTokens,
+  spacing,
+  typography,
 } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { FirebaseError } from "firebase/app";
@@ -23,13 +23,13 @@ import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    useWindowDimensions,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -39,9 +39,10 @@ const BG_WARM = colors.background;
 const USERNAME_PATTERN = /^[A-Za-z0-9]+$/;
 const THAI_CHAR_PATTERN = /[\u0E00-\u0E7F]/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_DEFAULT_HELPER = t("registerPasswordHelper");
+const PASSWORD_DEFAULT_HELPER =
+  "8–30 characters, including uppercase, lowercase, numbers, and at least one symbol (@, _ or .).";
 
-const SUCCESS_MESSAGE = t("registerSuccess");
+const SUCCESS_MESSAGE = "Account created successfully.";
 
 type FieldErrors = {
   username: string;
@@ -61,22 +62,22 @@ function validateUsername(username: string): string {
   const normalized = username;
 
   if (!normalized.trim()) {
-    return t("registerUsernameRequired");
+    return "Username is required.";
   }
 
   if (/\s/.test(normalized)) {
-    return t("registerUsernameNoSpaces");
+    return "Username cannot contain spaces.";
   }
 
   if (normalized.length > 20) {
-    return t("registerUsernameFormat");
+    return "Use English letters and numbers (maximum 20 characters).";
   }
 
   if (
     THAI_CHAR_PATTERN.test(normalized) ||
     !USERNAME_PATTERN.test(normalized)
   ) {
-    return t("registerUsernameFormat");
+    return "Use English letters and numbers (maximum 20 characters).";
   }
 
   return "";
@@ -86,11 +87,11 @@ function validateEmail(email: string): string {
   const normalized = email.trim();
 
   if (!normalized) {
-    return t("registerEmailRequired");
+    return "Email is required.";
   }
 
   if (!EMAIL_PATTERN.test(normalized)) {
-    return t("registerEmailInvalid");
+    return "Please enter a valid email address.";
   }
 
   return "";
@@ -100,31 +101,31 @@ function validatePassword(password: string): string {
   const normalized = password;
 
   if (!normalized) {
-    return t("registerPasswordRequired");
+    return "Password is required.";
   }
 
   if (normalized.length < 8) {
-    return t("registerPasswordMinLength");
+    return "Password must be at least 8 characters.";
   }
 
   if (normalized.length > 30) {
-    return t("registerPasswordMaxLength");
+    return "Password must not exceed 30 characters.";
   }
 
   if (!/[A-Z]/.test(normalized)) {
-    return t("registerPasswordUppercase");
+    return "Include at least 1 uppercase letter";
   }
 
   if (!/[a-z]/.test(normalized)) {
-    return t("registerPasswordLowercase");
+    return "Include at least 1 lowercase letter";
   }
 
   if (!/\d/.test(normalized)) {
-    return t("registerPasswordNumber");
+    return "Include at least 1 number";
   }
 
   if (!/[@_.]/.test(normalized)) {
-    return t("registerPasswordSymbol");
+    return "Include at least 1 of these: @ _ .";
   }
 
   return "";
@@ -135,11 +136,11 @@ function validateConfirmPassword(
   confirmPassword: string,
 ): string {
   if (!confirmPassword) {
-    return t("registerConfirmPasswordRequired");
+    return "Please confirm your password.";
   }
 
   if (confirmPassword !== password) {
-    return t("registerConfirmPasswordMismatch");
+    return "Password does not match.";
   }
 
   return "";
@@ -268,12 +269,12 @@ export function RegisterScreen() {
     setSuccessMessage("");
 
     if (!consentChecked) {
-      setConsentError(t("registerConsentRequired"));
+      setConsentError("You must agree to the Privacy Policy to continue.");
       return;
     }
 
     if (!username.trim() || !email.trim() || !password || !confirmPassword) {
-      setSubmitError(t("registerCompleteRequiredFields"));
+      setSubmitError("Please complete all required fields.");
     }
 
     const nextErrors = buildErrors(username, email, password, confirmPassword);
@@ -337,11 +338,11 @@ export function RegisterScreen() {
           error instanceof FirebaseError ? error.code : "unknown-error";
 
         if (code === "auth/email-already-in-use") {
-          setSubmitError(t("registerEmailAlreadyUsed"));
+          setSubmitError("This email is already registered.");
         } else if (code === "auth/invalid-email") {
-          setSubmitError(t("registerEmailInvalid"));
+          setSubmitError("Please enter a valid email address.");
         } else {
-          setSubmitError(t("registerCreateFailed"));
+          setSubmitError("Unable to create account. Please try again.");
         }
       } finally {
         setIsSubmitting(false);
@@ -372,17 +373,17 @@ export function RegisterScreen() {
               <IconButton
                 icon="chevron-back"
                 onPress={() => navigation.goBack()}
-                accessibilityLabel={t("goBack")}
+                accessibilityLabel={"Go back"}
               />
               <View style={styles.headerSpacer} />
             </View>
 
             <View style={styles.copyBlock}>
               <AppText variant="title" style={styles.title}>
-                {t("registerTitle")}
+                {"Create an Account"}
               </AppText>
               <AppText variant="caption" style={styles.subtitle}>
-                {t("registerSubtitle")}
+                {"Please enter your details to create a new account."}
               </AppText>
             </View>
 
@@ -397,14 +398,14 @@ export function RegisterScreen() {
                 value={username}
                 onChangeText={onChangeUsername}
                 onBlur={() => onBlurField("username")}
-                placeholder={t("usernamePlaceholder")}
+                placeholder={"Username"}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="username"
                 textContentType="username"
                 returnKeyType="next"
                 selectionColor={colors.primary}
-                accessibilityLabel={t("usernameInput")}
+                accessibilityLabel={"Username input"}
                 editable={!isSubmitting}
                 compact={isCompact}
                 error={showUsernameError ? errors.username : ""}
@@ -415,7 +416,7 @@ export function RegisterScreen() {
                 value={email}
                 onChangeText={onChangeEmail}
                 onBlur={() => onBlurField("email")}
-                placeholder={t("email")}
+                placeholder={"Email"}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="email"
@@ -423,7 +424,7 @@ export function RegisterScreen() {
                 keyboardType="email-address"
                 returnKeyType="next"
                 selectionColor={colors.primary}
-                accessibilityLabel={t("email")}
+                accessibilityLabel={"Email"}
                 editable={!isSubmitting}
                 compact={isCompact}
                 error={showEmailError ? errors.email : ""}
@@ -434,7 +435,7 @@ export function RegisterScreen() {
                 value={password}
                 onChangeText={onChangePassword}
                 onBlur={() => onBlurField("password")}
-                placeholder={t("passwordPlaceholder")}
+                placeholder={"Password"}
                 isPassword
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -442,7 +443,7 @@ export function RegisterScreen() {
                 textContentType="newPassword"
                 returnKeyType="next"
                 selectionColor={colors.primary}
-                accessibilityLabel={t("passwordInput")}
+                accessibilityLabel={"Password input"}
                 editable={!isSubmitting}
                 compact={isCompact}
                 error={
@@ -460,7 +461,7 @@ export function RegisterScreen() {
                 value={confirmPassword}
                 onChangeText={onChangeConfirmPassword}
                 onBlur={() => onBlurField("confirmPassword")}
-                placeholder={t("registerConfirmPasswordPlaceholder")}
+                placeholder={"Confirm Password"}
                 isPassword
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -468,7 +469,7 @@ export function RegisterScreen() {
                 textContentType="newPassword"
                 returnKeyType="done"
                 selectionColor={colors.primary}
-                accessibilityLabel={t("registerConfirmPasswordInput")}
+                accessibilityLabel={"Confirm password input"}
                 editable={!isSubmitting}
                 compact={isCompact}
                 error={showConfirmPasswordError ? errors.confirmPassword : ""}
@@ -487,7 +488,9 @@ export function RegisterScreen() {
                     style={styles.consentCheckbox}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: consentChecked }}
-                    accessibilityLabel={t("registerConsentFull")}
+                    accessibilityLabel={
+                      "I agree to the Privacy Policy and Terms of Service"
+                    }
                   >
                     {consentChecked ? (
                       <Ionicons
@@ -500,22 +503,22 @@ export function RegisterScreen() {
 
                   <View style={styles.consentTextWrap}>
                     <AppText style={styles.consentText}>
-                      {t("registerConsentPrefix")}{" "}
+                      {"I agree to the"}{" "}
                     </AppText>
                     <Pressable
                       onPress={() =>
                         navigation.navigate(StackRoutes.PrivacyPolicy)
                       }
                       accessibilityRole="button"
-                      accessibilityLabel={t("privacyPolicy")}
+                      accessibilityLabel={"Privacy Policy"}
                     >
                       <AppText style={styles.consentLinkText}>
-                        {t("privacyPolicy")}
+                        {"Privacy Policy"}
                       </AppText>
                     </Pressable>
                     <AppText style={styles.consentText}>
                       {" "}
-                      {t("registerConsentSuffix")}
+                      {"and Terms of Service"}
                     </AppText>
                   </View>
                 </View>
@@ -530,26 +533,24 @@ export function RegisterScreen() {
               </View>
 
               <AppButton
-                title={
-                  isSubmitting ? t("registerSigningUp") : t("registerSignUp")
-                }
+                title={isSubmitting ? "SIGNING UP..." : "Sign Up"}
                 onPress={onSubmit}
                 isLoading={isSubmitting}
-                loadingLabel={t("registerSigningUp")}
+                loadingLabel={"SIGNING UP..."}
                 size={isCompact ? "compact" : "default"}
-                accessibilityLabel={t("registerScreenAccessibility")}
+                accessibilityLabel={"Register"}
                 disabled={isSignUpDisabled}
               />
 
               <Pressable
                 onPress={() => navigation.navigate(StackRoutes.Login)}
                 accessibilityRole="button"
-                accessibilityLabel={t("registerBackToSignIn")}
+                accessibilityLabel={"Back to Sign In"}
                 style={styles.backToLoginButton}
                 disabled={isSubmitting}
               >
                 <AppText style={styles.backToLoginText}>
-                  {t("registerBackToSignIn")}
+                  {"Back to Sign In"}
                 </AppText>
               </Pressable>
 
@@ -668,7 +669,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 6,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",

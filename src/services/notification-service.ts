@@ -1,4 +1,4 @@
-import { t } from "@/src/core/utils";
+
 import type { Deadline, ReminderOption } from "@/src/models/deadline";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
@@ -88,7 +88,7 @@ export async function registerForPushNotificationsAsync(): Promise<
   string | null
 > {
   if (!Device.isDevice) {
-    console.warn(t("notificationPhysicalDeviceWarning"));
+    console.warn("Push notifications require a physical device. Emulator/simulator may not receive push notifications.");
     return null;
   }
 
@@ -101,7 +101,7 @@ export async function registerForPushNotificationsAsync(): Promise<
 
   const projectId = getEasProjectId();
   if (!projectId) {
-    console.warn(t("notificationMissingProjectIdWarning"));
+    console.warn("Missing EAS projectId. Set expo.extra.eas.projectId in app.json before requesting Expo push token.");
     return null;
   }
 
@@ -109,7 +109,7 @@ export async function registerForPushNotificationsAsync(): Promise<
     const token = await Notifications.getExpoPushTokenAsync({ projectId });
     return token.data;
   } catch (error) {
-    console.warn(t("notificationFetchTokenWarning"), error);
+    console.warn("Unable to fetch Expo push token", error);
     return null;
   }
 }
@@ -140,10 +140,8 @@ export async function scheduleDeadlineNotification(
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: t("notificationDueSoonTitle"),
-      body: t("notificationDueSoonBody", {
-        assignmentName: deadline.assignmentName,
-      }),
+      title: "Due soon",
+      body: `${deadline.assignmentName} is due soon. Tap to review.`,
       sound: true,
     },
     trigger: {

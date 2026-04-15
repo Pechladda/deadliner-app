@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
-import { t } from "@/src/core/utils";
+
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, screenSharedTokens, spacing, typography } from "@/src/theme";
 
@@ -17,63 +17,63 @@ export function PrivacyPolicyScreen() {
           <IconButton
             icon="chevron-back"
             onPress={() => navigation.goBack()}
-            accessibilityLabel={t("goBack")}
+            accessibilityLabel={"Go back"}
           />
           <AppText variant="title" style={styles.screenTitle}>
-            {t("privacyPolicy")}
+            {"Privacy Policy"}
           </AppText>
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
           <Card style={styles.card}>
             <AppText variant="cardTitle">
-              1. {t("privacyWhatWeStoreTitle")}
+              1. {"What we store"}
             </AppText>
             <AppText style={styles.bodyText}>
-              {t("privacyWhatWeStoreBody")}
+              {"We store your name, email, deadlines, and reminder settings."}
             </AppText>
           </Card>
 
           <Card style={styles.card}>
-            <AppText variant="cardTitle">2. {t("privacyWhyTitle")}</AppText>
-            <AppText style={styles.bodyText}>{t("privacyWhyBody")}</AppText>
-          </Card>
-
-          <Card style={styles.card}>
-            <AppText variant="cardTitle">
-              3. {t("privacyDataStorageTitle")}
-            </AppText>
-            <AppText style={styles.bodyText}>
-              {t("privacyDataStorageBody")}
-            </AppText>
+            <AppText variant="cardTitle">2. {"Why we store it"}</AppText>
+            <AppText style={styles.bodyText}>{"We use it only to run the app and send deadline reminders."}</AppText>
           </Card>
 
           <Card style={styles.card}>
             <AppText variant="cardTitle">
-              4. {t("privacyRetentionTitle")}
+              3. {"Data storage"}
             </AppText>
             <AppText style={styles.bodyText}>
-              {t("privacyRetentionBody")}
+              {"Your data is securely stored using Google Firebase (Cloud Firestore) to ensure data consistency across your devices. Firebase acts as our trusted service provider under strict security standards."}
             </AppText>
           </Card>
 
           <Card style={styles.card}>
             <AppText variant="cardTitle">
-              5. {t("privacySecurityTitle")}
+              4. {"Data retention"}
             </AppText>
             <AppText style={styles.bodyText}>
-              {t("privacySecurityBody")}
+              {"We retain your personal data for as long as your account is active. If you choose to delete your account, your personal data will be completely removed from our active database within 30 days."}
             </AppText>
           </Card>
 
           <Card style={styles.card}>
-            <AppText variant="cardTitle">6. {t("privacyRightsTitle")}</AppText>
-            <AppText style={styles.bodyText}>{t("privacyRightsBody")}</AppText>
+            <AppText variant="cardTitle">
+              5. {"Data security"}
+            </AppText>
+            <AppText style={styles.bodyText}>
+              {"We implement appropriate technical measures to protect your personal data from unauthorized access, loss, or misuse."}
+            </AppText>
           </Card>
 
           <Card style={styles.card}>
-            <AppText variant="cardTitle">7. {t("privacyContactTitle")}</AppText>
-            <AppText style={styles.bodyText}>{t("privacyContactBody")}</AppText>
+            <AppText variant="cardTitle">6. {"User rights (PDPA compliance)"}</AppText>
+            <AppText style={styles.bodyText}>{"You have the right to access, update, or delete your personal data at any time through the app settings. You also have the right to withdraw your consent for data processing."}</AppText>
+          </Card>
+
+          <Card style={styles.card}>
+            <AppText variant="cardTitle">7. {"Contact us"}</AppText>
+            <AppText style={styles.bodyText}>{"If you have any questions, privacy concerns, or wish to exercise your rights, please contact us at: support@deadliner.com"}</AppText>
           </Card>
         </ScrollView>
       </View>

@@ -49,14 +49,6 @@ const urgencyColorMap: Record<UrgencyColor, string> = {
   gray: colors.borderSoft,
 };
 
-const urgencyGlowMap: Record<UrgencyColor, [string, string]> = {
-  red: ["#FFFFFF", "#FFFFFF"],
-  orange: ["#FFFFFF", "#FFFFFF"],
-  yellow: ["#FFFFFF", "#FFFFFF"],
-  green: ["#FFFFFF", "#FFFFFF"],
-  gray: ["#FFFFFF", "#FFFFFF"],
-};
-
 export function DeadlineCard({
   assignmentName,
   courseName,
@@ -250,7 +242,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderRadius: radius.xl,
     overflow: "hidden",
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.borderSoft,
     ...shadows.shadowSoft,
   },
@@ -265,7 +257,7 @@ const styles = StyleSheet.create({
   },
   innerBorder: {
     ...StyleSheet.absoluteFillObject,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: deadlineCardTokens.innerBorder,
     borderRadius: radius.xl,
   },
@@ -322,7 +314,7 @@ const styles = StyleSheet.create({
   doneButton: {
     marginRight: spacing.s,
     marginLeft: spacing.s,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border,
     borderRadius: radius.pill,
     minHeight: 30,
@@ -341,7 +333,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: deadlineCardTokens.actionButtonBackground,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.borderSoft,
   },
   doneButtonText: {

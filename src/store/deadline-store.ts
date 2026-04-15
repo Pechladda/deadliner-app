@@ -2,13 +2,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
 import {
-    getDeadlineStatus,
-    getDeadlineStatusColor,
-    getFirestoreErrorMessage,
-    sanitizeDeadlineInput,
-    sortDeadlinesByDueAt,
-    t,
-    validateDeadlineInput,
+  getDeadlineStatus,
+  getDeadlineStatusColor,
+  getFirestoreErrorMessage,
+  sanitizeDeadlineInput,
+  sortDeadlinesByDueAt,
+  validateDeadlineInput,
 } from "@/src/core/utils";
 import { Deadline } from "@/src/models/deadline";
 import {
@@ -193,7 +192,7 @@ export const useDeadlineStore = create<DeadlineState>((set, get) => ({
       console.info("[AddDeadline] sanitized input:", sanitizedInput);
       if (!validateDeadlineInput(sanitizedInput)) {
         console.error("[AddDeadline] validation failed in store");
-        set({ deadlinesError: t("fillAllFieldsError") });
+        set({ deadlinesError: "Please fill Course name, Assignment name, Date and Time." });
         return false;
       }
 
