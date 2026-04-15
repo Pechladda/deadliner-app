@@ -18,13 +18,7 @@ import {
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import {
-    colors,
-    radius,
-    screenSharedTokens,
-    spacing,
-    typography,
-} from "@/src/theme";
+import { colors, radius, screenSharedTokens, spacing } from "@/src/theme";
 
 export function HistoryScreen() {
   const navigation = useSettingsNavigation();
@@ -46,7 +40,11 @@ export function HistoryScreen() {
 
   const onDelete = (id: string) => {
     void deleteDeadline(id).then((isSuccess) => {
-      setToastMessage(isSuccess ? "Deadline deleted" : "Could not delete this deadline. Please try again.");
+      setToastMessage(
+        isSuccess
+          ? "Deadline deleted"
+          : "Could not delete this deadline. Please try again.",
+      );
       setShowToast(true);
 
       if (toastTimerRef.current) {
@@ -73,7 +71,7 @@ export function HistoryScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={"Go back"}
           />
-          <AppText variant="title" style={styles.screenTitle}>
+          <AppText variant="section" style={styles.screenTitle}>
             {"History"}
           </AppText>
         </View>
@@ -99,7 +97,7 @@ export function HistoryScreen() {
           )}
           ListEmptyComponent={
             <Card style={styles.emptyCard}>
-              <AppText variant="sectionTitle" style={styles.emptyText}>
+              <AppText variant="section" style={styles.emptyText}>
                 {"No completed deadlines yet."}
               </AppText>
               <View style={styles.emptyActionWrap}>
@@ -137,8 +135,6 @@ const styles = StyleSheet.create({
   screenTitle: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   listContent: {

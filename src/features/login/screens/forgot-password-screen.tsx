@@ -9,13 +9,7 @@ import { StackRoutes } from "@/src/core/navigation/route-names";
 
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth } from "@/src/firebase";
-import {
-    colors,
-    loginTokens,
-    screenSharedTokens,
-    spacing,
-    typography,
-} from "@/src/theme";
+import { colors, loginTokens, spacing, typography } from "@/src/theme";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useState } from "react";
 import {
@@ -128,11 +122,13 @@ export function ForgotPasswordScreen() {
             </View>
 
             <View style={styles.copyBlock}>
-              <AppText variant="title" style={styles.title}>
+              <AppText variant="section" style={styles.title}>
                 {"Reset Password"}
               </AppText>
               <AppText variant="caption" style={styles.subtitle}>
-                {"Enter your email address and we will send you a password reset link."}
+                {
+                  "Enter your email address and we will send you a password reset link."
+                }
               </AppText>
             </View>
 
@@ -169,7 +165,8 @@ export function ForgotPasswordScreen() {
                 onPress={onSubmit}
                 isLoading={isSubmitting}
                 loadingLabel={"SENDING..."}
-                size={isCompact ? "compact" : "default"}
+                size="compact"
+                labelVariant="caption"
                 accessibilityLabel={"Send Reset Link"}
               />
 
@@ -180,19 +177,24 @@ export function ForgotPasswordScreen() {
                 style={styles.backToLoginButton}
                 disabled={isSubmitting}
               >
-                <AppText style={styles.backToLoginText}>
+                <AppText variant="caption" style={styles.backToLoginText}>
                   {"Back to Sign In"}
                 </AppText>
               </Pressable>
 
               <View style={styles.feedbackRow}>
                 {submitError ? (
-                  <AppText style={[styles.helperText, styles.errorText]}>
+                  <AppText
+                    variant="caption"
+                    style={[styles.helperText, styles.errorText]}
+                  >
                     {submitError}
                   </AppText>
                 ) : null}
                 {!submitError && successMessage ? (
-                  <AppText style={styles.successText}>{successMessage}</AppText>
+                  <AppText variant="caption" style={styles.successText}>
+                    {successMessage}
+                  </AppText>
                 ) : null}
               </View>
             </View>
@@ -251,8 +253,6 @@ const styles = StyleSheet.create({
     color: BRAND_PRIMARY,
     letterSpacing: loginTokens.titleLetterSpacing,
     fontWeight: typography.weight.bold,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     textAlign: "left",
   },
   subtitle: {
@@ -260,7 +260,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     letterSpacing: loginTokens.createAccountLetterSpacing,
     textAlign: "left",
-    lineHeight: typography.lineHeight.compact,
   },
   formArea: {
     width: "100%",
@@ -279,8 +278,6 @@ const styles = StyleSheet.create({
   },
   helperText: {
     color: colors.textSecondary,
-    fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.compact,
   },
   errorText: {
     color: colors.danger,
@@ -294,7 +291,6 @@ const styles = StyleSheet.create({
   backToLoginText: {
     color: colors.textSecondary,
     textDecorationLine: "underline",
-    fontSize: typography.size.s,
   },
   feedbackRow: {
     minHeight: 22,
@@ -303,7 +299,6 @@ const styles = StyleSheet.create({
   },
   successText: {
     color: colors.textSecondary,
-    fontSize: typography.size.s,
     textAlign: "center",
   },
 });

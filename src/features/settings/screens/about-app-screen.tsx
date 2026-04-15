@@ -5,7 +5,7 @@ import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
 import { APP_VERSION } from "@/src/core/config";
 
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
-import { colors, screenSharedTokens, spacing, typography } from "@/src/theme";
+import { colors, screenSharedTokens, spacing } from "@/src/theme";
 
 export function AboutAppScreen() {
   const navigation = useSettingsNavigation();
@@ -20,13 +20,13 @@ export function AboutAppScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={"Go back"}
           />
-          <AppText variant="title" style={styles.screenTitle}>
+          <AppText variant="section" style={styles.screenTitle}>
             {"About App"}
           </AppText>
         </View>
 
         <Card style={styles.card}>
-          <AppText variant="sectionTitle" style={styles.centerText}>
+          <AppText variant="section" style={styles.centerText}>
             {"Deadliner"}
           </AppText>
           <AppText
@@ -37,7 +37,9 @@ export function AboutAppScreen() {
             {`Version ${APP_VERSION}`}
           </AppText>
           <AppText variant="body" style={styles.description}>
-            {"Deadliner helps students visualize urgency and never miss important deadlines."}
+            {
+              "Deadliner helps students visualize urgency and never miss important deadlines."
+            }
           </AppText>
           <AppText variant="caption" style={styles.credit}>
             {"Developed by Maymae"}
@@ -61,8 +63,6 @@ const styles = StyleSheet.create({
   screenTitle: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   card: {
@@ -80,7 +80,6 @@ const styles = StyleSheet.create({
   },
   description: {
     textAlign: "center",
-    lineHeight: typography.lineHeight.normal,
     marginTop: spacing.s,
   },
   credit: {

@@ -22,12 +22,12 @@ import {
 } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation/route-names";
 import {
-  formatCountdownLong,
-  formatDueLabel,
-  getDeadlineStatus,
-  getDeadlineStatusDisplayColor,
-  getRemainingMs,
-  getUrgencyMessage,
+    formatCountdownLong,
+    formatDueLabel,
+    getDeadlineStatus,
+    getDeadlineStatusDisplayColor,
+    getRemainingMs,
+    getUrgencyMessage,
 } from "@/src/core/utils";
 import {
     useDeadlineDetailNavigation,
@@ -46,7 +46,6 @@ import {
     screenSharedTokens,
     shadows,
     spacing,
-    typography,
 } from "@/src/theme";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -59,7 +58,7 @@ function MissingState({ onPressBack }: MissingStateProps) {
         onPress={onPressBack}
         accessibilityLabel={"Go back"}
       />
-      <AppText variant="heading" style={styles.missingTitle}>
+      <AppText variant="section" style={styles.missingTitle}>
         {"No assignment selected"}
       </AppText>
       <AppText variant="body" color="textSecondary" style={styles.missingText}>
@@ -140,13 +139,13 @@ function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
         <View style={styles.countdownLeft}>
           <View style={styles.countdownRow}>
             <Ionicons name="sparkles-outline" size={18} color={accent} />
-            <AppText variant="title" style={styles.countdownText}>
+            <AppText variant="section" style={styles.countdownText}>
               {formatCountdownLong(dueAt, now)}
             </AppText>
           </View>
 
           <View style={[styles.statusPill, { backgroundColor: accent }]}>
-            <AppText style={styles.statusPillText}>
+            <AppText variant="bodyMedium" style={styles.statusPillText}>
               {status === "overdue"
                 ? "Overdue"
                 : status === "urgent"
@@ -243,29 +242,36 @@ export function DeadlineDetailScreen() {
       return;
     }
 
-    Alert.alert("Delete deadline", "Are you sure you want to delete this assignment?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          void deleteDeadline(deadline.id).then((isSuccess) => {
-            if (!isSuccess) {
-              Alert.alert("Error", "Could not delete this deadline. Please try again.");
-              return;
-            }
-
-            setSelectedId(null);
-            navigation.replace(StackRoutes.MainTabs, {
-              screen: TabRoutes.Home,
-            });
-          });
+    Alert.alert(
+      "Delete deadline",
+      "Are you sure you want to delete this assignment?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void deleteDeadline(deadline.id).then((isSuccess) => {
+              if (!isSuccess) {
+                Alert.alert(
+                  "Error",
+                  "Could not delete this deadline. Please try again.",
+                );
+                return;
+              }
+
+              setSelectedId(null);
+              navigation.replace(StackRoutes.MainTabs, {
+                screen: TabRoutes.Home,
+              });
+            });
+          },
+        },
+      ],
+    );
   };
 
   const onPressFallbackBack = () => {
@@ -315,7 +321,7 @@ export function DeadlineDetailScreen() {
           </View>
 
           <AppText
-            variant="heading"
+            variant="section"
             style={styles.assignmentTitle}
             numberOfLines={2}
           >
@@ -335,7 +341,7 @@ export function DeadlineDetailScreen() {
         <Card style={styles.metaCard}>
           <View style={styles.metaRow}>
             <AppText variant="caption">{"Reminder"}</AppText>
-            <AppText variant="body" style={styles.metaValue}>
+            <AppText variant="bodyMedium" style={styles.metaValue}>
               {deadline.reminder
                 ? deadline.reminder === "5m"
                   ? "5 minutes before"
@@ -430,9 +436,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.s,
   },
-  countdownText: {
-    fontSize: typography.size.xl,
-  },
+  countdownText: {},
   statusPill: {
     alignSelf: "flex-start",
     paddingHorizontal: spacing.m,
@@ -441,7 +445,6 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     color: colors.buttonText,
-    fontFamily: typography.family.semibold,
     letterSpacing: deadlineDetailTokens.statusPillLetterSpacing,
   },
   urgencyHelperText: {
@@ -456,9 +459,7 @@ const styles = StyleSheet.create({
   metaRow: {
     gap: spacing.xs,
   },
-  metaValue: {
-    fontFamily: typography.family.semibold,
-  },
+  metaValue: {},
   buttonRow: {
     flexDirection: "row",
     alignItems: "center",

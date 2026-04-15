@@ -1,18 +1,12 @@
-import {
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    useFonts,
-} from "@expo-google-fonts/inter";
 import "expo-dev-client";
+import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import {
     ActivityIndicator,
     Image,
     Platform,
     StyleSheet,
+    Text,
     View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -105,17 +99,36 @@ if (Platform.OS === "web") {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
+    Roboto_400Regular: require("./assets/fonts/Roboto-Regular.ttf"),
+    Roboto_700Bold: require("./assets/fonts/Roboto-Bold.ttf"),
   });
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const hydrateAuth = useAuthStore((state) => state.hydrateAuth);
   const hydrateNotificationsSetting = useDeadlineStore(
     (state) => state.hydrateNotificationsSetting,
   );
+
+  useEffect(() => {
+    if (!fontsLoaded) {
+      return;
+    }
+
+    const textWithDefaults = Text as typeof Text & {
+      defaultProps?: { style?: unknown };
+    };
+    const previousDefaults = textWithDefaults.defaultProps ?? {};
+    const previousStyle = previousDefaults.style;
+    const styleList = Array.isArray(previousStyle)
+      ? previousStyle
+      : previousStyle
+        ? [previousStyle]
+        : [];
+
+    textWithDefaults.defaultProps = {
+      ...previousDefaults,
+      style: [...styleList, { fontFamily: "Roboto_400Regular" }],
+    };
+  }, [fontsLoaded]);
 
   useEffect(() => {
     void hydrateAuth();

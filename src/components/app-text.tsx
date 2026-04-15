@@ -1,15 +1,14 @@
+import { colors, typography } from "@/src/theme";
 import { Text, TextProps, TextStyle } from "react-native";
 
-import { colors, typography } from "@/src/theme";
-
 type Variant =
+  | "display"
   | "title"
-  | "heading"
-  | "sectionTitle"
-  | "cardTitle"
+  | "section"
+  | "subtitle"
+  | "bodyMedium"
   | "body"
-  | "caption"
-  | "button";
+  | "caption";
 
 type AppTextProps = TextProps & {
   variant?: Variant;
@@ -17,53 +16,39 @@ type AppTextProps = TextProps & {
 };
 
 const variantStyles: Record<Variant, TextStyle> = {
+  display: {
+    ...typography.preset.display,
+    color: colors.textPrimary,
+  },
+
   title: {
-    fontSize: typography.size.xxl,
-    lineHeight: typography.lineHeight.title,
-    fontWeight: typography.weight.heavy,
-    fontFamily: typography.family.heavy,
+    ...typography.preset.title,
     color: colors.textPrimary,
   },
-  heading: {
-    fontSize: typography.size.section,
-    lineHeight: typography.lineHeight.relaxed,
-    fontWeight: typography.weight.bold,
-    fontFamily: typography.family.bold,
+
+  section: {
+    ...typography.preset.section,
     color: colors.textPrimary,
   },
-  sectionTitle: {
-    fontSize: typography.size.section,
-    lineHeight: typography.lineHeight.relaxed,
-    fontWeight: typography.weight.bold,
-    fontFamily: typography.family.bold,
+
+  subtitle: {
+    ...typography.preset.subtitle,
     color: colors.textPrimary,
   },
-  cardTitle: {
-    fontSize: typography.size.l,
-    lineHeight: typography.lineHeight.normal,
-    fontWeight: typography.weight.semibold,
-    fontFamily: typography.family.semibold,
+
+  bodyMedium: {
+    ...typography.preset.bodyMedium,
     color: colors.textPrimary,
   },
+
   body: {
-    fontSize: typography.size.m,
-    lineHeight: typography.lineHeight.normal,
-    fontWeight: typography.weight.regular,
-    fontFamily: typography.family.regular,
+    ...typography.preset.body,
     color: colors.textPrimary,
   },
+
   caption: {
-    fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.compact,
-    fontWeight: typography.weight.medium,
-    fontFamily: typography.family.medium,
+    ...typography.preset.caption,
     color: colors.textSecondary,
-  },
-  button: {
-    fontSize: typography.size.m,
-    fontWeight: typography.weight.bold,
-    fontFamily: typography.family.semibold,
-    color: colors.buttonText,
   },
 };
 

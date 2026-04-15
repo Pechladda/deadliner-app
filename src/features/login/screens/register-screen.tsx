@@ -10,13 +10,7 @@ import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigat
 import { auth, db } from "@/src/firebase";
 
 import { useAuthStore } from "@/src/store/auth-store";
-import {
-  colors,
-  loginTokens,
-  screenSharedTokens,
-  spacing,
-  typography,
-} from "@/src/theme";
+import { colors, loginTokens, spacing, typography } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
@@ -379,7 +373,7 @@ export function RegisterScreen() {
             </View>
 
             <View style={styles.copyBlock}>
-              <AppText variant="title" style={styles.title}>
+              <AppText variant="section" style={styles.title}>
                 {"Create an Account"}
               </AppText>
               <AppText variant="caption" style={styles.subtitle}>
@@ -525,7 +519,10 @@ export function RegisterScreen() {
 
                 <View style={styles.errorSlot}>
                   {consentError ? (
-                    <AppText style={[styles.helperText, styles.errorText]}>
+                    <AppText
+                      variant="caption"
+                      style={[styles.helperText, styles.errorText]}
+                    >
                       {consentError}
                     </AppText>
                   ) : null}
@@ -537,7 +534,8 @@ export function RegisterScreen() {
                 onPress={onSubmit}
                 isLoading={isSubmitting}
                 loadingLabel={"SIGNING UP..."}
-                size={isCompact ? "compact" : "default"}
+                size="compact"
+                labelVariant="caption"
                 accessibilityLabel={"Register"}
                 disabled={isSignUpDisabled}
               />
@@ -549,19 +547,24 @@ export function RegisterScreen() {
                 style={styles.backToLoginButton}
                 disabled={isSubmitting}
               >
-                <AppText style={styles.backToLoginText}>
+                <AppText variant="caption" style={styles.backToLoginText}>
                   {"Back to Sign In"}
                 </AppText>
               </Pressable>
 
               <View style={styles.feedbackRow}>
                 {submitError ? (
-                  <AppText style={[styles.helperText, styles.errorText]}>
+                  <AppText
+                    variant="caption"
+                    style={[styles.helperText, styles.errorText]}
+                  >
                     {submitError}
                   </AppText>
                 ) : null}
                 {!submitError && successMessage ? (
-                  <AppText style={styles.successText}>{successMessage}</AppText>
+                  <AppText variant="caption" style={styles.successText}>
+                    {successMessage}
+                  </AppText>
                 ) : null}
               </View>
             </View>
@@ -620,8 +623,6 @@ const styles = StyleSheet.create({
     color: BRAND_PRIMARY,
     letterSpacing: loginTokens.titleLetterSpacing,
     fontWeight: typography.weight.bold,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     textAlign: "left",
   },
   subtitle: {
@@ -629,7 +630,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     letterSpacing: loginTokens.createAccountLetterSpacing,
     textAlign: "left",
-    lineHeight: typography.lineHeight.compact,
   },
   formArea: {
     width: "100%",
@@ -651,8 +651,6 @@ const styles = StyleSheet.create({
   },
   helperText: {
     color: colors.textSecondary,
-    fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.compact,
   },
   errorText: {
     color: colors.danger,
@@ -682,15 +680,15 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   consentText: {
+    fontSize: typography.size.xs,
+    lineHeight: typography.lineHeight.xs,
     color: colors.textSecondary,
-    fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.compact,
   },
   consentLinkText: {
+    fontSize: typography.size.xs,
+    lineHeight: typography.lineHeight.xs,
     color: colors.textSecondary,
     textDecorationLine: "underline",
-    fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.compact,
   },
   backToLoginButton: {
     alignItems: "center",
@@ -701,7 +699,6 @@ const styles = StyleSheet.create({
   backToLoginText: {
     color: colors.textSecondary,
     textDecorationLine: "underline",
-    fontSize: typography.size.s,
   },
   feedbackRow: {
     minHeight: 22,
@@ -710,7 +707,6 @@ const styles = StyleSheet.create({
   },
   successText: {
     color: colors.success,
-    fontSize: typography.size.s,
     textAlign: "center",
   },
 });

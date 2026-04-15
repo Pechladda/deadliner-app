@@ -149,13 +149,17 @@ export function DeadlineCard({
         >
           <View style={styles.textGroupTop}>
             <AppText
-              variant="cardTitle"
+              variant="subtitle"
               style={styles.assignmentName}
               numberOfLines={1}
             >
               {assignmentName}
             </AppText>
-            <AppText style={styles.courseName} numberOfLines={1}>
+            <AppText
+              variant="caption"
+              style={styles.courseName}
+              numberOfLines={1}
+            >
               {courseName}
             </AppText>
           </View>
@@ -282,30 +286,20 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   assignmentName: {
-    lineHeight: typography.lineHeight.relaxed,
     color: colors.textPrimary,
   },
   courseName: {
     marginTop: spacing.xxs,
     color: colors.textPrimary,
-    fontSize: typography.size.s,
-    lineHeight: 18,
-    fontFamily: typography.family.medium,
   },
   dueLabel: {
     color: colors.textPrimary,
-    fontSize: typography.size.xs,
-    lineHeight: 16,
   },
   statusSeparator: {
     color: colors.textSecondary,
-    fontSize: typography.size.xs,
-    lineHeight: 16,
   },
   statusText: {
-    fontSize: typography.size.xs,
-    lineHeight: 16,
-    fontFamily: typography.family.semibold,
+    fontWeight: typography.weight.medium,
   },
   completedLabel: {
     marginTop: spacing.xs,

@@ -19,7 +19,6 @@ import {
     profileScreenTokens,
     screenSharedTokens,
     spacing,
-    typography,
 } from "@/src/theme";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -127,7 +126,7 @@ export function ProfileScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={"Go back"}
           />
-          <AppText variant="title" style={styles.screenTitle}>
+          <AppText variant="section" style={styles.screenTitle}>
             {"Profile"}
           </AppText>
         </View>
@@ -230,8 +229,6 @@ const styles = StyleSheet.create({
   screenTitle: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   contentInner: {
@@ -302,7 +299,6 @@ const styles = StyleSheet.create({
   errorBannerText: {
     color: colors.danger,
     flexShrink: 1,
-    lineHeight: profileScreenTokens.errorBannerTextLineHeight,
   },
   errorActionButton: {
     alignSelf: "flex-start",

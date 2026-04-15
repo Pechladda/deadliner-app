@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-    Pressable,
-    StyleProp,
-    StyleSheet,
-    TextInput,
-    TextInputProps,
-    TextStyle,
-    View,
-    ViewStyle,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  TextInput,
+  TextInputProps,
+  TextStyle,
+  View,
+  ViewStyle,
 } from "react-native";
 
 import { colors, radius, spacing, typography } from "@/src/theme";
@@ -115,16 +115,17 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     backgroundColor: colors.surface,
     color: colors.textPrimary,
-    fontSize: typography.size.m,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.s,
+    ...typography.preset.body,
+    fontSize: typography.size.xs,
+    lineHeight: typography.lineHeight.xs,
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.m,
   },
   inputCompact: {
-    minHeight: 46,
-    fontSize: typography.size.m,
+    minHeight: 50,
   },
   passwordInput: {
-    paddingRight: 52,
+    paddingRight: 50,
   },
   eyeButton: {
     position: "absolute",
@@ -147,9 +148,9 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxs,
   },
   feedbackText: {
+    marginLeft: spacing.s,
     color: colors.textSecondary,
-    fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.compact,
+    ...typography.preset.caption,
   },
   errorText: {
     color: colors.danger,

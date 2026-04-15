@@ -20,6 +20,14 @@ type AppButtonProps = {
   onPress: () => void;
   variant?: "solid" | "outline";
   size?: "default" | "compact";
+  labelVariant?:
+    | "display"
+    | "title"
+    | "section"
+    | "subtitle"
+    | "bodyMedium"
+    | "body"
+    | "caption";
   iconName?: keyof typeof Ionicons.glyphMap;
   iconColorToken?: keyof typeof colors;
   labelColorToken?: keyof typeof colors;
@@ -36,6 +44,7 @@ export function AppButton({
   onPress,
   variant = "solid",
   size = "default",
+  labelVariant = "bodyMedium",
   iconName,
   iconColorToken,
   labelColorToken,
@@ -94,7 +103,7 @@ export function AppButton({
             />
           ) : null}
           <AppText
-            variant="button"
+            variant={labelVariant}
             style={[
               isOutline ? styles.outlineLabel : styles.solidLabel,
               { color: labelColor },

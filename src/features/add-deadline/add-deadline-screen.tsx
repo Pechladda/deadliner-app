@@ -87,7 +87,10 @@ function FloatingInput({
 
   const labelSize = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [15, 12],
+    outputRange: [
+      typography.preset.body.fontSize,
+      typography.preset.caption.fontSize,
+    ],
   });
 
   return (
@@ -398,7 +401,11 @@ export function AddDeadlineScreen() {
 
     if (!isSuccess) {
       const latestError = useDeadlineStore.getState().deadlinesError;
-      setErrorMessage(latestError ?? deadlinesError ?? "Could not save the deadline. Please try again.");
+      setErrorMessage(
+        latestError ??
+          deadlinesError ??
+          "Could not save the deadline. Please try again.",
+      );
       setIsSaving(false);
       return;
     }
@@ -424,7 +431,7 @@ export function AddDeadlineScreen() {
             onPress={() => navigation.goBack()}
             accessibilityLabel={"Go back"}
           />
-          <AppText variant="title" style={styles.screenTitleText}>
+          <AppText variant="section" style={styles.screenTitleText}>
             {isEditMode ? "Edit Deadline" : "New Deadline"}
           </AppText>
         </View>
@@ -499,7 +506,7 @@ export function AddDeadlineScreen() {
               style={styles.modalSheet}
             >
               <View style={styles.modalHeader}>
-                <AppText variant="sectionTitle" style={styles.modalTitle}>
+                <AppText variant="section" style={styles.modalTitle}>
                   {iosPickerMode === "date" ? "Pick Date" : "Pick Time"}
                 </AppText>
                 <AppButton
@@ -557,8 +564,6 @@ const styles = StyleSheet.create({
   screenTitleText: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   formCard: {
@@ -587,13 +592,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: spacing.m,
     color: colors.textSecondary,
-    fontFamily: typography.family.medium,
+    ...typography.preset.bodyMedium,
   },
   floatingInput: {
     marginTop: 12,
     color: colors.textPrimary,
-    fontSize: typography.size.m,
-    fontFamily: typography.family.regular,
+    ...typography.preset.body,
   },
   sectionWrap: {
     gap: spacing.s,

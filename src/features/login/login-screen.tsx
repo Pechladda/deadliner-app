@@ -147,7 +147,6 @@ export function LoginScreen() {
       );
       await login(userCredential.user);
     } catch {
-      // ไม่ว่าจะ Error อะไร (รหัสผิด, ไม่มีเมล์) ให้โชว์ Modal ตัวนี้
       setShowErrorModal(true);
     } finally {
       setIsSubmitting(false);
@@ -188,7 +187,7 @@ export function LoginScreen() {
               >
                 <ClockLogo />
                 <AppText
-                  variant="title"
+                  variant="section"
                   style={[
                     styles.title,
                     isCompact && styles.titleCompact,
@@ -250,6 +249,7 @@ export function LoginScreen() {
                     isLoading={isSubmitting}
                     loadingLabel={"SIGNING IN..."}
                     size="compact"
+                    labelVariant="caption"
                     accessibilityLabel={"Sign In"}
                   />
 
@@ -262,7 +262,7 @@ export function LoginScreen() {
                     style={styles.forgotInlineButton}
                     disabled={isSubmitting}
                   >
-                    <AppText style={styles.forgotInlineText}>
+                    <AppText variant="caption" style={styles.forgotInlineText}>
                       {"Forgot password?"}
                     </AppText>
                   </Pressable>
@@ -283,7 +283,7 @@ export function LoginScreen() {
             ]}
             disabled={isSubmitting}
           >
-            <AppText style={styles.createAccountText}>
+            <AppText variant="caption" style={styles.createAccountText}>
               {"Create new account"}
             </AppText>
           </Pressable>
@@ -297,8 +297,10 @@ export function LoginScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <AppText style={styles.modalTitle}>{"Account not found"}</AppText>
-            <AppText style={styles.modalBody}>
+            <AppText variant="subtitle" style={styles.modalTitle}>
+              {"Account not found"}
+            </AppText>
+            <AppText variant="caption" style={styles.modalBody}>
               {
                 "We couldn't find an account matching these details. If you don't have an account, you can create one."
               }
@@ -309,7 +311,7 @@ export function LoginScreen() {
                 style={styles.modalSecondaryBtn}
                 onPress={onGoToRegister}
               >
-                <AppText style={styles.modalSecondaryBtnText}>
+                <AppText variant="caption" style={styles.modalSecondaryBtnText}>
                   {"Sign Up"}
                 </AppText>
               </Pressable>
@@ -318,7 +320,9 @@ export function LoginScreen() {
                 style={styles.modalPrimaryBtn}
                 onPress={() => setShowErrorModal(false)}
               >
-                <AppText style={styles.modalPrimaryBtnText}>{"Retry"}</AppText>
+                <AppText variant="caption" style={styles.modalPrimaryBtnText}>
+                  {"Retry"}
+                </AppText>
               </Pressable>
             </View>
           </View>
@@ -355,10 +359,10 @@ const styles = StyleSheet.create({
     color: BRAND_PRIMARY,
     letterSpacing: loginTokens.titleLetterSpacing,
     fontWeight: typography.weight.bold,
-    marginTop: spacing.m,
+    marginTop: spacing.l,
   },
-  titleCompact: { marginTop: spacing.s },
-  titleWide: { marginTop: spacing.l },
+  titleCompact: { marginTop: spacing.m },
+  titleWide: { marginTop: spacing.xl },
   formArea: {
     width: "100%",
     maxWidth: loginTokens.formAreaMaxWidth,
@@ -370,7 +374,7 @@ const styles = StyleSheet.create({
   formFieldsGroup: { gap: spacing.s },
   actionArea: { gap: spacing.xxs },
   forgotInlineButton: {
-    marginTop: spacing.xs,
+    marginTop: spacing.s,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: spacing.xs,
@@ -378,7 +382,6 @@ const styles = StyleSheet.create({
   forgotInlineText: {
     color: colors.textSecondary,
     textDecorationLine: "underline",
-    fontSize: typography.size.s,
   },
   bottomSecondaryArea: {
     position: "absolute",
@@ -408,11 +411,10 @@ const styles = StyleSheet.create({
   createAccountText: {
     color: BRAND_PRIMARY,
     textDecorationLine: "none",
-    fontSize: typography.size.s,
-    fontWeight: typography.weight.medium,
+    fontWeight: typography.weight.heavy,
     letterSpacing: loginTokens.createAccountLetterSpacing,
   },
-  // --- Styles สำหรับ Modal (Minimal Pastel) ---
+
   modalOverlay: {
     flex: 1,
     backgroundColor: loginTokens.modalOverlayBackground,
@@ -435,16 +437,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: BRAND_PRIMARY,
-    fontSize: typography.size.s,
-    fontWeight: typography.weight.bold,
     marginBottom: spacing.s,
     textAlign: "center",
   },
   modalBody: {
     color: colors.textSecondary,
-    fontSize: typography.size.s,
     textAlign: "center",
-    lineHeight: typography.lineHeight.compact,
     marginBottom: spacing.xxl,
   },
   modalActions: {
@@ -463,7 +461,6 @@ const styles = StyleSheet.create({
   modalPrimaryBtnText: {
     color: loginTokens.modalPrimaryTextColor,
     fontWeight: typography.weight.bold,
-    fontSize: typography.size.s,
   },
   modalSecondaryBtn: {
     flex: 1,
@@ -477,7 +474,6 @@ const styles = StyleSheet.create({
   },
   modalSecondaryBtnText: {
     color: BRAND_PRIMARY,
-    fontWeight: typography.weight.bold,
-    fontSize: typography.size.s,
+    fontWeight: typography.weight.heavy,
   },
 });

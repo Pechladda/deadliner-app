@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, View } from "react-native";
 
 import { AppText } from "@/src/components";
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { colors, radius, spacing } from "@/src/theme";
 
 type UrgencyBadgeProps = {
   timeLeft: string;
@@ -26,11 +26,7 @@ export function UrgencyBadge({ timeLeft, status }: UrgencyBadgeProps) {
           color={statusColorMap[status]}
           style={styles.icon}
         />
-        <AppText
-          variant="sectionTitle"
-          style={styles.timeLeft}
-          numberOfLines={1}
-        >
+        <AppText variant="section" style={styles.timeLeft} numberOfLines={1}>
           {timeLeft}
         </AppText>
       </View>
@@ -61,7 +57,6 @@ const styles = StyleSheet.create({
   timeLeft: {
     color: colors.textPrimary,
     minWidth: 64,
-    fontSize: typography.size.xl,
   },
   statusPill: {
     width: 8,

@@ -255,16 +255,20 @@ export function HomeScreen() {
   };
 
   const onDelete = (id: string) => {
-    Alert.alert("Delete deadline", "Are you sure you want to delete this assignment?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          void deleteDeadline(id);
+    Alert.alert(
+      "Delete deadline",
+      "Are you sure you want to delete this assignment?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void deleteDeadline(id);
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const dueTodayCount = deadlines.filter((item) =>
@@ -336,7 +340,7 @@ export function HomeScreen() {
 
       <View style={[styles.container, isCompact && styles.containerCompact]}>
         <View style={styles.headerRow}>
-          <AppText variant="title" style={styles.headerTitle}>
+          <AppText variant="section" style={styles.headerTitle}>
             {"My Deadlines"}
           </AppText>
         </View>
@@ -351,7 +355,7 @@ export function HomeScreen() {
               <AppText variant="caption" style={styles.summaryLabelCoral}>
                 {"Overdue"}
               </AppText>
-              <AppText variant="sectionTitle" style={styles.summaryValue}>
+              <AppText variant="section" style={styles.summaryValue}>
                 {String(overdueCount)}
               </AppText>
             </View>
@@ -360,7 +364,7 @@ export function HomeScreen() {
               <AppText variant="caption" style={styles.summaryLabelViolet}>
                 {"Due today"}
               </AppText>
-              <AppText variant="sectionTitle" style={styles.summaryValue}>
+              <AppText variant="section" style={styles.summaryValue}>
                 {String(dueTodayCount)}
               </AppText>
             </View>
@@ -369,7 +373,7 @@ export function HomeScreen() {
               <AppText variant="caption" style={styles.summaryLabelAmber}>
                 {"Urgent"}
               </AppText>
-              <AppText variant="sectionTitle" style={styles.summaryValue}>
+              <AppText variant="section" style={styles.summaryValue}>
                 {String(urgentCount)}
               </AppText>
             </View>
@@ -408,7 +412,9 @@ export function HomeScreen() {
             onChangeText={setSearch}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            placeholder={isSearchFocused ? "" : "Search by assignment or course"}
+            placeholder={
+              isSearchFocused ? "" : "Search by assignment or course"
+            }
             placeholderTextColor={homeDeadlineListTokens.searchPlaceholder}
             style={styles.searchInput}
             accessibilityLabel={"Search by assignment or course"}
@@ -494,10 +500,7 @@ export function HomeScreen() {
                   tint="light"
                   style={styles.emptyStateCard}
                 >
-                  <AppText
-                    variant="sectionTitle"
-                    style={styles.emptyStateTitle}
-                  >
+                  <AppText variant="section" style={styles.emptyStateTitle}>
                     {filter === "all"
                       ? "You're all caught up."
                       : "No tasks in this category yet."}
@@ -555,8 +558,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: homeDeadlineListTokens.titleColor,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   summaryGlass: {
@@ -607,8 +608,6 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     color: homeDeadlineListTokens.titleColor,
-    lineHeight: homeDeadlineListTokens.summaryValueLineHeight,
-    fontSize: typography.size.section,
     textAlign: "center",
   },
   summaryLabelCoral: {
@@ -646,9 +645,7 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     color: homeDeadlineListTokens.titleColor,
-    fontFamily: typography.family.medium,
-    fontSize: homeDeadlineListTokens.filterChipTextSize,
-    lineHeight: homeDeadlineListTokens.filterChipTextLineHeight,
+    fontWeight: typography.weight.medium,
   },
   filterChipTextActive: {
     color: homeDeadlineListTokens.titleColor,
@@ -670,8 +667,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: homeDeadlineListTokens.titleColor,
     marginLeft: spacing.m,
-    fontSize: homeDeadlineListTokens.searchInputSize,
-    fontFamily: typography.family.regular,
+    ...typography.preset.body,
   },
   listSection: {
     flex: 1,
@@ -732,7 +728,7 @@ const styles = StyleSheet.create({
   },
   swipeActionText: {
     color: colors.buttonText,
-    fontFamily: typography.family.semibold,
+    fontWeight: typography.weight.medium,
   },
   doneAction: {
     backgroundColor: homeDeadlineListTokens.doneActionBackground,

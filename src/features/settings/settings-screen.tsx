@@ -23,13 +23,7 @@ import { StackRoutes } from "@/src/core/navigation/route-names";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import {
-    colors,
-    radius,
-    screenSharedTokens,
-    spacing,
-    typography,
-} from "@/src/theme";
+import { colors, radius, screenSharedTokens, spacing } from "@/src/theme";
 
 type SettingsRowProps = {
   label: string;
@@ -128,21 +122,27 @@ export function SettingsScreen() {
   };
 
   const onDeleteAllData = () => {
-    Alert.alert("Delete all app data", "This will permanently remove all deadlines and history. Continue?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          void clearAllData().then((isSuccess) => {
-            showToast(
-              isSuccess ? "All app data deleted" : "Could not delete this deadline. Please try again.",
-              isSuccess ? "success" : "error",
-            );
-          });
+    Alert.alert(
+      "Delete all app data",
+      "This will permanently remove all deadlines and history. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void clearAllData().then((isSuccess) => {
+              showToast(
+                isSuccess
+                  ? "All app data deleted"
+                  : "Could not delete this deadline. Please try again.",
+                isSuccess ? "success" : "error",
+              );
+            });
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   return (
@@ -170,13 +170,13 @@ export function SettingsScreen() {
           <View
             style={[styles.headerRow, isCompact && styles.headerRowCompact]}
           >
-            <AppText variant="title" style={styles.screenTitle}>
+            <AppText variant="section" style={styles.screenTitle}>
               {"Settings"}
             </AppText>
           </View>
 
           <View style={styles.sectionBlock}>
-            <AppText variant="sectionTitle" style={styles.sectionTitle}>
+            <AppText variant="section" style={styles.sectionTitle}>
               {"Account"}
             </AppText>
             <View style={styles.section}>
@@ -189,7 +189,7 @@ export function SettingsScreen() {
           </View>
 
           <View style={styles.sectionBlock}>
-            <AppText variant="sectionTitle" style={styles.sectionTitle}>
+            <AppText variant="section" style={styles.sectionTitle}>
               {"Preferences"}
             </AppText>
             <View style={styles.section}>
@@ -251,7 +251,7 @@ export function SettingsScreen() {
           </View>
 
           <View style={styles.sectionBlock}>
-            <AppText variant="sectionTitle" style={styles.sectionTitle}>
+            <AppText variant="section" style={styles.sectionTitle}>
               {"Support & Privacy"}
             </AppText>
             <View style={styles.section}>
@@ -338,8 +338,6 @@ const styles = StyleSheet.create({
   screenTitle: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
-    fontSize: typography.size.xl,
-    lineHeight: screenSharedTokens.screenTitleLineHeight,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   sectionTitle: {
