@@ -1,3 +1,4 @@
+// ...existing code...
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { onAuthStateChanged } from "firebase/auth";
@@ -558,7 +559,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: homeDeadlineListTokens.titleColor,
+    fontWeight: typography.weight.bold,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    marginLeft: spacing.s,
+    fontSize: typography.size.l,
+    lineHeight: typography.lineHeight.normal,
+    marginTop: spacing.m,
   },
   summaryGlass: {
     borderRadius: radius.xl,
@@ -566,6 +572,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     borderColor: homeDeadlineListTokens.summaryBorder,
     backgroundColor: homeDeadlineListTokens.summaryBackground,
+    marginTop: spacing.m,
     marginBottom: spacing.m,
     shadowColor: homeDeadlineListTokens.summaryShadow,
     shadowOpacity: homeDeadlineListTokens.summaryShadowOpacity,
@@ -580,17 +587,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: homeDeadlineListTokens.summaryItemGap,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.m,
+    paddingHorizontal: spacing.m,
   },
   summaryItem: {
     flex: 1,
-    height: homeDeadlineListTokens.summaryDividerHeight,
-    gap: spacing.xxs,
-    borderRadius: radius.m,
+    borderRadius: radius.s,
     paddingVertical: spacing.s,
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.xxs,
   },
   summaryItemCoral: {
     backgroundColor: homeDeadlineListTokens.summaryItemBackground,
@@ -607,31 +613,40 @@ const styles = StyleSheet.create({
     backgroundColor: homeDeadlineListTokens.summaryDivider,
   },
   summaryValue: {
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textPrimary,
     textAlign: "center",
+    fontSize: typography.preset.body.fontSize,
+    lineHeight: typography.preset.body.lineHeight,
   },
   summaryLabelCoral: {
     color: homeDeadlineListTokens.titleColor,
     textAlign: "center",
+    fontWeight: typography.weight.heavy,
+    marginBottom: spacing.s,
   },
   summaryLabelViolet: {
     color: homeDeadlineListTokens.titleColor,
     textAlign: "center",
+    fontWeight: typography.weight.heavy,
+    marginBottom: spacing.s,
   },
   summaryLabelAmber: {
     color: homeDeadlineListTokens.titleColor,
     textAlign: "center",
+    fontWeight: typography.weight.heavy,
+    marginBottom: spacing.s,
   },
   filterRow: {
     flexDirection: "row",
     gap: homeDeadlineListTokens.filterChipRowGap,
     marginBottom: spacing.m,
+    marginTop: spacing.s,
   },
   filterChip: {
     flex: 1,
-    minHeight: homeDeadlineListTokens.filterChipMinHeight,
-    paddingHorizontal: homeDeadlineListTokens.filterChipHorizontalPadding,
-    paddingVertical: homeDeadlineListTokens.filterChipVerticalPadding,
+    minHeight: homeDeadlineListTokens.filterChipMinHeight * 0.9,
+    paddingHorizontal: homeDeadlineListTokens.filterChipHorizontalPadding * 0.9,
+    paddingVertical: homeDeadlineListTokens.filterChipVerticalPadding * 0.9,
     borderRadius: homeDeadlineListTokens.filterChipBorderRadius,
     borderWidth: 0,
     borderColor: homeDeadlineListTokens.filterChipBorder,
@@ -641,12 +656,10 @@ const styles = StyleSheet.create({
   },
   filterChipActive: {
     backgroundColor: colors.chipBgActive,
-    borderColor: colors.border,
+    borderColor: "#000",
+    borderWidth: 1,
   },
-  filterChipText: {
-    color: homeDeadlineListTokens.titleColor,
-    fontWeight: typography.weight.medium,
-  },
+  // ...existing code...
   filterChipTextActive: {
     color: homeDeadlineListTokens.titleColor,
   },
@@ -669,6 +682,13 @@ const styles = StyleSheet.create({
     marginLeft: spacing.m,
     ...typography.preset.body,
   },
+  filterChipText: {
+    color: colors.textSecondary,
+    fontWeight: typography.weight.heavy,
+    textAlign: "center",
+    fontSize: typography.preset.caption.fontSize,
+    lineHeight: typography.preset.caption.lineHeight,
+  },
   listSection: {
     flex: 1,
   },
@@ -678,6 +698,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.s,
   },
+  // ...existing code...
   loadingText: {
     color: homeDeadlineListTokens.titleColor,
   },
@@ -728,7 +749,7 @@ const styles = StyleSheet.create({
   },
   swipeActionText: {
     color: colors.buttonText,
-    fontWeight: typography.weight.medium,
+    fontWeight: typography.weight.heavy,
   },
   doneAction: {
     backgroundColor: homeDeadlineListTokens.doneActionBackground,

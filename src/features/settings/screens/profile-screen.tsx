@@ -19,6 +19,7 @@ import {
     profileScreenTokens,
     screenSharedTokens,
     spacing,
+    typography,
 } from "@/src/theme";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -229,6 +230,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
+    fontWeight: typography.weight.medium,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   contentInner: {

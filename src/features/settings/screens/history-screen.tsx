@@ -18,7 +18,13 @@ import {
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, radius, screenSharedTokens, spacing } from "@/src/theme";
+import {
+    colors,
+    radius,
+    screenSharedTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
 
 export function HistoryScreen() {
   const navigation = useSettingsNavigation();
@@ -135,6 +141,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
+    fontWeight: typography.weight.medium,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   listContent: {

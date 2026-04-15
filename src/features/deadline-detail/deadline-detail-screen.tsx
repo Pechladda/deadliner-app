@@ -46,6 +46,7 @@ import {
     screenSharedTokens,
     shadows,
     spacing,
+    typography,
 } from "@/src/theme";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -405,6 +406,7 @@ const styles = StyleSheet.create({
   assignmentTitle: {
     marginTop: spacing.s,
     marginBottom: spacing.xs,
+    fontWeight: typography.weight.medium,
   },
   courseText: {
     color: colors.textSecondary,

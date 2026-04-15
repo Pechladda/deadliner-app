@@ -23,7 +23,13 @@ import { StackRoutes } from "@/src/core/navigation/route-names";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import { colors, radius, screenSharedTokens, spacing } from "@/src/theme";
+import {
+    colors,
+    radius,
+    screenSharedTokens,
+    spacing,
+    typography,
+} from "@/src/theme";
 
 type SettingsRowProps = {
   label: string;
@@ -300,7 +306,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.l,
     paddingTop: spacing.l,
     paddingBottom: spacing.l,
   },
@@ -337,8 +343,13 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     textAlign: "left",
-    color: screenSharedTokens.screenTitleColor,
+    color: homeDeadlineListTokens.titleColor,
+    fontWeight: typography.weight.bold,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    fontSize: typography.size.l,
+    lineHeight: typography.lineHeight.normal,
+    marginLeft: spacing.s,
+    marginTop: spacing.m,
   },
   sectionTitle: {
     marginBottom: spacing.s,

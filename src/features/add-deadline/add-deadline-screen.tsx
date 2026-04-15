@@ -17,12 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  AppButton,
-  AppText,
-  IconButton,
-  PastelBackground,
-} from "@/src/components";
+import { AppButton, AppText, PastelBackground } from "@/src/components";
 import {
   ANDROID_DATE_PICKER_LOCALE,
   DATE_DISPLAY_LOCALE,
@@ -426,11 +421,6 @@ export function AddDeadlineScreen() {
       <PastelBackground />
       <View style={[styles.container, isCompact && styles.containerCompact]}>
         <View style={styles.headerRow}>
-          <IconButton
-            icon="chevron-back"
-            onPress={() => navigation.goBack()}
-            accessibilityLabel={"Go back"}
-          />
           <AppText variant="section" style={styles.screenTitleText}>
             {isEditMode ? "Edit Deadline" : "New Deadline"}
           </AppText>
@@ -548,7 +538,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: spacing.l,
-    paddingTop: spacing.s,
+    paddingTop: spacing.l,
     paddingBottom: spacing.l,
   },
   containerCompact: {
@@ -563,8 +553,13 @@ const styles = StyleSheet.create({
   },
   screenTitleText: {
     textAlign: "left",
-    color: screenSharedTokens.screenTitleColor,
+    color: colors.textPrimary,
+    fontWeight: typography.weight.bold,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    fontSize: typography.size.l,
+    lineHeight: typography.lineHeight.normal,
+    marginLeft: spacing.s,
+    marginTop: spacing.m,
   },
   formCard: {
     borderRadius: radius.xxl,

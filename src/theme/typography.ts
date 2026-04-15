@@ -18,36 +18,36 @@ export const typography = {
   size: {
     xs: 12,
     sm: 14,
-    s: 14,
-    base: 16,
-    m: 16,
-    l: 19,
-    lg: 19,
-    section: 24,
-    xl: 26,
+    s: 16,
+    base: 18,
+    m: 20,
+    l: 22,
+    lg: 24,
+    section: 26,
+    xl: 28,
     xxl: 30,
-    display: 40,
+    display: 32,
   },
 
   lineHeight: {
-    xs: 16,
-    sm: 20,
-    base: 24,
+    xs: 14,
+    sm: 16,
+    base: 18,
     compact: 20,
-    normal: 24,
-    relaxed: 30,
-    title: 44,
-    lg: 26,
-    section: 32,
+    normal: 22,
+    relaxed: 24,
+    title: 26,
+    lg: 28,
+    section: 30,
     xl: 32,
-    xxl: 38,
-    display: 48,
+    xxl: 34,
+    display: 36,
   },
 
   preset: {
     caption: {
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: 18.5,
       fontFamily: "Roboto_400Regular",
     },
 
@@ -58,17 +58,15 @@ export const typography = {
     },
 
     bodyMedium: {
-      fontSize: 16,
+      fontSize: 18,
       lineHeight: 24,
       fontFamily: "Roboto_500Medium",
-      fontWeight: "500" as const,
     },
 
     subtitle: {
       fontSize: 19,
       lineHeight: 26,
       fontFamily: "Roboto_700Bold",
-      fontWeight: "500" as const,
     },
 
     section: {

@@ -3,22 +3,22 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRef } from "react";
 import {
-    Animated,
-    Pressable,
-    StyleSheet,
-    View,
-    type ViewStyle,
+  Animated,
+  Pressable,
+  StyleSheet,
+  View,
+  type ViewStyle,
 } from "react-native";
 
 import { AppText } from "@/src/components";
 import {
-    colors,
-    deadlineCardTokens,
-    motion,
-    radius,
-    shadows,
-    spacing,
-    typography,
+  colors,
+  deadlineCardTokens,
+  motion,
+  radius,
+  shadows,
+  spacing,
+  typography,
 } from "@/src/theme";
 
 type UrgencyColor = "red" | "orange" | "yellow" | "green" | "gray";

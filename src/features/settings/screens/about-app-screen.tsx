@@ -5,7 +5,7 @@ import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
 import { APP_VERSION } from "@/src/core/config";
 
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
-import { colors, screenSharedTokens, spacing } from "@/src/theme";
+import { colors, screenSharedTokens, spacing, typography } from "@/src/theme";
 
 export function AboutAppScreen() {
   const navigation = useSettingsNavigation();
@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     textAlign: "left",
     color: screenSharedTokens.screenTitleColor,
+    fontWeight: typography.weight.medium,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
   },
   card: {
