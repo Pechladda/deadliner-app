@@ -34,7 +34,6 @@ import {
 } from "@/src/features/add-deadline/hooks/use-add-deadline-screen";
 import { PickerMode } from "@/src/features/add-deadline/types";
 import { validateDeadlineForm } from "@/src/features/add-deadline/utils/validate-deadline-form";
-import { ReminderOption } from "@/src/models/deadline";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
   addDeadlineTokens,
@@ -123,6 +122,8 @@ type DateTimeFieldProps = {
 };
 
 function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
+  // ถ้า value เป็น 'Date' หรือ 'Time' ให้ใช้สี textSecondary (เหมือน Reminder Time)
+  const isPlaceholder = value === label;
   return (
     <Pressable
       onPress={onPress}
@@ -135,7 +136,7 @@ function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
       <Ionicons name={icon} size={18} color={colors.primary} />
       <AppText
         variant="body"
-        color={value === label ? "textSecondary" : "textPrimary"}
+        color={isPlaceholder ? "textSecondary" : "textPrimary"}
         style={styles.dateTimeText}
       >
         {value}
@@ -172,45 +173,29 @@ function getDateDisplayForOS(
   return "clock";
 }
 
-type ReminderSelectionProps = {
-  value: ReminderOption | null;
-  onChange: (value: ReminderOption | null) => void;
-};
-
-function ReminderSelection({ value, onChange }: ReminderSelectionProps) {
-  const reminderOptions: { value: ReminderOption | null; label: string }[] = [
-    { value: null, label: "None" },
-    { value: "5m", label: "5 minutes before" },
-    { value: "30m", label: "30 minutes before" },
-    { value: "1h", label: "1 hour before" },
-    { value: "1d", label: "1 day before" },
-  ];
-
+function ReminderSelection({
+  value,
+  onChange,
+  pickerValue,
+  onOpenPicker,
+}: {
+  value: Date | null;
+  onChange: (value: Date) => void;
+  pickerValue: Date;
+  onOpenPicker: () => void;
+}) {
   return (
     <View style={styles.reminderWrap}>
       <AppText variant="caption" style={styles.sectionLabel}>
-        {"Reminder"}
+        {"Reminder Time"}
       </AppText>
-      <View style={styles.reminderOptionsRow}>
-        {reminderOptions.map((option) => {
-          const isActive = option.value === value;
-          return (
-            <Pressable
-              key={option.value ?? "none"}
-              onPress={() => onChange(option.value)}
-              style={[
-                styles.reminderOption,
-                isActive && styles.reminderOptionActive,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={option.label}
-            >
-              <AppText variant="caption" style={styles.reminderOptionText}>
-                {option.label}
-              </AppText>
-            </Pressable>
-          );
-        })}
+      <View style={styles.row}>
+        <DateTimeField
+          label={value ? formatTimeDisplay(value) : "Time"}
+          icon="alarm-outline"
+          value={value ? formatTimeDisplay(value) : "Time"}
+          onPress={onOpenPicker}
+        />
       </View>
     </View>
   );
@@ -235,7 +220,10 @@ export function AddDeadlineScreen() {
   const [androidPickerMode, setAndroidPickerMode] = useState<PickerMode | null>(
     null,
   );
-  const [reminder, setReminder] = useState<ReminderOption | null>(null);
+  // reminder เก็บเป็น string (ISO) | null
+  const [reminder, setReminder] = useState<string | null>(null);
+  const [reminderPickerMode, setReminderPickerMode] =
+    useState<PickerMode | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -276,7 +264,7 @@ export function AddDeadlineScreen() {
     setSelectedDate(safeDate);
     setHasPickedDate(true);
     setHasPickedTime(true);
-    setReminder(target.reminder ?? null);
+    setReminder(target.reminder ?? null); // string | null
     setErrorMessage(null);
   }, [deadlines, editId]);
 
@@ -384,7 +372,7 @@ export function AddDeadlineScreen() {
       dueDate: dueAt.slice(0, 10),
       dueTime: dueAt.slice(11, 16),
       dueAt,
-      reminder,
+      reminder: reminder,
       colorStatus: urgencyColor,
       updatedAt: nowIso,
     };
@@ -415,6 +403,9 @@ export function AddDeadlineScreen() {
     selectedDate && hasPickedDate ? formatDateDisplay(selectedDate) : "Date";
   const timeValue =
     selectedDate && hasPickedTime ? formatTimeDisplay(selectedDate) : "Time";
+
+  // สำหรับ ReminderSelection: แปลง reminder (string | null) เป็น Date | null
+  const reminderDate = reminder ? new Date(reminder) : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -462,7 +453,12 @@ export function AddDeadlineScreen() {
             </View>
           </View>
 
-          <ReminderSelection value={reminder} onChange={setReminder} />
+          <ReminderSelection
+            value={reminderDate}
+            onChange={(date) => setReminder(date.toISOString())}
+            pickerValue={reminderDate ?? new Date()}
+            onOpenPicker={() => setReminderPickerMode("time")}
+          />
 
           {errorMessage ? (
             <AppText color="danger" style={styles.errorText}>
@@ -479,10 +475,13 @@ export function AddDeadlineScreen() {
             }}
             disabled={isSaving}
             iconName="sparkles-outline"
+            size="compact"
+            labelVariant="caption"
           />
         </View>
       </View>
 
+      {/* Due Date/Time Picker */}
       {Platform.OS === "ios" && iosPickerMode ? (
         <Modal
           transparent
@@ -529,6 +528,59 @@ export function AddDeadlineScreen() {
           themeVariant="light"
         />
       ) : null}
+
+      {/* Reminder Time Picker */}
+      {Platform.OS === "ios" && reminderPickerMode ? (
+        <Modal
+          transparent
+          animationType="fade"
+          visible={Boolean(reminderPickerMode)}
+          onRequestClose={() => setReminderPickerMode(null)}
+        >
+          <BlurView intensity={28} tint="light" style={styles.modalOverlay}>
+            <LinearGradient
+              colors={addDeadlineTokens.iosModalGradient}
+              style={styles.modalSheet}
+            >
+              <View style={styles.modalHeader}>
+                <AppText variant="section" style={styles.modalTitle}>
+                  Pick Reminder Time
+                </AppText>
+                <AppButton
+                  label={"Done"}
+                  onPress={() => setReminderPickerMode(null)}
+                />
+              </View>
+              <DateTimePicker
+                value={reminderDate ?? new Date()}
+                mode="time"
+                display={getDateDisplayForOS("time")}
+                onChange={(event, value) => {
+                  if (value) setReminder(value.toISOString());
+                }}
+                locale={PICKER_LOCALE}
+                is24Hour
+                themeVariant="light"
+              />
+            </LinearGradient>
+          </BlurView>
+        </Modal>
+      ) : null}
+
+      {Platform.OS === "android" && reminderPickerMode ? (
+        <DateTimePicker
+          value={reminderDate ?? new Date()}
+          mode="time"
+          display={getDateDisplayForOS("time")}
+          onChange={(event, value) => {
+            setReminderPickerMode(null);
+            if (value) setReminder(value.toISOString());
+          }}
+          locale={PICKER_LOCALE}
+          is24Hour
+          themeVariant="light"
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -537,12 +589,12 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
-    paddingHorizontal: spacing.l,
+    paddingHorizontal: spacing.s, // ลด padding ข้างเพื่อให้เนื้อที่กว้างขึ้น
     paddingTop: spacing.l,
     paddingBottom: spacing.l,
   },
   containerCompact: {
-    paddingHorizontal: spacing.m,
+    paddingHorizontal: spacing.xs, // ลด padding ข้างในโหมด compact
   },
   headerRow: {
     flexDirection: "row",
@@ -552,47 +604,50 @@ const styles = StyleSheet.create({
     marginBottom: spacing.m,
   },
   screenTitleText: {
-    textAlign: "left",
     color: colors.textPrimary,
     fontWeight: typography.weight.bold,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    marginLeft: spacing.l,
     fontSize: typography.size.l,
     lineHeight: typography.lineHeight.normal,
-    marginLeft: spacing.s,
     marginTop: spacing.m,
+    textAlign: "left",
   },
   formCard: {
     borderRadius: radius.xxl,
     borderWidth: 0,
     borderColor: colors.border,
-    padding: spacing.l,
+    padding: spacing.m, // ลด padding รอบๆ ช่องกรอก
     gap: spacing.m,
     overflow: "hidden",
     ...shadows.shadowCard,
   },
   floatingWrap: {
-    minHeight: 58,
-    borderRadius: radius.l,
-    backgroundColor: addDeadlineTokens.floatingFieldBackground,
+    minHeight: 50,
+    borderRadius: radius.m,
+    backgroundColor: colors.surface, // หรือ homeDeadlineListTokens.searchBackground ถ้า import ได้
     borderWidth: 0,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.m,
+    borderColor: colors.border, // หรือ homeDeadlineListTokens.searchBorder
+    paddingHorizontal: spacing.xs,
     justifyContent: "center",
-    shadowColor: addDeadlineTokens.floatingFieldShadowColor,
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 2, height: 3 },
+    flexDirection: "row",
+    alignItems: "center",
+    overflow: "hidden",
   },
   floatingLabel: {
     position: "absolute",
     left: spacing.m,
     color: colors.textSecondary,
-    ...typography.preset.bodyMedium,
+    ...typography.preset.caption,
   },
   floatingInput: {
-    marginTop: 12,
+    flex: 1,
     color: colors.textPrimary,
+    marginLeft: spacing.m,
     ...typography.preset.body,
+    fontSize: typography.size.xs, // ปรับให้เท่ากับช่อง email
+    lineHeight: typography.lineHeight.xs,
+    marginTop: 12, // คงไว้เพื่อไม่ให้ label ทับ input
   },
   sectionWrap: {
     gap: spacing.s,
@@ -607,15 +662,16 @@ const styles = StyleSheet.create({
   },
   dateTimeField: {
     flex: 1,
-    minHeight: 56,
-    borderRadius: radius.l,
-    backgroundColor: addDeadlineTokens.dateTimeFieldBackground,
+    minHeight: 50, // homeDeadlineListTokens.searchMinHeight
+    borderRadius: radius.m, // เหมือน searchWrap
+    backgroundColor: colors.surface, // หรือ homeDeadlineListTokens.searchBackground ถ้า import ได้
     borderWidth: 0,
-    borderColor: colors.border,
+    borderColor: colors.border, // หรือ homeDeadlineListTokens.searchBorder
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.s,
     paddingHorizontal: spacing.m,
+    overflow: "hidden",
   },
   dateTimeText: {
     flex: 1,
@@ -648,6 +704,8 @@ const styles = StyleSheet.create({
   },
   saveButtonWrap: {
     marginTop: spacing.l,
+    alignSelf: "center",
+    width: "95%", // ลดความกว้างลง 1 ระดับ (จากเต็มความกว้าง)
   },
   modalOverlay: {
     flex: 1,

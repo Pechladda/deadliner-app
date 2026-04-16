@@ -2,19 +2,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useState } from "react";
 import {
-    Alert,
-    AppState,
-    Linking,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    useWindowDimensions,
-    View,
+  Alert,
+  AppState,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import {
-    SafeAreaView,
-    useSafeAreaInsets,
+  SafeAreaView,
+  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
 import { AppButton, AppText, PastelBackground, Toast } from "@/src/components";
@@ -24,12 +24,13 @@ import { useSettingsNavigation } from "@/src/features/settings/hooks/use-setting
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
-    colors,
-    radius,
-    screenSharedTokens,
-    spacing,
-    typography,
+  colors,
+  radius,
+  screenSharedTokens,
+  spacing,
+  typography,
 } from "@/src/theme";
+import { homeDeadlineListTokens } from "@/src/theme/tokens/home-deadline-list";
 
 type SettingsRowProps = {
   label: string;
@@ -311,8 +312,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.l,
   },
   containerCompact: {
-    paddingHorizontal: spacing.l,
-    paddingTop: spacing.m,
+    paddingHorizontal: spacing.s,
+    paddingTop: spacing.s,
   },
   containerWide: {
     paddingHorizontal: spacing.xxxl,

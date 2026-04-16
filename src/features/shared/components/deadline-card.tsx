@@ -237,14 +237,14 @@ export function DeadlineCard({
 
 const styles = StyleSheet.create({
   cardShell: {
-    borderRadius: radius.xl,
+    borderRadius: radius.s,
     overflow: "visible",
   },
   card: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "transparent",
-    borderRadius: radius.xl,
+    borderRadius: radius.s,
     overflow: "hidden",
     borderWidth: 0,
     borderColor: colors.borderSoft,
@@ -256,14 +256,14 @@ const styles = StyleSheet.create({
     right: 12,
     top: 8,
     bottom: 6,
-    borderRadius: radius.xl,
+    borderRadius: radius.s,
     zIndex: -1,
   },
   innerBorder: {
     ...StyleSheet.absoluteFillObject,
     borderWidth: 0,
     borderColor: deadlineCardTokens.innerBorder,
-    borderRadius: radius.xl,
+    borderRadius: radius.s,
   },
   cardMuted: {
     opacity: 0.72,
@@ -290,20 +290,20 @@ const styles = StyleSheet.create({
   },
   courseName: {
     marginTop: spacing.xxs,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
   dueLabel: {
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
   statusSeparator: {
     color: colors.textSecondary,
   },
   statusText: {
-    fontWeight: typography.weight.medium,
+    fontWeight: typography.weight.bold,
   },
   completedLabel: {
     marginTop: spacing.xs,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
   doneButton: {
     marginRight: spacing.s,
@@ -332,6 +332,6 @@ const styles = StyleSheet.create({
   },
   doneButtonText: {
     fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
 });

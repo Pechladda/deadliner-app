@@ -2,6 +2,9 @@ export type DeadlineColorStatus = "green" | "yellow" | "red";
 
 export type ReminderOption = "5m" | "30m" | "1h" | "1d";
 
+// รองรับทั้ง ReminderOption เดิม และ ISO string
+export type ReminderValue = ReminderOption | string | null;
+
 export interface Deadline {
   id: string;
   courseName: string;
@@ -12,7 +15,7 @@ export interface Deadline {
   colorStatus: DeadlineColorStatus;
   createdAt: string;
   updatedAt: string;
-  reminder: ReminderOption | null;
+  reminder: ReminderValue;
   notificationId?: string | null;
   isCompleted?: boolean;
   completedAt?: string | null;
@@ -29,7 +32,7 @@ export type CreateDeadlineInput = Omit<
   | "notificationId"
 > & {
   colorStatus?: DeadlineColorStatus;
-  reminder?: ReminderOption | null;
+  reminder?: ReminderValue;
   notificationId?: string;
 };
 

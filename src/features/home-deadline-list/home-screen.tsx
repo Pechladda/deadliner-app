@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.m,
   },
   summaryGlass: {
-    borderRadius: radius.xl,
+    borderRadius: radius.m,
     overflow: "hidden",
     borderWidth: 0,
     borderColor: homeDeadlineListTokens.summaryBorder,
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
   searchWrap: {
     marginTop: spacing.xs,
     marginBottom: spacing.m,
-    borderRadius: radius.xl,
+    borderRadius: radius.m,
     overflow: "hidden",
     borderWidth: 0,
     borderColor: homeDeadlineListTokens.searchBorder,
@@ -680,14 +680,13 @@ const styles = StyleSheet.create({
     flex: 1,
     color: homeDeadlineListTokens.titleColor,
     marginLeft: spacing.m,
-    ...typography.preset.body,
+    ...typography.preset.caption,
   },
   filterChipText: {
     color: colors.textSecondary,
     fontWeight: typography.weight.heavy,
     textAlign: "center",
-    fontSize: typography.preset.caption.fontSize,
-    lineHeight: typography.preset.caption.lineHeight,
+    fontSize: typography.size.xs,
   },
   listSection: {
     flex: 1,
