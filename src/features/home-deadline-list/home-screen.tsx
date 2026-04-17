@@ -563,18 +563,9 @@ const styles = StyleSheet.create({
   summaryGlass: {
     borderRadius: radius.s,
     overflow: "hidden",
-    borderWidth: 0,
-    borderColor: homeDeadlineListTokens.summaryBorder,
-    backgroundColor: homeDeadlineListTokens.summaryBackground,
+    backgroundColor: colors.surface,
     marginTop: spacing.m,
     marginBottom: spacing.m,
-    shadowColor: homeDeadlineListTokens.summaryShadow,
-    shadowOpacity: homeDeadlineListTokens.summaryShadowOpacity,
-    shadowRadius: homeDeadlineListTokens.summaryShadowRadius,
-    shadowOffset: {
-      width: 0,
-      height: homeDeadlineListTokens.summaryShadowOffsetY,
-    },
     elevation: homeDeadlineListTokens.summaryShadowElevation,
   },
   summaryRow: {
@@ -593,13 +584,13 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   summaryItemCoral: {
-    backgroundColor: homeDeadlineListTokens.summaryItemBackground,
+    backgroundColor: colors.surface,
   },
   summaryItemViolet: {
-    backgroundColor: homeDeadlineListTokens.summaryItemBackground,
+    backgroundColor: colors.surface,
   },
   summaryItemAmber: {
-    backgroundColor: homeDeadlineListTokens.summaryItemBackground,
+    backgroundColor: colors.surface,
   },
   summaryDivider: {
     width: homeDeadlineListTokens.summaryDividerWidth,
@@ -662,9 +653,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.l,
     borderRadius: radius.s,
     overflow: "hidden",
-    borderWidth: 0,
-    borderColor: colors.border,
-    backgroundColor: homeDeadlineListTokens.searchBackground,
+    backgroundColor: colors.surface,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.m,
@@ -708,8 +697,8 @@ const styles = StyleSheet.create({
   },
   emptyStateCard: {
     borderRadius: radius.s,
-    borderColor: homeDeadlineListTokens.emptyCardBorder,
-    backgroundColor: homeDeadlineListTokens.emptyCardBackground,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     padding: spacing.xl,
     alignItems: "center",
     gap: spacing.m,
