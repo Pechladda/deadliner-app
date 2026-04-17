@@ -26,17 +26,17 @@ export function AboutAppScreen() {
         </View>
 
         <Card style={styles.card}>
-          <AppText variant="section" style={styles.centerText}>
+          <AppText variant="body" style={styles.centerText}>
             {"Deadliner"}
           </AppText>
           <AppText
-            variant="body"
+            variant="caption"
             color="textSecondary"
             style={styles.centerText}
           >
             {`Version ${APP_VERSION}`}
           </AppText>
-          <AppText variant="body" style={styles.description}>
+          <AppText variant="caption" style={styles.description}>
             {
               "Deadliner helps students visualize urgency and never miss important deadlines."
             }
@@ -58,13 +58,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     gap: spacing.s,
-    marginBottom: spacing.xl2,
+    marginBottom: spacing.l,
   },
   screenTitle: {
     textAlign: "left",
-    color: screenSharedTokens.screenTitleColor,
-    fontWeight: typography.weight.medium,
+    color: colors.textPrimary,
+    fontWeight: typography.weight.bold,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    fontSize: typography.size.m,
+    lineHeight: typography.lineHeight.normal,
+    marginLeft: spacing.s,
+    marginTop: spacing.m,
   },
   card: {
     alignSelf: "center",
@@ -72,9 +76,9 @@ const styles = StyleSheet.create({
     maxWidth: screenSharedTokens.contentCompactMaxWidth,
     borderColor: colors.borderSoft,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.xl2,
-    paddingVertical: spacing.xl2,
-    gap: spacing.m,
+    paddingHorizontal: spacing.s,
+    paddingVertical: spacing.xs,
+    gap: spacing.s,
   },
   centerText: {
     textAlign: "center",

@@ -6,10 +6,9 @@ import {
     colors,
     motion,
     radius,
-    shadows,
     sharedComponentTokens,
     spacing,
-    typography,
+    typography
 } from "@/src/theme";
 
 import { AppText } from "./app-text";
@@ -125,7 +124,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.xl,
     borderWidth: 0,
-    ...shadows.shadowLight,
+    // shadow removed
   },
   baseCompact: {
     minHeight: sharedComponentTokens.appButtonCompactMinHeight,

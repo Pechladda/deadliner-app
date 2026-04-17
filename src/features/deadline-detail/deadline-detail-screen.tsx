@@ -1,55 +1,20 @@
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useRef, useState } from "react";
-import {
-    Alert,
-    Animated,
-    Easing,
-    StyleSheet,
-    useWindowDimensions,
-    View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, StyleSheet, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle } from "react-native-svg";
+// import Svg, { Circle } from "react-native-svg";
 
-import {
-    AppButton,
-    AppText,
-    Card,
-    IconButton,
-    PastelBackground,
-} from "@/src/components";
+import { AppText, IconButton, PastelBackground } from "@/src/components";
 import { StackRoutes, TabRoutes } from "@/src/core/navigation/route-names";
+import { getDeadlineStatus } from "@/src/core/utils";
 import {
-    formatCountdownLong,
-    formatDueLabel,
-    getDeadlineStatus,
-    getDeadlineStatusDisplayColor,
-    getRemainingMs,
-    getUrgencyMessage,
-} from "@/src/core/utils";
-import {
-    useDeadlineDetailNavigation,
-    useDeadlineDetailRoute,
+  useDeadlineDetailNavigation,
+  useDeadlineDetailRoute,
 } from "@/src/features/deadline-detail/hooks/use-deadline-detail-screen";
-import {
-    ActionRowProps,
-    CountdownCardProps,
-    MissingStateProps,
-} from "@/src/features/deadline-detail/types";
+import { MissingStateProps } from "@/src/features/deadline-detail/types";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import {
-    colors,
-    deadlineDetailTokens,
-    radius,
-    screenSharedTokens,
-    shadows,
-    spacing,
-    typography,
-} from "@/src/theme";
+import { colors, screenSharedTokens, spacing, typography } from "@/src/theme";
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+// const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 function MissingState({ onPressBack }: MissingStateProps) {
   return (
@@ -65,139 +30,6 @@ function MissingState({ onPressBack }: MissingStateProps) {
       <AppText variant="body" color="textSecondary" style={styles.missingText}>
         {"Please choose an assignment from Home to see its details."}
       </AppText>
-    </View>
-  );
-}
-
-function ProgressArc({ ratio, color }: { ratio: number; color: string }) {
-  const size = 168;
-  const strokeWidth = 12;
-  const radiusSize = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radiusSize;
-  const progress = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: ratio,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [ratio, progress]);
-
-  const strokeDashoffset = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [circumference, 0],
-  });
-
-  return (
-    <View style={styles.arcWrap}>
-      <Svg width={size} height={size}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radiusSize}
-          stroke={deadlineDetailTokens.arcTrack}
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <AnimatedCircle
-          cx={size / 2}
-          cy={size / 2}
-          r={radiusSize}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </Svg>
-    </View>
-  );
-}
-
-function CountdownCard({ dueAt, status, now }: CountdownCardProps) {
-  const urgencyMessage = getUrgencyMessage(getRemainingMs(dueAt, now));
-  const statusColor = getDeadlineStatusDisplayColor(status);
-  const accent =
-    statusColor === "red"
-      ? colors.priorityOverdue
-      : statusColor === "orange"
-        ? colors.priorityUrgent
-        : statusColor === "yellow"
-          ? colors.priorityYellow
-          : colors.priorityGreen;
-
-  const remainingMs = Math.max(0, getRemainingMs(dueAt, now));
-  const progressRatio = Math.min(1, remainingMs / (7 * 24 * 60 * 60 * 1000));
-
-  return (
-    <BlurView intensity={24} tint="light" style={styles.countdownCard}>
-      <View style={styles.countdownMain}>
-        <ProgressArc ratio={progressRatio} color={accent} />
-        <View style={styles.countdownLeft}>
-          <View style={styles.countdownRow}>
-            <Ionicons name="sparkles-outline" size={18} color={accent} />
-            <AppText variant="section" style={styles.countdownText}>
-              {formatCountdownLong(dueAt, now)}
-            </AppText>
-          </View>
-
-          <View style={[styles.statusPill, { backgroundColor: accent }]}>
-            <AppText variant="bodyMedium" style={styles.statusPillText}>
-              {status === "overdue"
-                ? "Overdue"
-                : status === "urgent"
-                  ? "URGENT"
-                  : status === "soon"
-                    ? "SOON"
-                    : "On Track"}
-            </AppText>
-          </View>
-
-          {urgencyMessage !== "overdue" ? (
-            <AppText variant="caption" style={styles.urgencyHelperText}>
-              {urgencyMessage === "needsToday"
-                ? "Needs attention today"
-                : urgencyMessage === "dueSoon"
-                  ? "Due very soon"
-                  : "Safe for now"}
-            </AppText>
-          ) : null}
-
-          <AppText variant="caption" style={styles.dueText}>
-            {"Due"} {formatDueLabel(dueAt)}
-          </AppText>
-        </View>
-      </View>
-    </BlurView>
-  );
-}
-
-function ActionRow({ onEdit, onDelete }: ActionRowProps) {
-  return (
-    <View style={styles.buttonRow}>
-      <View style={styles.actionButtonWrap}>
-        <AppButton
-          label={"Edit"}
-          onPress={onEdit}
-          variant="solid"
-          size="compact"
-          iconName="pencil-outline"
-        />
-      </View>
-      <View style={styles.actionButtonWrap}>
-        <AppButton
-          label={"Delete"}
-          onPress={onDelete}
-          variant="outline"
-          size="compact"
-          iconName="trash-outline"
-          iconColorToken="danger"
-        />
-      </View>
     </View>
   );
 }
@@ -288,75 +120,143 @@ export function DeadlineDetailScreen() {
     );
   }
 
-  const status = getDeadlineStatus(deadline.dueAt, now);
-  const statusColor = getDeadlineStatusDisplayColor(status);
-  const palette =
-    statusColor === "red"
-      ? deadlineDetailTokens.heroPaletteOverdue
-      : statusColor === "orange"
-        ? deadlineDetailTokens.heroPaletteUrgent
-        : statusColor === "yellow"
-          ? deadlineDetailTokens.heroPaletteSoon
-          : deadlineDetailTokens.heroPaletteOnTrack;
-
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <PastelBackground />
       <View style={[styles.container, isCompact && styles.containerCompact]}>
-        <LinearGradient colors={palette} style={styles.heroHeader}>
-          <BlurView
-            intensity={24}
-            tint="light"
-            style={StyleSheet.absoluteFill}
+        <View style={styles.headerRow}>
+          <IconButton
+            icon="chevron-back"
+            onPress={onPressFallbackBack}
+            accessibilityLabel={"Go back"}
           />
-          <View style={styles.headerRow}>
-            <IconButton
-              icon="chevron-back"
-              onPress={onPressFallbackBack}
-              accessibilityLabel={"Go back"}
-            />
-            <AppText variant="caption" style={styles.headerCaption}>
-              {"Assignment Detail"}
-            </AppText>
-            <View style={styles.headerSpacer} />
-          </View>
-
+          <AppText variant="section" style={styles.headerTitle}>
+            {"Assignment Detail"}
+          </AppText>
+        </View>
+        {/* White Card Box */}
+        <View
+          style={[styles.cardBox, styles.cardBoxCenter, styles.cardBoxModern]}
+        >
+          {/* Assignment Title */}
           <AppText
-            variant="section"
-            style={styles.assignmentTitle}
-            numberOfLines={2}
+            style={{
+              fontSize: typography.size.l,
+              fontWeight: typography.weight.bold,
+              marginBottom: spacing.s,
+              color: colors.textPrimary,
+              textAlign: "center",
+            }}
           >
             {deadline.assignmentName}
           </AppText>
-          <AppText
-            variant="body"
-            color="textSecondary"
-            style={styles.courseText}
+
+          {/* Subject / Course Badge + Status */}
+          <View
+            style={[
+              styles.badgeModern,
+              {
+                marginBottom: spacing.s,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              },
+            ]}
           >
-            {deadline.courseName}
-          </AppText>
-        </LinearGradient>
-
-        <CountdownCard dueAt={deadline.dueAt} now={now} status={status} />
-
-        <Card style={styles.metaCard}>
-          <View style={styles.metaRow}>
-            <AppText variant="caption">{"Reminder"}</AppText>
-            <AppText variant="bodyMedium" style={styles.metaValue}>
-              {deadline.reminder
-                ? deadline.reminder === "5m"
-                  ? "5 minutes before"
-                  : deadline.reminder === "30m"
-                    ? "30 minutes before"
-                    : deadline.reminder === "1h"
-                      ? "1 hour before"
-                      : "1 day before"
-                : "No reminder"}
+            <AppText
+              style={{
+                color: colors.primary,
+                fontWeight: "500",
+                fontSize: typography.size.xs,
+                textAlign: "center",
+                letterSpacing: 0.5,
+              }}
+            >
+              {deadline.courseName}
             </AppText>
           </View>
-        </Card>
 
-        <ActionRow onEdit={onPressEdit} onDelete={onPressDelete} />
+          {/* Status */}
+          {(() => {
+            const status = getDeadlineStatus(deadline.dueAt, now);
+            let statusText: string = "";
+            let statusColor: string = colors.textSecondary;
+            let statusIcon = "";
+            if (deadline.isCompleted) {
+              statusText = "Completed";
+              statusColor = colors.success;
+              statusIcon = "✔️ ";
+            } else {
+              switch (status) {
+                case "overdue":
+                  statusText = "Overdue";
+                  statusColor = colors.danger;
+                  break;
+                case "urgent":
+                  statusText = "Due Soon";
+                  statusColor = colors.warning;
+                  break;
+                case "soon":
+                  statusText = "Coming Up";
+                  statusColor = colors.info;
+                  break;
+                default:
+                  statusText = "On Track";
+                  statusColor = colors.textSecondary;
+                  statusIcon = "";
+              }
+            }
+            return (
+              <AppText
+                style={{
+                  color: statusColor,
+                  fontWeight: "bold",
+                  marginBottom: spacing.xs,
+                  textAlign: "center",
+                  fontSize: typography.size.s,
+                  letterSpacing: 0.2,
+                }}
+              >
+                {statusIcon}
+                {statusText}
+              </AppText>
+            );
+          })()}
+          {/* Divider */}
+          <View style={styles.dividerModern} />
+
+          {/* Due Date & Time */}
+          <AppText
+            style={{
+              color: colors.textSecondary,
+              marginBottom: spacing.xs,
+              textAlign: "center",
+              fontSize: typography.size.xs,
+              letterSpacing: 0.1,
+            }}
+          >
+            <AppText style={{ fontWeight: "bold", color: colors.textPrimary }}>
+              Due:
+            </AppText>{" "}
+            {deadline.dueDate} {deadline.dueTime}
+          </AppText>
+
+          {/* Created Date */}
+          <AppText
+            style={{
+              color: colors.textSecondary,
+              fontSize: 12,
+              marginBottom: spacing.xs,
+              textAlign: "center",
+              letterSpacing: 0.1,
+            }}
+          >
+            <AppText style={{ fontWeight: "bold", color: colors.textPrimary }}>
+              Created:
+            </AppText>{" "}
+            {deadline.createdAt}
+          </AppText>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -383,95 +283,58 @@ const styles = StyleSheet.create({
   },
   missingTitle: { textAlign: "center" },
   missingText: { textAlign: "center" },
-  heroHeader: {
-    borderRadius: radius.xxl,
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.m,
-    overflow: "hidden",
-    borderWidth: 0,
-    borderColor: colors.border,
-    ...shadows.shadowCard,
-  },
   headerRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     marginBottom: spacing.s,
   },
-  headerCaption: {
+  headerTitle: {
     color: colors.textPrimary,
-    letterSpacing: deadlineDetailTokens.headerCaptionLetterSpacing,
+    fontWeight: typography.weight.bold,
+    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    marginLeft: spacing.m,
+    fontSize: typography.size.l,
+    lineHeight: typography.lineHeight.normal,
+    marginTop: spacing.m,
   },
-  headerSpacer: { width: 38, height: 38 },
-  assignmentTitle: {
-    marginTop: spacing.s,
-    marginBottom: spacing.xs,
-    fontWeight: typography.weight.medium,
+  cardBox: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: spacing.l,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: spacing.m,
   },
-  courseText: {
-    color: colors.textSecondary,
-  },
-  countdownCard: {
-    borderRadius: radius.xxl,
-    overflow: "hidden",
-    borderWidth: 0,
-    borderColor: colors.border,
-    backgroundColor: deadlineDetailTokens.countdownCardBackground,
-    ...shadows.shadowCard,
-  },
-  countdownMain: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: spacing.m,
-    gap: spacing.m,
-  },
-  arcWrap: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  countdownLeft: {
-    flex: 1,
+  cardBoxModern: {
     gap: spacing.s,
   },
-  countdownRow: {
+  badgeModern: {
+    alignSelf: "center",
+    backgroundColor: colors.accentMint,
+    borderRadius: 999,
+    paddingHorizontal: spacing.l,
+    paddingVertical: 4,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.s,
+    gap: 6,
   },
-  countdownText: {},
-  statusPill: {
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
+  dividerModern: {
+    width: "80%",
+    height: 1,
+    backgroundColor: colors.borderSoft,
+    alignSelf: "center",
+    marginVertical: spacing.xs,
+    borderRadius: 1,
   },
-  statusPillText: {
-    color: colors.buttonText,
-    letterSpacing: deadlineDetailTokens.statusPillLetterSpacing,
-  },
-  urgencyHelperText: {
-    color: colors.textSecondary,
-  },
-  dueText: {
-    color: colors.primary,
-  },
-  metaCard: {
-    borderRadius: radius.xl,
-  },
-  metaRow: {
-    gap: spacing.xs,
-  },
-  metaValue: {},
-  buttonRow: {
-    flexDirection: "row",
+  cardBoxCenter: {
     alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: "auto",
-    gap: spacing.m,
-    paddingBottom: spacing.l,
-    paddingTop: spacing.s,
-  },
-  actionButtonWrap: {
-    flex: 1,
   },
 });

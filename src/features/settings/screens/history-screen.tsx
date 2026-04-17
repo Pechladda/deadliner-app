@@ -3,27 +3,27 @@ import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-    AppButton,
-    AppText,
-    Card,
-    IconButton,
-    PastelBackground,
-    Toast,
+  AppButton,
+  AppText,
+  Card,
+  IconButton,
+  PastelBackground,
+  Toast,
 } from "@/src/components";
 
 import {
-    formatCompletedLabel,
-    formatDueLabel,
+  formatCompletedLabel,
+  formatDueLabel,
 } from "@/src/core/utils/deadline-utils";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
-    colors,
-    radius,
-    screenSharedTokens,
-    spacing,
-    typography,
+  colors,
+  radius,
+  screenSharedTokens,
+  spacing,
+  typography,
 } from "@/src/theme";
 
 export function HistoryScreen() {
@@ -140,9 +140,13 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     textAlign: "left",
-    color: screenSharedTokens.screenTitleColor,
-    fontWeight: typography.weight.medium,
+    color: colors.textPrimary,
+    fontWeight: typography.weight.bold,
     letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    fontSize: typography.size.l,
+    lineHeight: typography.lineHeight.normal,
+    marginLeft: spacing.s,
+    marginTop: spacing.m,
   },
   listContent: {
     gap: spacing.m,

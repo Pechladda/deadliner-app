@@ -4,9 +4,8 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Animated,
   Modal,
   Platform,
   Pressable,
@@ -53,7 +52,7 @@ type FloatingInputProps = {
   value: string;
   onChangeText: (text: string) => void;
   accessibilityLabel: string;
-  placeholder: string;
+  hidePlaceholderOnFocus?: boolean;
 };
 
 function FloatingInput({
@@ -61,54 +60,20 @@ function FloatingInput({
   value,
   onChangeText,
   accessibilityLabel,
-  placeholder,
+  hidePlaceholderOnFocus = false,
 }: FloatingInputProps) {
-  const [focused, setFocused] = useState(false);
-  const progress = useRef(new Animated.Value(value ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: focused || value ? 1 : 0,
-      duration: 180,
-      useNativeDriver: false,
-    }).start();
-  }, [focused, value, progress]);
-
-  const labelTop = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [16, 8],
-  });
-
-  const labelSize = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [
-      typography.preset.body.fontSize,
-      typography.preset.caption.fontSize,
-    ],
-  });
-
+  const [isFocused, setIsFocused] = useState(false);
   return (
-    <View style={styles.floatingWrap}>
-      <Animated.Text
-        style={[
-          styles.floatingLabel,
-          {
-            top: labelTop,
-            fontSize: labelSize,
-          },
-        ]}
-      >
-        {label}
-      </Animated.Text>
+    <View style={styles.searchInputWrap}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={focused ? placeholder : ""}
+        placeholder={hidePlaceholderOnFocus && isFocused ? "" : label}
         placeholderTextColor={colors.textSecondary}
-        style={styles.floatingInput}
+        style={styles.searchInput}
         accessibilityLabel={accessibilityLabel}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
       />
     </View>
   );
@@ -135,7 +100,7 @@ function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
     >
       <Ionicons name={icon} size={18} color={colors.primary} />
       <AppText
-        variant="body"
+        variant="caption"
         color={isPlaceholder ? "textSecondary" : "textPrimary"}
         style={styles.dateTimeText}
       >
@@ -173,29 +138,52 @@ function getDateDisplayForOS(
   return "clock";
 }
 
+const REMINDER_OPTIONS = [
+  { label: "5 minutes before", value: "5m" },
+  { label: "30 minutes before", value: "30m" },
+  { label: "1 hour before", value: "1h" },
+  { label: "1 day before", value: "1d" },
+  { label: "No reminder", value: null },
+];
+
 function ReminderSelection({
   value,
   onChange,
-  pickerValue,
-  onOpenPicker,
 }: {
-  value: Date | null;
-  onChange: (value: Date) => void;
-  pickerValue: Date;
-  onOpenPicker: () => void;
+  value: string | null;
+  onChange: (value: string | null) => void;
 }) {
   return (
     <View style={styles.reminderWrap}>
-      <AppText variant="caption" style={styles.sectionLabel}>
-        {"Reminder Time"}
+      <AppText
+        variant="caption"
+        style={[styles.sectionLabel, { fontSize: typography.size.xs }]}
+      >
+        {"Reminder"}
       </AppText>
-      <View style={styles.row}>
-        <DateTimeField
-          label={value ? formatTimeDisplay(value) : "Time"}
-          icon="alarm-outline"
-          value={value ? formatTimeDisplay(value) : "Time"}
-          onPress={onOpenPicker}
-        />
+      <View style={styles.reminderOptionsRow}>
+        {REMINDER_OPTIONS.map((opt) => (
+          <Pressable
+            key={String(opt.value)}
+            style={[
+              styles.reminderOption,
+              value === opt.value && styles.reminderOptionActive,
+            ]}
+            onPress={() => onChange(opt.value)}
+          >
+            <AppText
+              style={[
+                styles.reminderOptionText,
+                value === opt.value && {
+                  color: colors.primary,
+                  fontWeight: "bold",
+                },
+              ]}
+            >
+              {opt.label}
+            </AppText>
+          </Pressable>
+        ))}
       </View>
     </View>
   );
@@ -220,10 +208,9 @@ export function AddDeadlineScreen() {
   const [androidPickerMode, setAndroidPickerMode] = useState<PickerMode | null>(
     null,
   );
-  // reminder เก็บเป็น string (ISO) | null
+  // reminder เก็บเป็น ReminderOption | null
   const [reminder, setReminder] = useState<string | null>(null);
-  const [reminderPickerMode, setReminderPickerMode] =
-    useState<PickerMode | null>(null);
+  // reminderPickerMode and related modal are no longer used
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -404,9 +391,6 @@ export function AddDeadlineScreen() {
   const timeValue =
     selectedDate && hasPickedTime ? formatTimeDisplay(selectedDate) : "Time";
 
-  // สำหรับ ReminderSelection: แปลง reminder (string | null) เป็น Date | null
-  const reminderDate = reminder ? new Date(reminder) : null;
-
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <PastelBackground />
@@ -422,15 +406,15 @@ export function AddDeadlineScreen() {
             label={"Course name"}
             value={courseName}
             onChangeText={setCourseName}
-            placeholder={"e.g. Software Engineering"}
             accessibilityLabel={"Course name input"}
+            hidePlaceholderOnFocus={true}
           />
           <FloatingInput
             label={"Assignment name"}
             value={assignmentName}
             onChangeText={setAssignmentName}
-            placeholder={"e.g. API Design Sprint"}
             accessibilityLabel={"Assignment name input"}
+            hidePlaceholderOnFocus={true}
           />
 
           <View style={styles.sectionWrap}>
@@ -453,15 +437,13 @@ export function AddDeadlineScreen() {
             </View>
           </View>
 
-          <ReminderSelection
-            value={reminderDate}
-            onChange={(date) => setReminder(date.toISOString())}
-            pickerValue={reminderDate ?? new Date()}
-            onOpenPicker={() => setReminderPickerMode("time")}
-          />
+          <ReminderSelection value={reminder} onChange={setReminder} />
 
           {errorMessage ? (
-            <AppText color="danger" style={styles.errorText}>
+            <AppText
+              color="danger"
+              style={[styles.errorText, { fontSize: typography.size.xs }]}
+            >
               {errorMessage}
             </AppText>
           ) : null}
@@ -529,58 +511,7 @@ export function AddDeadlineScreen() {
         />
       ) : null}
 
-      {/* Reminder Time Picker */}
-      {Platform.OS === "ios" && reminderPickerMode ? (
-        <Modal
-          transparent
-          animationType="fade"
-          visible={Boolean(reminderPickerMode)}
-          onRequestClose={() => setReminderPickerMode(null)}
-        >
-          <BlurView intensity={28} tint="light" style={styles.modalOverlay}>
-            <LinearGradient
-              colors={addDeadlineTokens.iosModalGradient}
-              style={styles.modalSheet}
-            >
-              <View style={styles.modalHeader}>
-                <AppText variant="section" style={styles.modalTitle}>
-                  Pick Reminder Time
-                </AppText>
-                <AppButton
-                  label={"Done"}
-                  onPress={() => setReminderPickerMode(null)}
-                />
-              </View>
-              <DateTimePicker
-                value={reminderDate ?? new Date()}
-                mode="time"
-                display={getDateDisplayForOS("time")}
-                onChange={(event, value) => {
-                  if (value) setReminder(value.toISOString());
-                }}
-                locale={PICKER_LOCALE}
-                is24Hour
-                themeVariant="light"
-              />
-            </LinearGradient>
-          </BlurView>
-        </Modal>
-      ) : null}
-
-      {Platform.OS === "android" && reminderPickerMode ? (
-        <DateTimePicker
-          value={reminderDate ?? new Date()}
-          mode="time"
-          display={getDateDisplayForOS("time")}
-          onChange={(event, value) => {
-            setReminderPickerMode(null);
-            if (value) setReminder(value.toISOString());
-          }}
-          locale={PICKER_LOCALE}
-          is24Hour
-          themeVariant="light"
-        />
-      ) : null}
+      {/* Reminder Time Picker removed: now only Picker is used for reminder */}
     </SafeAreaView>
   );
 }
@@ -614,7 +545,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   formCard: {
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     borderWidth: 0,
     borderColor: colors.border,
     padding: spacing.m, // ลด padding รอบๆ ช่องกรอก
@@ -622,32 +553,26 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...shadows.shadowCard,
   },
-  floatingWrap: {
+  searchInputWrap: {
     minHeight: 50,
-    borderRadius: radius.m,
-    backgroundColor: colors.surface, // หรือ homeDeadlineListTokens.searchBackground ถ้า import ได้
+    borderRadius: radius.s,
+    backgroundColor: colors.surface,
     borderWidth: 0,
-    borderColor: colors.border, // หรือ homeDeadlineListTokens.searchBorder
-    paddingHorizontal: spacing.xs,
-    justifyContent: "center",
+    borderColor: colors.border,
+    paddingHorizontal: spacing.m,
     flexDirection: "row",
     alignItems: "center",
     overflow: "hidden",
+    marginBottom: spacing.s,
   },
-  floatingLabel: {
-    position: "absolute",
-    left: spacing.m,
-    color: colors.textSecondary,
-    ...typography.preset.caption,
-  },
-  floatingInput: {
+  searchInput: {
     flex: 1,
-    color: colors.textPrimary,
-    marginLeft: spacing.m,
+    color: colors.textSecondary,
     ...typography.preset.body,
-    fontSize: typography.size.xs, // ปรับให้เท่ากับช่อง email
-    lineHeight: typography.lineHeight.xs,
-    marginTop: 12, // คงไว้เพื่อไม่ให้ label ทับ input
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.sm,
+    paddingVertical: spacing.s,
+    paddingHorizontal: 0,
   },
   sectionWrap: {
     gap: spacing.s,
@@ -663,7 +588,7 @@ const styles = StyleSheet.create({
   dateTimeField: {
     flex: 1,
     minHeight: 50, // homeDeadlineListTokens.searchMinHeight
-    borderRadius: radius.m, // เหมือน searchWrap
+    borderRadius: radius.s, // เหมือน searchWrap
     backgroundColor: colors.surface, // หรือ homeDeadlineListTokens.searchBackground ถ้า import ได้
     borderWidth: 0,
     borderColor: colors.border, // หรือ homeDeadlineListTokens.searchBorder
@@ -675,6 +600,7 @@ const styles = StyleSheet.create({
   },
   dateTimeText: {
     flex: 1,
+    color: colors.textSecondary,
   },
   reminderWrap: {
     gap: spacing.s,
@@ -687,17 +613,18 @@ const styles = StyleSheet.create({
   reminderOption: {
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.s,
-    borderRadius: radius.pill,
+    borderRadius: radius.s,
     borderWidth: 0,
-    borderColor: colors.border,
     backgroundColor: colors.surface,
   },
   reminderOptionActive: {
     borderColor: colors.primary,
     backgroundColor: colors.chipBgActive,
+    borderWidth: 1,
   },
   reminderOptionText: {
     color: colors.textSecondary,
+    fontSize: typography.size.xs,
   },
   errorText: {
     marginTop: spacing.xs,
@@ -713,7 +640,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.l,
   },
   modalSheet: {
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     borderWidth: 0,
     borderColor: colors.background,
     overflow: "hidden",

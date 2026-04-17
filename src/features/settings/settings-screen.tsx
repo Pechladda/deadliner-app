@@ -48,7 +48,7 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
     >
       <View style={styles.rowLeft}>
         <Ionicons name={icon} size={20} color={colors.textSecondary} />
-        <AppText>{label}</AppText>
+        <AppText variant="caption">{label}</AppText>
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
     </Pressable>
@@ -207,7 +207,7 @@ export function SettingsScreen() {
                     size={20}
                     color={colors.textSecondary}
                   />
-                  <AppText>{"Enable Notifications"}</AppText>
+                  <AppText variant="caption">{"Enable Notifications"}</AppText>
                 </View>
                 <Switch
                   value={notificationsEnabled}
@@ -243,7 +243,10 @@ export function SettingsScreen() {
                     <AppButton
                       label={"Open Settings"}
                       onPress={onOpenSystemSettings}
-                      variant="outline"
+                      variant="solid"
+                      size="compact"
+                      labelVariant="body"
+                      labelColorToken="surface"
                     />
                   </View>
                 </View>
@@ -272,18 +275,20 @@ export function SettingsScreen() {
                 icon="help-circle-outline"
                 onPress={() => navigation.navigate(StackRoutes.AboutApp)}
               />
-
-              <View style={styles.deleteActionWrap}>
-                <AppButton
-                  label={"Delete All Data"}
-                  onPress={onDeleteAllData}
-                  variant="outline"
-                  iconName="trash-outline"
-                  iconColorToken="danger"
-                  labelColorToken="danger"
-                />
-              </View>
             </View>
+          </View>
+
+          <View style={styles.accountActionWrap}>
+            <AppButton
+              label={"Delete All Data"}
+              onPress={onDeleteAllData}
+              variant="outline"
+              iconName="trash-outline"
+              iconColorToken="danger"
+              labelColorToken="danger"
+              size="compact"
+              labelVariant="body"
+            />
           </View>
 
           <View style={styles.accountActionWrap}>
@@ -293,6 +298,8 @@ export function SettingsScreen() {
               variant="outline"
               iconName="log-out-outline"
               iconColorToken="danger"
+              size="compact"
+              labelVariant="body"
             />
           </View>
         </View>
@@ -358,13 +365,15 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: "600",
     letterSpacing: screenSharedTokens.settingsSectionTitleLetterSpacing,
+    fontSize: typography.size.s,
+    lineHeight: typography.lineHeight.base,
   },
   sectionBlock: {
-    marginTop: spacing.xl2,
+    marginTop: spacing.s,
     gap: spacing.s,
   },
   section: {
-    borderRadius: radius.xl,
+    borderRadius: radius.s,
     backgroundColor: colors.surface,
     borderWidth: 0,
     borderColor: colors.border,
@@ -401,9 +410,8 @@ const styles = StyleSheet.create({
   notificationsHintCard: {
     marginHorizontal: spacing.l,
     marginVertical: spacing.m,
-    borderWidth: 0,
     borderColor: colors.border,
-    borderRadius: radius.l,
+    borderRadius: radius.s,
     padding: spacing.m,
     gap: spacing.s,
     backgroundColor: colors.surface,
@@ -417,8 +425,8 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   privacyActionsWrap: {
-    paddingHorizontal: spacing.l,
-    paddingBottom: spacing.l,
+    paddingHorizontal: spacing.s,
+    paddingBottom: spacing.s,
   },
   settingsButtonWrap: {
     marginTop: spacing.s,
@@ -429,5 +437,6 @@ const styles = StyleSheet.create({
   deleteActionWrap: {
     paddingHorizontal: spacing.l,
     paddingBottom: spacing.l,
+    borderRadius: radius.s,
   },
 });

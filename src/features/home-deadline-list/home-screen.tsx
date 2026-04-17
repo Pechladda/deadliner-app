@@ -336,8 +336,6 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <PastelBackground />
-      <Animated.View style={[styles.heroOrb, { opacity: heroGlow }]} />
-      <View style={styles.violetOrb} />
 
       <View style={[styles.container, isCompact && styles.containerCompact]}>
         <View style={styles.headerRow}>
@@ -346,11 +344,7 @@ export function HomeScreen() {
           </AppText>
         </View>
 
-        <BlurView
-          intensity={homeDeadlineListTokens.summaryBlurIntensity}
-          tint="light"
-          style={styles.summaryGlass}
-        >
+        <View style={[styles.summaryGlass, { backgroundColor: "#fff" }]}>
           <View style={styles.summaryRow}>
             <View style={[styles.summaryItem, styles.summaryItemCoral]}>
               <AppText variant="caption" style={styles.summaryLabelCoral}>
@@ -379,7 +373,7 @@ export function HomeScreen() {
               </AppText>
             </View>
           </View>
-        </BlurView>
+        </View>
 
         <View style={styles.filterRow}>
           {[
@@ -567,7 +561,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.m,
   },
   summaryGlass: {
-    borderRadius: radius.m,
+    borderRadius: radius.s,
     overflow: "hidden",
     borderWidth: 0,
     borderColor: homeDeadlineListTokens.summaryBorder,
@@ -613,25 +607,25 @@ const styles = StyleSheet.create({
     backgroundColor: homeDeadlineListTokens.summaryDivider,
   },
   summaryValue: {
-    color: colors.textPrimary,
+    color: colors.textSecondary,
     textAlign: "center",
     fontSize: typography.preset.body.fontSize,
     lineHeight: typography.preset.body.lineHeight,
   },
   summaryLabelCoral: {
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textSecondary,
     textAlign: "center",
     fontWeight: typography.weight.heavy,
     marginBottom: spacing.s,
   },
   summaryLabelViolet: {
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textSecondary,
     textAlign: "center",
     fontWeight: typography.weight.heavy,
     marginBottom: spacing.s,
   },
   summaryLabelAmber: {
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textSecondary,
     textAlign: "center",
     fontWeight: typography.weight.heavy,
     marginBottom: spacing.s,
@@ -644,32 +638,32 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     flex: 1,
-    minHeight: homeDeadlineListTokens.filterChipMinHeight * 0.9,
+    minHeight: homeDeadlineListTokens.filterChipMinHeight,
     paddingHorizontal: homeDeadlineListTokens.filterChipHorizontalPadding * 0.9,
     paddingVertical: homeDeadlineListTokens.filterChipVerticalPadding * 0.9,
     borderRadius: homeDeadlineListTokens.filterChipBorderRadius,
     borderWidth: 0,
-    borderColor: homeDeadlineListTokens.filterChipBorder,
+    borderColor: colors.border,
     backgroundColor: homeDeadlineListTokens.filterChipBackground,
     justifyContent: "center",
     alignItems: "center",
   },
   filterChipActive: {
     backgroundColor: colors.chipBgActive,
-    borderColor: "#000",
+    borderColor: colors.border,
     borderWidth: 1,
   },
   // ...existing code...
   filterChipTextActive: {
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.primary,
   },
   searchWrap: {
     marginTop: spacing.xs,
-    marginBottom: spacing.m,
-    borderRadius: radius.m,
+    marginBottom: spacing.l,
+    borderRadius: radius.s,
     overflow: "hidden",
     borderWidth: 0,
-    borderColor: homeDeadlineListTokens.searchBorder,
+    borderColor: colors.border,
     backgroundColor: homeDeadlineListTokens.searchBackground,
     flexDirection: "row",
     alignItems: "center",
@@ -678,7 +672,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textSecondary,
     marginLeft: spacing.m,
     ...typography.preset.caption,
   },
@@ -707,37 +701,36 @@ const styles = StyleSheet.create({
     gap: spacing.m,
   },
   cardWrapper: {
-    marginBottom: spacing.s,
-    borderWidth: 0,
-    borderColor: colors.border,
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     backgroundColor: colors.surface,
-    padding: homeDeadlineListTokens.cardWrapperPadding,
+    padding: spacing.xs,
     overflow: "hidden",
   },
   emptyStateCard: {
-    marginTop: spacing.xl,
-    borderRadius: radius.xl,
-    borderWidth: 0,
+    borderRadius: radius.s,
     borderColor: homeDeadlineListTokens.emptyCardBorder,
     backgroundColor: homeDeadlineListTokens.emptyCardBackground,
     padding: spacing.xl,
     alignItems: "center",
-    gap: spacing.s,
+    gap: spacing.m,
   },
   emptyStateTitle: {
     textAlign: "center",
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textSecondary,
+    fontSize: typography.size.s,
+    lineHeight: typography.lineHeight.sm,
   },
   emptyStateHint: {
     textAlign: "center",
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textSecondary,
+    fontSize: typography.size.xs,
+    lineHeight: typography.lineHeight.xs,
   },
   swipeActionsWrap: {
     flexDirection: "row",
     alignItems: "stretch",
     marginBottom: spacing.m,
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     overflow: "hidden",
   },
   swipeActionBtn: {
@@ -751,12 +744,12 @@ const styles = StyleSheet.create({
     fontWeight: typography.weight.heavy,
   },
   doneAction: {
-    backgroundColor: homeDeadlineListTokens.doneActionBackground,
+    backgroundColor: colors.success,
   },
   editAction: {
-    backgroundColor: homeDeadlineListTokens.editActionBackground,
+    backgroundColor: colors.shadow,
   },
   deleteAction: {
-    backgroundColor: homeDeadlineListTokens.deleteActionBackground,
+    backgroundColor: colors.danger,
   },
 });

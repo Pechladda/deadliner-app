@@ -15,8 +15,8 @@ export const screenSharedTokens = {
 export const profileScreenTokens = {
   accent: "#8B5E3C",
   accentStrong: "#A47148",
-  avatarSize: 96,
-  avatarRadius: 48,
+  avatarSize: 72,
+  avatarRadius: 36,
   readOnlyRowRadius: 12,
   errorBannerRadius: 14,
   errorBannerTextLineHeight: 16,

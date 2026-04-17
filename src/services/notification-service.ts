@@ -1,4 +1,3 @@
-
 import type { Deadline, ReminderOption } from "@/src/models/deadline";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
@@ -88,7 +87,9 @@ export async function registerForPushNotificationsAsync(): Promise<
   string | null
 > {
   if (!Device.isDevice) {
-    console.warn("Push notifications require a physical device. Emulator/simulator may not receive push notifications.");
+    console.warn(
+      "Push notifications require a physical device. Emulator/simulator may not receive push notifications.",
+    );
     return null;
   }
 
@@ -101,7 +102,9 @@ export async function registerForPushNotificationsAsync(): Promise<
 
   const projectId = getEasProjectId();
   if (!projectId) {
-    console.warn("Missing EAS projectId. Set expo.extra.eas.projectId in app.json before requesting Expo push token.");
+    console.warn(
+      "Missing EAS projectId. Set expo.extra.eas.projectId in app.json before requesting Expo push token.",
+    );
     return null;
   }
 
@@ -117,7 +120,9 @@ export async function registerForPushNotificationsAsync(): Promise<
 export async function scheduleDeadlineNotification(
   deadline: Pick<Deadline, "assignmentName" | "dueAt" | "reminder">,
 ): Promise<string | null> {
-  if (!deadline.reminder) {
+  // Only allow ReminderOption values
+  const allowedReminders = ["5m", "30m", "1h", "1d"];
+  if (!deadline.reminder || !allowedReminders.includes(deadline.reminder)) {
     return null;
   }
 
@@ -133,9 +138,24 @@ export async function scheduleDeadlineNotification(
     return null;
   }
 
-  const secondsFromNow = Math.floor((triggerMs - Date.now()) / 1000);
-  if (secondsFromNow <= 0) {
-    return null;
+  let trigger;
+  if (Platform.OS === "android") {
+    const secondsFromNow = Math.floor((triggerMs - Date.now()) / 1000);
+    if (secondsFromNow <= 0) {
+      return null;
+    }
+    trigger = {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: secondsFromNow,
+      repeats: false,
+      channelId: "default",
+    };
+  } else {
+    // iOS: use absolute date trigger (type: 'date')
+    trigger = {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: new Date(triggerMs),
+    };
   }
 
   const id = await Notifications.scheduleNotificationAsync({
@@ -144,12 +164,7 @@ export async function scheduleDeadlineNotification(
       body: `${deadline.assignmentName} is due soon. Tap to review.`,
       sound: true,
     },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: secondsFromNow,
-      repeats: false,
-      channelId: "default",
-    },
+    trigger,
   });
 
   return id;
