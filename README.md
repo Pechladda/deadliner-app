@@ -1,67 +1,132 @@
-# Deadliner
+# Deadliner — Task & Deadline Management App
 
-Deadliner is an Expo React Native app for students to manage assignment deadlines with urgency-focused UI, reminders, history, and privacy-conscious data controls.
+Deadliner is a mobile task management application designed to help students and individuals effectively track assignments, manage deadlines, and prioritize their workload. The app focuses on clarity, simplicity, and a calm visual experience to reduce cognitive load and improve productivity.
 
-## Setup
+---
 
-1. Install dependencies.
+## Overview
 
-```bash
+Managing multiple assignments across different subjects can be overwhelming, especially when deadlines overlap. Deadliner addresses this problem by providing a structured and intuitive interface that allows users to:
+
+- Track all tasks in one place
+- Understand urgency through visual cues
+- Stay aware of upcoming deadlines
+- Maintain better time management habits
+
+---
+
+## Key Features
+
+- **Task Management**
+  Create, edit, and delete assignments بسهولة with a clean interface
+
+- **Deadline Tracking**
+  Clear due dates with real-time countdown indicators
+
+- **Priority System**
+  Categorize tasks by priority (Low, Medium, High)
+
+- **Status Management**
+  Update task status (Pending / Completed)
+
+- **Subject Organization**
+  Group tasks by subject or category
+
+- **Trash System**
+  Soft-delete functionality with the ability to restore tasks
+
+- **Minimal UI Design**
+  Soft pastel color system designed to reduce visual stress
+
+---
+
+## Design Philosophy
+
+Deadliner follows a **minimal and user-centered design approach**:
+
+- Reduce unnecessary visual noise
+- Emphasize important information (deadline, priority)
+- Use color as a communication tool, not decoration
+- Ensure fast interaction with minimal steps
+
+---
+
+## Tech Stack
+
+- **React Native (Expo)**
+- **TypeScript**
+- **React Navigation**
+- **Custom Component Architecture**
+- Local State Management (Context / Hooks)
+
+---
+
+## Project Structure
+
+```
+src/
+│
+├── components/        # Reusable UI components
+├── features/          # Feature-based modules (assignment logic)
+├── screens/           # Application screens
+├── navigation/        # Navigation configuration
+├── theme/             # Colors, typography, design tokens
+└── utils/             # Helper functions
+```
+
+---
+
+## Getting Started
+
+### Clone the repository
+
+```
+git clone https://github.com/Pechladda/deadliner-app.git
+cd deadliner-app
+```
+
+### Install dependencies
+
+```
 npm install
 ```
 
-2. Create environment variables.
+### Run the application
 
-```bash
-cp .env.example .env
+```
+npx expo start
 ```
 
-3. Fill in Firebase values in `.env`.
+---
 
-- `EXPO_PUBLIC_FIREBASE_API_KEY`
-- `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`
-- `EXPO_PUBLIC_FIREBASE_PROJECT_ID`
-- `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET`
-- `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `EXPO_PUBLIC_FIREBASE_APP_ID`
+## Product Goals
 
-4. Run the app.
+- Help users manage deadlines more effectively
+- Reduce missed assignments
+- Encourage consistent productivity habits
+- Provide a calm and focused user experience
 
-```bash
-npm start
-```
+---
 
-5. If you changed `.env` values, restart Expo with cache clear.
+## Future Improvements
 
-```bash
-npx expo start -c
-```
+- Push notifications for deadlines
+- Cloud synchronization
+- Collaborative task sharing
+- Productivity analytics dashboard
+- Dark mode support
 
-## Environment Notes
+---
 
-- Firebase config is loaded from Expo public env variables in `src/core/config/env.ts`.
-- The app throws a startup error if any required Firebase env variable is missing.
-- Do not commit real secrets to version control.
+## Author
 
-## Scripts
+**Phetlada Duangkaew**
+This project is part of a personal journey to develop real-world software engineering and product design skills.
 
-- `npm start` starts Expo
-- `npm run ios` runs on iOS simulator
-- `npm run android` runs on Android emulator/device
-- `npm run web` runs web target
-- `npm run lint` runs Expo lint checks
+---
 
-## Architecture Highlights
+## Notes
 
-- Feature-based modules under `src/features`
-- Centralized theme tokens under `src/theme`
-- Firestore access isolated in `src/services/deadline-service.ts`
-- Notifications isolated in `src/services/notification-service.ts`
-- Zustand stores under `src/store`
+This project is under continuous development and will evolve with additional features and improvements over time.
 
-## Privacy & Data
-
-- First-use consent checkbox before login
-- Dedicated Privacy Policy screen
-- "Delete All Data" action in Settings
-- Stored data is limited to deadlines, reminders, and app preferences
+---
