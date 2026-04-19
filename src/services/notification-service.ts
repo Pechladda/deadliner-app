@@ -133,7 +133,8 @@ export async function scheduleDeadlineNotification(
     return null;
   }
 
-  const triggerMs = dueMs - reminderOffsets[deadline.reminder];
+  const reminderKey = deadline.reminder as ReminderOption;
+  const triggerMs = dueMs - reminderOffsets[reminderKey];
   if (triggerMs <= Date.now()) {
     return null;
   }
@@ -164,7 +165,7 @@ export async function scheduleDeadlineNotification(
       body: `${deadline.assignmentName} is due soon. Tap to review.`,
       sound: true,
     },
-    trigger,
+    trigger: trigger as Notifications.NotificationTriggerInput,
   });
 
   return id;

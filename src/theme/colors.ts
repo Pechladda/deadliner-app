@@ -1,33 +1,24 @@
 export const colors = {
-  background: "#FFFFFF",
-  surface: "#FFFFFF",
-  textPrimary: "#000000d8",
-  textSecondary: "#989797",
-  border: "rgba(77, 81, 89, 0.79)",
-  borderSoft: "rgba(15, 23, 42, 0.05)",
-  shadow: "#000000",
-  primary: "rgba(15, 23, 42, 0.8)",
-  primaryStrong: "#d8d8d8",
-  accentCream: "#FFF4E8",
-  accentPink: "#FFEAF4",
-  accentPinkStrong: "#FFD7EA",
-  accentMint: "#E6FBF7",
-  danger: "#FF4D6D",
-  warning: "#FFB341",
-  success: "#0bef50",
-  priorityOverdue: "#f80834",
-  priorityUrgent: "#FF7A45",
-  priorityYellow: "#FFEF5A",
-  priorityGreen: "#72FF7E",
-  urgentBg: "rgba(255, 122, 69, 0.10)",
-  urgentPill: "#FF8A5B",
-  buttonBg: "#000000",
-  buttonText: "#FFFFFF",
-  cardHighlight: "rgba(255, 255, 255, 0.96)",
-  info: "#95A8C4",
-  chipBgActive: "rgba(215, 215, 215, 0.21)",
-  overlay: "rgba(15, 23, 42, 0.35)",
-  Ionicons: "#bfbfbf",
-} as const;
 
-export type ColorToken = keyof typeof colors;
+  //Deadliner originales
+  background: "#FFFFFF",
+  surface: "#ffffff",
+  textPrimary: "#333333",
+  textSecondary: "#6C757D",
+  border: "#E9B8C9",
+  borderSoft: "#F8EBEF",
+  buttonBg: "#E9B8C9",
+  shadow: "#31241F",
+
+  //Status color 
+  overdue: "#f80834",
+  urgent: "#ff4a02ff",
+  soon: "#fce514ff",
+  onTrack: "#05e317ff",
+
+  // Compatibility tokens (mapped to available colors)
+  success: "#05e317ff",
+  danger: "#f80834",
+  warning: "#ff4a02ff",
+
+} as const;

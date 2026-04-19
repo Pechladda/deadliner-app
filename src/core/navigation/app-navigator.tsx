@@ -25,7 +25,7 @@ import {
     ProfileScreen,
 } from "@/src/features/settings/screens";
 import { useAuthStore } from "@/src/store/auth-store";
-import { colors, screenSharedTokens } from "@/src/theme";
+import { colors } from "@/src/theme";
 
 import { StackRoutes, TabRoutes } from "./route-names";
 
@@ -69,7 +69,7 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: screenSharedTokens.navigationTabActiveTint,
+        tabBarActiveTintColor: colors.buttonBg,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarHideOnKeyboard: true,
         tabBarBackground: () => (

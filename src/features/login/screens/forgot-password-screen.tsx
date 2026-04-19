@@ -9,7 +9,7 @@ import { StackRoutes } from "@/src/core/navigation/route-names";
 
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth } from "@/src/firebase";
-import { colors, loginTokens, spacing, typography } from "@/src/theme";
+import { colors, constants, layout, spacing, typography } from "@/src/theme";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useState } from "react";
 import {
@@ -43,8 +43,8 @@ function validateEmail(email: string): string {
 
 export function ForgotPasswordScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < loginTokens.compactWidthThreshold;
-  const isWide = width >= loginTokens.wideWidthThreshold;
+  const isCompact = width < layout.thresholds.compact;
+  const isWide = width >= layout.thresholds.wide;
   const navigation = useLoginNavigation();
 
   const [email, setEmail] = useState("");
@@ -151,7 +151,7 @@ export function ForgotPasswordScreen() {
                   textContentType="emailAddress"
                   keyboardType="email-address"
                   returnKeyType="done"
-                  selectionColor={colors.primary}
+                  selectionColor={colors.textPrimary}
                   accessibilityLabel={"Email"}
                   editable={!isSubmitting}
                   compact={isCompact}
@@ -244,34 +244,34 @@ const styles = StyleSheet.create({
   },
   copyBlock: {
     width: "100%",
-    maxWidth: loginTokens.formAreaMaxWidth,
+    maxWidth: layout.components.login.formAreaMaxWidth,
     alignSelf: "center",
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
   },
   title: {
     color: BRAND_PRIMARY,
-    letterSpacing: loginTokens.titleLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
     fontWeight: typography.weight.bold,
     textAlign: "left",
   },
   subtitle: {
     marginTop: spacing.xs,
     color: colors.textSecondary,
-    letterSpacing: loginTokens.createAccountLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.tight,
     textAlign: "left",
   },
   formArea: {
     width: "100%",
-    maxWidth: loginTokens.formAreaMaxWidth,
+    maxWidth: layout.components.login.formAreaMaxWidth,
     alignSelf: "center",
     gap: spacing.l,
   },
   formAreaCompact: {
-    maxWidth: loginTokens.formAreaCompactMaxWidth,
+    maxWidth: layout.components.login.formAreaCompactMaxWidth,
   },
   formAreaWide: {
-    maxWidth: loginTokens.formAreaWideMaxWidth,
+    maxWidth: layout.components.login.formAreaWideMaxWidth,
   },
   fieldWrap: {
     gap: spacing.xxs,

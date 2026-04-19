@@ -2,9 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { useFocusEffect } from "@react-navigation/native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Modal,
   Platform,
@@ -35,10 +36,10 @@ import { PickerMode } from "@/src/features/add-deadline/types";
 import { validateDeadlineForm } from "@/src/features/add-deadline/utils/validate-deadline-form";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
-  addDeadlineTokens,
   colors,
+  constants,
+  layout,
   radius,
-  screenSharedTokens,
   shadows,
   spacing,
   typography,
@@ -98,7 +99,7 @@ function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
         label === "Date" ? "Open date picker" : "Open time picker"
       }
     >
-      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Ionicons name={icon} size={18} color={colors.textPrimary} />
       <AppText
         variant="caption"
         color={isPlaceholder ? "textSecondary" : "textPrimary"}
@@ -175,8 +176,8 @@ function ReminderSelection({
               style={[
                 styles.reminderOptionText,
                 value === opt.value && {
-                  color: colors.primary,
-                  fontWeight: "bold",
+                  color: colors.textPrimary,
+                  fontWeight: typography.weight.bold,
                 },
               ]}
             >
@@ -191,7 +192,7 @@ function ReminderSelection({
 
 export function AddDeadlineScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < screenSharedTokens.compactWidthThreshold;
+  const isCompact = width < layout.thresholds.compact;
   const route = useAddDeadlineRoute();
   const navigation = useAddDeadlineNavigation();
 
@@ -254,6 +255,25 @@ export function AddDeadlineScreen() {
     setReminder(target.reminder ?? null); // string | null
     setErrorMessage(null);
   }, [deadlines, editId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isEditMode) {
+        resetForm();
+      }
+    }, [isEditMode])
+  );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("blur", () => {
+      // Whenever the user leaves this screen (via Cancel, tab switch, etc.),
+      // we ensure the next visit is a fresh 'Add' screen.
+      navigation.setParams({ mode: undefined, id: undefined });
+      resetForm();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const openPicker = (pickerMode: PickerMode) => {
     if (Platform.OS === "ios") {
@@ -373,8 +393,8 @@ export function AddDeadlineScreen() {
       const latestError = useDeadlineStore.getState().deadlinesError;
       setErrorMessage(
         latestError ??
-          deadlinesError ??
-          "Could not save the deadline. Please try again.",
+        deadlinesError ??
+        "Could not save the deadline. Please try again.",
       );
       setIsSaving(false);
       return;
@@ -382,6 +402,7 @@ export function AddDeadlineScreen() {
 
     resetForm();
     setIsSaving(false);
+    navigation.setParams({ mode: undefined, id: undefined });
     navigation.navigate(TabRoutes.Home);
   };
 
@@ -441,7 +462,7 @@ export function AddDeadlineScreen() {
 
           {errorMessage ? (
             <AppText
-              color="danger"
+              color="overdue"
               style={[styles.errorText, { fontSize: typography.size.xs }]}
             >
               {errorMessage}
@@ -460,6 +481,16 @@ export function AddDeadlineScreen() {
             size="compact"
             labelVariant="caption"
           />
+          {isEditMode && (
+            <AppButton
+              label={"Cancel"}
+              onPress={() => navigation.goBack()}
+              disabled={isSaving}
+              iconName="close-outline"
+              size="compact"
+              labelVariant="caption"
+            />
+          )}
         </View>
       </View>
 
@@ -473,7 +504,7 @@ export function AddDeadlineScreen() {
         >
           <BlurView intensity={28} tint="light" style={styles.modalOverlay}>
             <LinearGradient
-              colors={addDeadlineTokens.iosModalGradient}
+              colors={[colors.background, colors.background]}
               style={styles.modalSheet}
             >
               <View style={styles.modalHeader}>
@@ -531,18 +562,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
-    gap: spacing.s,
-    marginBottom: spacing.m,
+    marginBottom: spacing.s,
   },
   screenTitleText: {
     color: colors.textPrimary,
     fontWeight: typography.weight.bold,
-    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
-    marginLeft: spacing.l,
     fontSize: typography.size.l,
-    lineHeight: typography.lineHeight.normal,
-    marginTop: spacing.m,
+    lineHeight: typography.lineHeight.m,
     textAlign: "left",
+    marginLeft: spacing.s,
+    marginTop: spacing.m,
   },
   formCard: {
     borderRadius: radius.s,
@@ -557,7 +586,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: radius.s,
     backgroundColor: colors.surface,
-    borderWidth: 0,
+    borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.m,
     flexDirection: "row",
@@ -568,7 +597,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     color: colors.textSecondary,
-    ...typography.preset.body,
+    fontFamily: typography.family.regular,
     fontSize: typography.size.sm,
     lineHeight: typography.lineHeight.sm,
     paddingVertical: spacing.s,
@@ -579,7 +608,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: colors.textSecondary,
-    letterSpacing: screenSharedTokens.addDeadlineSectionLabelLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.tight,
   },
   row: {
     flexDirection: "row",
@@ -587,11 +616,11 @@ const styles = StyleSheet.create({
   },
   dateTimeField: {
     flex: 1,
-    minHeight: 50, // homeDeadlineListTokens.searchMinHeight
-    borderRadius: radius.s, // เหมือน searchWrap
-    backgroundColor: colors.surface, // หรือ homeDeadlineListTokens.searchBackground ถ้า import ได้
-    borderWidth: 0,
-    borderColor: colors.border, // หรือ homeDeadlineListTokens.searchBorder
+    minHeight: layout.components.input.minHeight,
+    borderRadius: radius.s,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.s,
@@ -615,11 +644,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.s,
     borderRadius: radius.s,
     borderWidth: 0,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
   reminderOptionActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.chipBgActive,
+    borderColor: colors.border,
+    backgroundColor: colors.buttonBg,
     borderWidth: 1,
   },
   reminderOptionText: {
@@ -632,7 +661,8 @@ const styles = StyleSheet.create({
   saveButtonWrap: {
     marginTop: spacing.l,
     alignSelf: "center",
-    width: "95%", // ลดความกว้างลง 1 ระดับ (จากเต็มความกว้าง)
+    width: "100%",
+    gap: spacing.m,
   },
   modalOverlay: {
     flex: 1,

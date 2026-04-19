@@ -11,7 +11,7 @@ import {
   ViewStyle,
 } from "react-native";
 
-import { colors, radius, spacing, typography } from "@/src/theme";
+import { colors, layout, radius, spacing, typography } from "@/src/theme";
 
 import { AppText } from "./app-text";
 
@@ -110,19 +110,21 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   input: {
-    minHeight: 50,
-    borderRadius: radius.xxl,
-    borderWidth: 0,
+    minHeight: layout.components.input.minHeight,
+    borderRadius: radius.s,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
     color: colors.textPrimary,
-    ...typography.preset.body,
+    fontFamily: typography.family.regular,
     fontSize: typography.size.xs,
     lineHeight: typography.lineHeight.xs,
     paddingHorizontal: spacing.l,
     paddingVertical: spacing.m,
   },
   inputCompact: {
-    minHeight: 50,
+    minHeight: layout.components.button.compactMinHeight,
+    paddingVertical: spacing.xs,
   },
   passwordInput: {
     paddingRight: 50,
@@ -139,7 +141,7 @@ const styles = StyleSheet.create({
   },
   inputInvalid: {
     borderColor: colors.danger,
-    borderWidth: 0,
+    borderWidth: 1.5,
   },
   feedbackSlot: {
     minHeight: 22,
@@ -150,7 +152,9 @@ const styles = StyleSheet.create({
   feedbackText: {
     marginLeft: spacing.s,
     color: colors.textSecondary,
-    ...typography.preset.caption,
+    fontFamily: typography.family.regular,
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.sm,
   },
   errorText: {
     color: colors.danger,

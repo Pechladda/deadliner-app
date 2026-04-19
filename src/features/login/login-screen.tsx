@@ -9,7 +9,7 @@ import { StackRoutes } from "@/src/core/navigation/route-names";
 import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
 import { auth } from "@/src/firebase";
 import { useAuthStore } from "@/src/store/auth-store";
-import { colors, loginTokens, radius, spacing, typography } from "@/src/theme";
+import { colors, constants, layout, radius, spacing, typography } from "@/src/theme";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import {
@@ -31,7 +31,7 @@ const BG_WARM = colors.background;
 function ClockLogo() {
   const stroke = BRAND_PRIMARY;
   const accent = stroke;
-  const logo = loginTokens.clockLogo;
+  const logo = constants.clockLogo;
 
   const ticks = Array.from({ length: logo.tickCount }, (_, i) => {
     const deg = i * logo.tickStepDegrees;
@@ -111,8 +111,8 @@ function ClockLogo() {
 
 export function LoginScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < loginTokens.compactWidthThreshold;
-  const isWide = width >= loginTokens.wideWidthThreshold;
+  const isCompact = width < layout.thresholds.compact;
+  const isWide = width >= layout.thresholds.wide;
   const navigation = useLoginNavigation();
   const login = useAuthStore((state) => state.login);
 
@@ -217,7 +217,7 @@ export function LoginScreen() {
                     textContentType="emailAddress"
                     keyboardType="email-address"
                     returnKeyType="next"
-                    selectionColor={colors.primary}
+                    selectionColor={colors.textPrimary}
                     accessibilityLabel={"Email"}
                     editable={!isSubmitting}
                     compact={isCompact}
@@ -233,7 +233,7 @@ export function LoginScreen() {
                     autoComplete="password"
                     textContentType="password"
                     returnKeyType="done"
-                    selectionColor={colors.primary}
+                    selectionColor={colors.textPrimary}
                     accessibilityLabel={"Password input"}
                     editable={!isSubmitting}
                     compact={isCompact}
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   logoBlockWide: { marginTop: spacing.xxxxl, marginBottom: spacing.xxxl },
   title: {
     color: BRAND_PRIMARY,
-    letterSpacing: loginTokens.titleLetterSpacing,
+    letterSpacing: 0.6,
     fontWeight: typography.weight.bold,
     marginTop: spacing.l,
   },
@@ -365,12 +365,12 @@ const styles = StyleSheet.create({
   titleWide: { marginTop: spacing.xl },
   formArea: {
     width: "100%",
-    maxWidth: loginTokens.formAreaMaxWidth,
+    maxWidth: layout.maxWidths.default,
     alignSelf: "center",
     gap: spacing.xl,
   },
-  formAreaCompact: { maxWidth: loginTokens.formAreaCompactMaxWidth },
-  formAreaWide: { maxWidth: loginTokens.formAreaWideMaxWidth },
+  formAreaCompact: { maxWidth: layout.maxWidths.compact },
+  formAreaWide: { maxWidth: layout.maxWidths.wide },
   formFieldsGroup: { gap: spacing.s },
   actionArea: { gap: spacing.xxs },
   forgotInlineButton: {
@@ -393,45 +393,45 @@ const styles = StyleSheet.create({
   },
   createAccountButton: {
     width: "100%",
-    maxWidth: loginTokens.formAreaMaxWidth,
-    minHeight: loginTokens.createAccountButtonMinHeight,
+    maxWidth: layout.maxWidths.default,
+    minHeight: 47,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: BRAND_PRIMARY,
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     marginTop: spacing.s,
   },
   createAccountButtonPressed: {
-    opacity: loginTokens.createAccountButtonPressedOpacity,
-    transform: [{ scale: loginTokens.createAccountButtonPressedScale }],
+    opacity: 0.88,
+    transform: [{ scale: 0.99 }],
   },
   createAccountText: {
     color: BRAND_PRIMARY,
     textDecorationLine: "none",
     fontWeight: typography.weight.heavy,
-    letterSpacing: loginTokens.createAccountLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: loginTokens.modalOverlayBackground,
+    backgroundColor: colors.borderSoft,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
   },
   modalContent: {
     width: "100%",
-    maxWidth: loginTokens.modalContentMaxWidth,
-    backgroundColor: loginTokens.modalContentBackground,
-    borderRadius: radius.xxl,
+    maxWidth: 340,
+    backgroundColor: colors.surface,
+    borderRadius: radius.s,
     padding: spacing.xl,
     alignItems: "center",
     shadowColor: BRAND_PRIMARY,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: loginTokens.modalShadowOpacity,
+    shadowOpacity: 0.08,
     shadowRadius: 24,
     elevation: 8,
   },
@@ -454,12 +454,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: BRAND_PRIMARY,
     paddingVertical: spacing.m,
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     alignItems: "center",
     justifyContent: "center",
   },
   modalPrimaryBtnText: {
-    color: loginTokens.modalPrimaryTextColor,
+    color: colors.surface,
     fontWeight: typography.weight.bold,
   },
   modalSecondaryBtn: {
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: BRAND_PRIMARY,
     paddingVertical: spacing.m,
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     alignItems: "center",
     justifyContent: "center",
   },

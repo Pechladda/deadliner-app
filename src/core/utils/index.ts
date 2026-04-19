@@ -2,6 +2,7 @@ export {
     computeColorStatus,
     formatCountdownLong,
     formatCountdownShort,
+    formatCreatedLabel,
     formatDueLabel,
     formatRemaining,
     getDeadlineStatus,

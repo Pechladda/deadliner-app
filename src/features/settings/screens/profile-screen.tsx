@@ -15,8 +15,10 @@ import { auth, db } from "@/src/firebase";
 import { useAuthStore } from "@/src/store/auth-store";
 import {
   colors,
-  profileScreenTokens,
-  screenSharedTokens,
+  constants,
+  layout,
+  radius,
+  shadows,
   spacing,
   typography,
 } from "@/src/theme";
@@ -27,13 +29,13 @@ type UserProfile = {
   name?: string;
 };
 
-const PROFILE_ACCENT = profileScreenTokens.accent;
-const PROFILE_ACCENT_STRONG = profileScreenTokens.accentStrong;
+const PROFILE_ACCENT = colors.textPrimary;
+const PROFILE_ACCENT_STRONG = colors.textSecondary;
 
 export function ProfileScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < screenSharedTokens.compactWidthThreshold;
-  const isWide = width >= screenSharedTokens.wideWidthThreshold;
+  const isCompact = width < layout.thresholds.compact;
+  const isWide = width >= layout.thresholds.wide;
   const navigation = useSettingsNavigation();
   const currentUser = useAuthStore((state) => state.currentUser);
   const isHydrated = useAuthStore((state) => state.isHydrated);
@@ -199,41 +201,35 @@ const styles = StyleSheet.create({
     textAlign: "left",
     color: colors.textPrimary,
     fontWeight: typography.weight.bold,
-    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
     fontSize: typography.size.l,
-    lineHeight: typography.lineHeight.normal,
+    lineHeight: typography.lineHeight.m,
     marginLeft: spacing.s,
     marginTop: spacing.m,
   },
   contentInner: {
     width: "100%",
-    maxWidth: screenSharedTokens.contentMaxWidth,
+    maxWidth: layout.maxWidths.default,
     alignSelf: "center",
     gap: spacing.xxl,
   },
   contentInnerCompact: {
-    maxWidth: screenSharedTokens.contentCompactMaxWidth,
+    maxWidth: layout.maxWidths.compact,
   },
   contentInnerWide: {
-    maxWidth: screenSharedTokens.contentWideMaxWidth,
+    maxWidth: layout.maxWidths.wide,
   },
   avatar: {
     alignSelf: "center",
-    width: profileScreenTokens.avatarSize,
-    height: profileScreenTokens.avatarSize,
-    borderRadius: profileScreenTokens.avatarRadius,
+    width: layout.components.profile.avatarSize,
+    height: layout.components.profile.avatarSize,
+    borderRadius: layout.components.profile.avatarRadius,
     borderColor: colors.borderSoft,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
     marginTop: spacing.xs,
     marginBottom: spacing.xs,
-  },
-  formCard: {
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surface,
-    gap: spacing.m,
-    padding: spacing.l,
   },
   formWrap: { gap: spacing.m },
   readOnlyRow: {
@@ -247,7 +243,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   readOnlyValue: {
-    color: colors.primary,
+    color: colors.textPrimary,
   },
   loadingWrap: {
     alignItems: "center",

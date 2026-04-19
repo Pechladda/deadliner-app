@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
 
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
-import { colors, screenSharedTokens, spacing, typography } from "@/src/theme";
+import { colors, constants, layout, spacing, typography } from "@/src/theme";
 
 export function PrivacyPolicyScreen() {
   const navigation = useSettingsNavigation();
@@ -87,9 +87,9 @@ const styles = StyleSheet.create({
     textAlign: "left",
     color: colors.textPrimary,
     fontWeight: typography.weight.bold,
-    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
     fontSize: typography.size.l,
-    lineHeight: typography.lineHeight.normal,
+    lineHeight: typography.lineHeight.m,
     marginLeft: spacing.s,
     marginTop: spacing.m,
   },
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   card: {
-    borderColor: colors.primary,
+    borderColor: colors.textPrimary,
     backgroundColor: colors.surface,
     gap: spacing.s,
   },

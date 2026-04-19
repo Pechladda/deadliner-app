@@ -1,22 +1,18 @@
 import { AppText } from "@/src/components";
 import {
   colors,
-  deadlineCardTokens,
   radius,
   spacing,
   typography,
 } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
-import { useRef } from "react";
 import {
-  Animated,
   Pressable,
   StyleSheet,
-  View,
-  type ViewStyle,
+  View
 } from "react-native";
 
-type UrgencyColor = "red" | "orange" | "yellow" | "green" | "gray";
+type UrgencyColor = "red" | "orange" | "yellow" | "green";
 type ActionStyle = "text" | "check" | "trash";
 
 type DeadlineCardProps = {
@@ -28,20 +24,16 @@ type DeadlineCardProps = {
   completedLabel?: string;
   onPressAction?: () => void;
   onPressCard?: () => void;
-  cardAccessibilityLabel?: string;
   actionLabel?: string;
   actionStyle?: ActionStyle;
   muted?: boolean;
-  style?: ViewStyle;
-  gradientColors?: readonly [string, string, ...string[]];
 };
 
 const urgencyColorMap: Record<UrgencyColor, string> = {
-  red: colors.priorityOverdue,
-  orange: colors.priorityUrgent,
-  yellow: colors.priorityYellow,
-  green: colors.priorityGreen,
-  gray: colors.borderSoft,
+  red: colors.overdue,
+  orange: colors.urgent,
+  yellow: colors.soon,
+  green: colors.onTrack,
 };
 
 export function DeadlineCard({
@@ -53,20 +45,13 @@ export function DeadlineCard({
   completedLabel,
   onPressAction,
   onPressCard,
-  cardAccessibilityLabel,
   actionLabel,
   actionStyle = "text",
   muted = false,
-  style,
-  gradientColors,
 }: DeadlineCardProps) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const glow = useRef(new Animated.Value(0.25)).current;
-  const cardBaseColors = [colors.background, colors.background] as const;
 
-  // Removed handlePressAction and all unused code
   return (
-    <View style={styles.cardPlain}>
+    <View style={[styles.cardPlain, muted && { opacity: 0.6 }]}>
       <Pressable
         style={styles.content}
         onPress={() => {
@@ -74,7 +59,6 @@ export function DeadlineCard({
         }}
         disabled={!onPressCard}
         accessibilityRole={onPressCard ? "button" : undefined}
-        accessibilityLabel={cardAccessibilityLabel}
       >
         <View style={styles.textGroupTop}>
           <AppText
@@ -126,7 +110,8 @@ export function DeadlineCard({
           </AppText>
         ) : null}
       </Pressable>
-      {/* Delete button (trash) */}
+
+      {/* Delete button (trash) for HistoryScreen */}
       {actionStyle === "trash" && onPressAction ? (
         <Pressable
           style={styles.trashButton}
@@ -134,7 +119,7 @@ export function DeadlineCard({
           accessibilityRole="button"
           accessibilityLabel={actionLabel || "Delete"}
         >
-          <Ionicons name="trash-outline" size={22} color={colors.danger} />
+          <Ionicons name="trash-outline" size={22} color={colors.overdue} />
         </Pressable>
       ) : null}
     </View>
@@ -142,50 +127,29 @@ export function DeadlineCard({
 }
 
 const styles = StyleSheet.create({
-  cardShell: {
-    borderRadius: radius.s,
-    overflow: "visible",
-  },
   cardPlain: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.borderSoft,
     borderRadius: radius.s,
     overflow: "hidden",
   },
   content: {
     flex: 1,
-    paddingLeft: spacing.m,
-    paddingRight: spacing.m,
-    paddingVertical: spacing.m,
+    paddingLeft: spacing.l,
+    paddingRight: spacing.l,
+    paddingVertical: spacing.l,
     justifyContent: "space-between",
-    minHeight: 98,
+    minHeight: 68,
   },
-  trashButton: {
-    marginRight: spacing.m,
-    marginLeft: spacing.xs,
-    padding: spacing.xs,
-    borderRadius: radius.s,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  glow: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    top: 8,
-    bottom: 6,
-    borderRadius: radius.s,
-    zIndex: -1,
-  },
+
   innerBorder: {
     ...StyleSheet.absoluteFillObject,
     paddingLeft: spacing.m,
     paddingRight: spacing.m,
     paddingVertical: spacing.m,
     justifyContent: "space-between",
-    minHeight: 98,
+    minHeight: 68,
   },
   textGroupTop: {
     gap: spacing.xxs,
@@ -197,10 +161,10 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   assignmentName: {
-    color: colors.primary,
+    color: colors.textSecondary,
+    fontSize: typography.size.m,
   },
   courseName: {
-    marginTop: spacing.xxs,
     color: colors.textSecondary,
   },
   dueLabel: {
@@ -224,7 +188,7 @@ const styles = StyleSheet.create({
     minHeight: 30,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.xs,
-    backgroundColor: deadlineCardTokens.actionButtonBackground,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -232,12 +196,21 @@ const styles = StyleSheet.create({
     marginRight: spacing.s,
     marginLeft: spacing.s,
     width: 34,
-    height: 34,
+    height: 30,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: deadlineCardTokens.actionButtonBackground,
+    backgroundColor: colors.surface,
     borderColor: colors.borderSoft,
+  },
+  trashButton: {
+    marginRight: spacing.xs,
+    marginLeft: spacing.xs,
+    padding: spacing.xs,
+    borderRadius: radius.s,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
   },
   doneButtonText: {
     fontWeight: typography.weight.bold,

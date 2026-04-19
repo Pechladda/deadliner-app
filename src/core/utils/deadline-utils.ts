@@ -164,6 +164,19 @@ export function getDeadlineStatusLabel(status: DeadlineStatus): string {
   return "On Track";
 }
 
+export function formatCreatedLabel(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+
+  const locale = DATE_DISPLAY_LOCALE;
+  const formatOptions =
+    COMPLETED_LABEL_OPTIONS ?? completedLabelFallbackOptions;
+
+  return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+}
+
 export function getUrgencyPriority(
   iso: string,
   now = new Date(),

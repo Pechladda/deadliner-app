@@ -3,10 +3,11 @@ import { Pressable, StyleSheet } from "react-native";
 
 import {
     colors,
+    constants,
+    layout,
     motion,
     radius,
     shadows,
-    sharedComponentTokens,
     spacing,
 } from "@/src/theme";
 
@@ -22,8 +23,8 @@ export function IconButton({
   icon,
   onPress,
   accessibilityLabel,
-  colorToken = "textPrimary",
-  size = sharedComponentTokens.iconButtonDefaultIconSize,
+  colorToken = "buttonBg",
+  size = layout.components.iconButton.defaultIconSize,
 }: IconButtonProps) {
   return (
     <Pressable
@@ -39,8 +40,8 @@ export function IconButton({
 
 const styles = StyleSheet.create({
   button: {
-    width: sharedComponentTokens.iconButtonSize,
-    height: sharedComponentTokens.iconButtonSize,
+    width: layout.components.iconButton.size,
+    height: layout.components.iconButton.size,
     borderRadius: radius.l,
     justifyContent: "center",
     alignItems: "center",

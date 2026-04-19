@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ReactNode } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
-import { cardTokens, radius, spacing } from "@/src/theme";
+import { colors, constants, layout, radius, spacing } from "@/src/theme";
 
 type CardProps = {
   children: ReactNode;
@@ -19,8 +19,8 @@ export function Card({
   gradientColors,
 }: CardProps) {
   const defaultColors: readonly [string, string] = highlighted
-    ? cardTokens.highlightedGradient
-    : cardTokens.defaultGradient;
+    ? constants.card.highlightedGradient
+    : constants.card.defaultGradient;
   const finalColors = gradientColors ?? defaultColors;
 
   return (
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderWidth: 0,
     borderRadius: radius.l,
-    borderColor: cardTokens.innerBorder,
+    borderColor: constants.card.innerBorder,
   },
   contentGap: {
     rowGap: spacing.s,

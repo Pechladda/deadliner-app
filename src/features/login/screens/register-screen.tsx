@@ -10,7 +10,7 @@ import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigat
 import { auth, db } from "@/src/firebase";
 
 import { useAuthStore } from "@/src/store/auth-store";
-import { colors, loginTokens, spacing, typography } from "@/src/theme";
+import { colors, constants, layout, spacing, typography } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
@@ -142,8 +142,8 @@ function validateConfirmPassword(
 
 export function RegisterScreen() {
   const { width } = useWindowDimensions();
-  const isCompact = width < loginTokens.compactWidthThreshold;
-  const isWide = width >= loginTokens.wideWidthThreshold;
+  const isCompact = width < layout.thresholds.compact;
+  const isWide = width >= layout.thresholds.wide;
   const navigation = useLoginNavigation();
   const login = useAuthStore((state) => state.login);
 
@@ -398,7 +398,7 @@ export function RegisterScreen() {
                 autoComplete="username"
                 textContentType="username"
                 returnKeyType="next"
-                selectionColor={colors.primary}
+                selectionColor={colors.textPrimary}
                 accessibilityLabel={"Username input"}
                 editable={!isSubmitting}
                 compact={isCompact}
@@ -417,7 +417,7 @@ export function RegisterScreen() {
                 textContentType="emailAddress"
                 keyboardType="email-address"
                 returnKeyType="next"
-                selectionColor={colors.primary}
+                selectionColor={colors.textPrimary}
                 accessibilityLabel={"Email"}
                 editable={!isSubmitting}
                 compact={isCompact}
@@ -436,7 +436,7 @@ export function RegisterScreen() {
                 autoComplete="password-new"
                 textContentType="newPassword"
                 returnKeyType="next"
-                selectionColor={colors.primary}
+                selectionColor={colors.textPrimary}
                 accessibilityLabel={"Password input"}
                 editable={!isSubmitting}
                 compact={isCompact}
@@ -462,7 +462,7 @@ export function RegisterScreen() {
                 autoComplete="password-new"
                 textContentType="newPassword"
                 returnKeyType="done"
-                selectionColor={colors.primary}
+                selectionColor={colors.textPrimary}
                 accessibilityLabel={"Confirm password input"}
                 editable={!isSubmitting}
                 compact={isCompact}
@@ -614,34 +614,34 @@ const styles = StyleSheet.create({
   },
   copyBlock: {
     width: "100%",
-    maxWidth: loginTokens.formAreaMaxWidth,
+    maxWidth: layout.components.login.formAreaMaxWidth,
     alignSelf: "center",
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
   },
   title: {
     color: BRAND_PRIMARY,
-    letterSpacing: loginTokens.titleLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
     fontWeight: typography.weight.bold,
     textAlign: "left",
   },
   subtitle: {
     marginTop: spacing.xs,
     color: colors.textSecondary,
-    letterSpacing: loginTokens.createAccountLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.tight,
     textAlign: "left",
   },
   formArea: {
     width: "100%",
-    maxWidth: loginTokens.formAreaMaxWidth,
+    maxWidth: layout.components.login.formAreaMaxWidth,
     alignSelf: "center",
     gap: spacing.l,
   },
   formAreaCompact: {
-    maxWidth: loginTokens.formAreaCompactMaxWidth,
+    maxWidth: layout.components.login.formAreaCompactMaxWidth,
   },
   formAreaWide: {
-    maxWidth: loginTokens.formAreaWideMaxWidth,
+    maxWidth: layout.components.login.formAreaWideMaxWidth,
   },
   errorSlot: {
     minHeight: 22,
@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 0,
-    borderColor: colors.primary,
+    borderColor: colors.textPrimary,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,

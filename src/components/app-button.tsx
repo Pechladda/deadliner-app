@@ -4,9 +4,10 @@ import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 import {
     colors,
+    constants,
+    layout,
     motion,
     radius,
-    sharedComponentTokens,
     spacing,
     typography
 } from "@/src/theme";
@@ -62,12 +63,12 @@ export function AppButton({
     ? colors[iconColorToken]
     : isOutline
       ? colors.textPrimary
-      : colors.buttonText;
+      : colors.surface;
   const labelColor = labelColorToken
     ? colors[labelColorToken]
     : isOutline
       ? colors.textPrimary
-      : colors.buttonText;
+      : colors.surface;
 
   const animateTo = (value: number, duration: number) => {
     Animated.timing(scale, {
@@ -97,7 +98,7 @@ export function AppButton({
           {iconName ? (
             <Ionicons
               name={iconName}
-              size={sharedComponentTokens.appButtonDefaultIconSize}
+              size={layout.components.button.iconSize}
               color={iconColor}
             />
           ) : null}
@@ -118,8 +119,8 @@ export function AppButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: sharedComponentTokens.appButtonMinHeight,
-    borderRadius: radius.pill,
+    minHeight: layout.components.button.minHeight,
+    borderRadius: radius.s,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     // shadow removed
   },
   baseCompact: {
-    minHeight: sharedComponentTokens.appButtonCompactMinHeight,
+    minHeight: layout.components.button.compactMinHeight,
   },
   solid: {
     backgroundColor: colors.buttonBg,
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   disabled: {
-    opacity: sharedComponentTokens.appButtonDisabledOpacity,
+    opacity: layout.components.button.disabledOpacity,
   },
   inner: {
     flexDirection: "row",
@@ -146,9 +147,9 @@ const styles = StyleSheet.create({
     gap: spacing.s,
   },
   solidLabel: {
-    color: colors.buttonText,
+    color: colors.surface,
     fontWeight: typography.weight.bold,
-    letterSpacing: sharedComponentTokens.appButtonSolidLabelLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
   },
   outlineLabel: {
     color: colors.textPrimary,

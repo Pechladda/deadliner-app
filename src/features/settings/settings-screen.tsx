@@ -25,12 +25,12 @@ import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
   colors,
+  constants,
+  layout,
   radius,
-  screenSharedTokens,
   spacing,
   typography,
 } from "@/src/theme";
-import { homeDeadlineListTokens } from "@/src/theme/tokens/home-deadline-list";
 
 type SettingsRowProps = {
   label: string;
@@ -58,8 +58,8 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
 export function SettingsScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const isCompact = width < screenSharedTokens.compactWidthThreshold;
-  const isWide = width >= screenSharedTokens.wideWidthThreshold;
+  const isCompact = width < layout.thresholds.compact;
+  const isWide = width >= layout.thresholds.wide;
   const navigation = useSettingsNavigation();
   const logout = useAuthStore((state) => state.logout);
   const notificationsEnabled = useDeadlineStore(
@@ -218,7 +218,7 @@ export function SettingsScreen() {
                       ? colors.border
                       : colors.borderSoft,
                     true: hasNotificationPermission
-                      ? colors.primaryStrong
+                      ? colors.textSecondary
                       : colors.borderSoft,
                   }}
                   thumbColor={
@@ -282,10 +282,8 @@ export function SettingsScreen() {
             <AppButton
               label={"Delete All Data"}
               onPress={onDeleteAllData}
-              variant="outline"
+              variant="solid"
               iconName="trash-outline"
-              iconColorToken="danger"
-              labelColorToken="danger"
               size="compact"
               labelVariant="body"
             />
@@ -295,9 +293,8 @@ export function SettingsScreen() {
             <AppButton
               label={"Sign Out"}
               onPress={onLogout}
-              variant="outline"
+              variant="solid"
               iconName="log-out-outline"
-              iconColorToken="danger"
               size="compact"
               labelVariant="body"
             />
@@ -331,14 +328,14 @@ const styles = StyleSheet.create({
   },
   contentInner: {
     width: "100%",
-    maxWidth: screenSharedTokens.contentMaxWidth,
+    maxWidth: layout.maxWidths.default,
     alignSelf: "center",
   },
   contentInnerCompact: {
-    maxWidth: screenSharedTokens.contentCompactMaxWidth,
+    maxWidth: layout.maxWidths.compact,
   },
   contentInnerWide: {
-    maxWidth: screenSharedTokens.contentWideMaxWidth,
+    maxWidth: layout.maxWidths.wide,
   },
   headerRow: {
     flexDirection: "row",
@@ -351,11 +348,11 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     textAlign: "left",
-    color: homeDeadlineListTokens.titleColor,
+    color: colors.textPrimary,
     fontWeight: typography.weight.bold,
-    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
     fontSize: typography.size.l,
-    lineHeight: typography.lineHeight.normal,
+    lineHeight: typography.lineHeight.m,
     marginLeft: spacing.s,
     marginTop: spacing.m,
   },
@@ -363,10 +360,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.s,
     paddingHorizontal: spacing.s,
     color: colors.textSecondary,
-    fontWeight: "600",
-    letterSpacing: screenSharedTokens.settingsSectionTitleLetterSpacing,
+    fontWeight: typography.weight.semibold,
+    letterSpacing: constants.typography.letterSpacing.normal,
     fontSize: typography.size.s,
-    lineHeight: typography.lineHeight.base,
+    lineHeight: typography.lineHeight.s,
   },
   sectionBlock: {
     marginTop: spacing.s,

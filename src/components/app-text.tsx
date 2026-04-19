@@ -17,37 +17,45 @@ type AppTextProps = TextProps & {
 
 const variantStyles: Record<Variant, TextStyle> = {
   display: {
-    ...typography.preset.display,
+    fontFamily: typography.family.heavy,
+    fontSize: typography.size.display,
+    lineHeight: typography.lineHeight.display,
     color: colors.textPrimary,
   },
-
   title: {
-    ...typography.preset.title,
+    fontFamily: typography.family.heavy,
+    fontSize: typography.size.xxl,
+    lineHeight: typography.lineHeight.title,
     color: colors.textPrimary,
   },
-
   section: {
-    ...typography.preset.section,
+    fontFamily: typography.family.heavy,
+    fontSize: typography.size.lg,
+    lineHeight: typography.lineHeight.xxl,
     color: colors.textPrimary,
   },
-
   subtitle: {
-    ...typography.preset.subtitle,
+    fontFamily: typography.family.bold,
+    fontSize: typography.size.m,
+    lineHeight: typography.lineHeight.lg,
     color: colors.textPrimary,
   },
-
   bodyMedium: {
-    ...typography.preset.bodyMedium,
+    fontFamily: typography.family.medium,
+    fontSize: typography.size.base,
+    lineHeight: typography.lineHeight.l,
     color: colors.textPrimary,
   },
-
   body: {
-    ...typography.preset.body,
+    fontFamily: typography.family.regular,
+    fontSize: typography.size.s,
+    lineHeight: typography.lineHeight.l,
     color: colors.textPrimary,
   },
-
   caption: {
-    ...typography.preset.caption,
+    fontFamily: typography.family.regular,
+    fontSize: typography.size.sm,
+    lineHeight: typography.lineHeight.caption,
     color: colors.textSecondary,
   },
 };

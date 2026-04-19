@@ -20,8 +20,8 @@ import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import {
   colors,
+  constants,
   radius,
-  screenSharedTokens,
   spacing,
   typography,
 } from "@/src/theme";
@@ -93,7 +93,7 @@ export function HistoryScreen() {
                 courseName={item.courseName}
                 dueLabel={`${"Original due"}: ${formatDueLabel(item.dueAt)}`}
                 completedLabel={`${"Completed"}: ${formatCompletedLabel(item.completedAt)}`}
-                urgencyColor="gray"
+                urgencyColor="green"
                 actionLabel={"Delete"}
                 actionStyle="trash"
                 onPressAction={() => onDelete(item.id)}
@@ -142,9 +142,9 @@ const styles = StyleSheet.create({
     textAlign: "left",
     color: colors.textPrimary,
     fontWeight: typography.weight.bold,
-    letterSpacing: screenSharedTokens.screenTitleLetterSpacing,
+    letterSpacing: constants.typography.letterSpacing.normal,
     fontSize: typography.size.l,
-    lineHeight: typography.lineHeight.normal,
+    lineHeight: typography.lineHeight.m,
     marginLeft: spacing.s,
     marginTop: spacing.m,
   },
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   cardWrapper: {
     borderWidth: 0,
     borderColor: colors.border,
-    borderRadius: radius.xxl,
+    borderRadius: radius.s,
     backgroundColor: colors.surface,
     padding: 3,
     overflow: "hidden",
