@@ -1,5 +1,3 @@
-
-
 export type ValidateDeadlineParams = {
   courseName: string;
   assignmentName: string;
@@ -8,8 +6,8 @@ export type ValidateDeadlineParams = {
   hasPickedTime: boolean;
 };
 
-const maxTextLength = 120;
-const minDueMsFromNow = 60 * 1000;
+const MAX_TEXT_LENGTH = 120;
+const MIN_DUE_MS_FROM_NOW = 60 * 1000;
 
 export function validateDeadlineForm({
   courseName,
@@ -18,15 +16,18 @@ export function validateDeadlineForm({
   hasPickedDate,
   hasPickedTime,
 }: ValidateDeadlineParams): string | null {
-  if (!courseName.trim() || !assignmentName.trim()) {
+  const trimmedCourse = courseName.trim();
+  const trimmedAssignment = assignmentName.trim();
+
+  if (!trimmedCourse || !trimmedAssignment) {
     return "This field is required.";
   }
 
   if (
-    courseName.trim().length > maxTextLength ||
-    assignmentName.trim().length > maxTextLength
+    trimmedCourse.length > MAX_TEXT_LENGTH ||
+    trimmedAssignment.length > MAX_TEXT_LENGTH
   ) {
-    return "Please keep text under 120 characters.";
+    return `Please keep text under ${MAX_TEXT_LENGTH} characters.`;
   }
 
   if (!selectedDate || !hasPickedDate || !hasPickedTime) {
@@ -38,7 +39,7 @@ export function validateDeadlineForm({
     return "Please choose a valid date and time.";
   }
 
-  if (dueMs <= Date.now() + minDueMsFromNow) {
+  if (dueMs <= Date.now() + MIN_DUE_MS_FROM_NOW) {
     return "Due time should be at least 1 minute from now.";
   }
 

@@ -1,8 +1,12 @@
-
-
 type MaybeFirebaseError = {
   code?: string;
 };
+
+const GENERIC_AUTH_ERROR_MESSAGE = "Something went wrong. Please try again.";
+const GENERIC_FIRESTORE_ERROR_MESSAGE =
+  "Unable to complete this action right now. Please try again.";
+const NETWORK_ERROR_MESSAGE =
+  "Network error. Please check your connection and try again.";
 
 export function getAuthErrorMessage(error: unknown): string {
   const code = (error as MaybeFirebaseError | null)?.code ?? "";
@@ -36,10 +40,10 @@ export function getAuthErrorMessage(error: unknown): string {
   }
 
   if (code === "auth/network-request-failed") {
-    return "Network error. Please check your connection and try again.";
+    return NETWORK_ERROR_MESSAGE;
   }
 
-  return "Something went wrong. Please try again.";
+  return GENERIC_AUTH_ERROR_MESSAGE;
 }
 
 export function getFirestoreErrorMessage(error: unknown): string {
@@ -62,8 +66,8 @@ export function getFirestoreErrorMessage(error: unknown): string {
   }
 
   if (code === "network-request-failed") {
-    return "Network error. Please check your connection and try again.";
+    return NETWORK_ERROR_MESSAGE;
   }
 
-  return "Unable to complete this action right now. Please try again.";
+  return GENERIC_FIRESTORE_ERROR_MESSAGE;
 }

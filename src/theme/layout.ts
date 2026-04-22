@@ -9,11 +9,13 @@ export const layout = {
   thresholds: {
     compact: 375,
     wide: 430,
+    tablet: 768,
   },
   maxWidths: {
     default: 420,
     compact: 360,
     wide: 460,
+    tablet: 700,
   },
   components: {
     button: {

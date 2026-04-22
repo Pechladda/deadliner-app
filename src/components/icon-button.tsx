@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
 import {
-    colors,
-    constants,
-    layout,
-    motion,
-    radius,
-    shadows,
-    spacing,
+  colors,
+  constants,
+  layout,
+  motion,
+  radius,
+  shadows,
+  spacing,
 } from "@/src/theme";
 
 type IconButtonProps = {

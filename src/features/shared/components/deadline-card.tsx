@@ -1,16 +1,8 @@
-import { AppText } from "@/src/components";
-import {
-  colors,
-  radius,
-  spacing,
-  typography,
-} from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Pressable,
-  StyleSheet,
-  View
-} from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+
+import { AppText } from "@/src/components";
+import { colors, radius, spacing, typography } from "@/src/theme";
 
 type UrgencyColor = "red" | "orange" | "yellow" | "green";
 type ActionStyle = "text" | "check" | "trash";
@@ -29,40 +21,52 @@ type DeadlineCardProps = {
   muted?: boolean;
 };
 
-const urgencyColorMap: Record<UrgencyColor, string> = {
+const BRAND_ACCENT = "#EAB8C9";
+
+const URGENCY_TEXT_COLOR: Record<UrgencyColor, string> = {
   red: colors.overdue,
   orange: colors.urgent,
   yellow: colors.soon,
   green: colors.onTrack,
 };
 
-export function DeadlineCard({
-  assignmentName,
-  courseName,
-  dueLabel,
-  statusLabel,
-  urgencyColor,
-  completedLabel,
-  onPressAction,
-  onPressCard,
-  actionLabel,
-  actionStyle = "text",
-  muted = false,
-}: DeadlineCardProps) {
+const URGENCY_BAR_COLOR: Record<UrgencyColor, string> = {
+  red: colors.overdue,
+  orange: colors.urgent,
+  yellow: colors.soon,
+  green: BRAND_ACCENT,
+};
+
+const CARD_MIN_HEIGHT = 64;
+const ROW_ICON_SIZE = 12;
+const TRASH_ICON_SIZE = 18;
+
+export function DeadlineCard(props: DeadlineCardProps) {
+  const {
+    assignmentName,
+    courseName,
+    dueLabel,
+    statusLabel,
+    urgencyColor,
+    completedLabel,
+    onPressAction,
+    onPressCard,
+    actionLabel,
+    actionStyle = "text",
+    muted = false,
+  } = props;
 
   return (
-    <View style={[styles.cardPlain, muted && { opacity: 0.6 }]}>
+    <View style={[styles.card, muted && styles.cardMuted]}>
       <Pressable
         style={styles.content}
-        onPress={() => {
-          onPressCard?.();
-        }}
+        onPress={onPressCard}
         disabled={!onPressCard}
         accessibilityRole={onPressCard ? "button" : undefined}
       >
         <View style={styles.textGroupTop}>
           <AppText
-            variant="subtitle"
+            variant="caption"
             style={styles.assignmentName}
             numberOfLines={1}
           >
@@ -78,19 +82,24 @@ export function DeadlineCard({
         </View>
 
         <View style={styles.dueRow}>
+          <Ionicons
+            name="time-outline"
+            size={ROW_ICON_SIZE}
+            color={colors.textSecondary}
+          />
           <AppText variant="caption" style={styles.dueLabel} numberOfLines={1}>
             {dueLabel}
           </AppText>
           {statusLabel ? (
             <>
               <AppText variant="caption" style={styles.statusSeparator}>
-                •
+                {"•"}
               </AppText>
               <AppText
                 variant="caption"
                 style={[
                   styles.statusText,
-                  { color: urgencyColorMap[urgencyColor] },
+                  { color: URGENCY_TEXT_COLOR[urgencyColor] },
                 ]}
                 numberOfLines={1}
               >
@@ -101,17 +110,12 @@ export function DeadlineCard({
         </View>
 
         {completedLabel ? (
-          <AppText
-            variant="caption"
-            style={styles.completedLabel}
-            numberOfLines={1}
-          >
+          <AppText variant="caption" style={styles.completedLabel}>
             {completedLabel}
           </AppText>
         ) : null}
       </Pressable>
 
-      {/* Delete button (trash) for HistoryScreen */}
       {actionStyle === "trash" && onPressAction ? (
         <Pressable
           style={styles.trashButton}
@@ -119,101 +123,85 @@ export function DeadlineCard({
           accessibilityRole="button"
           accessibilityLabel={actionLabel || "Delete"}
         >
-          <Ionicons name="trash-outline" size={22} color={colors.overdue} />
+          <Ionicons
+            name="trash-outline"
+            size={TRASH_ICON_SIZE}
+            color={colors.overdue}
+          />
         </Pressable>
       ) : null}
     </View>
   );
 }
 
+// Exposed in case another module needs the same mapping (kept alongside the component).
+export { URGENCY_BAR_COLOR };
+
 const styles = StyleSheet.create({
-  cardPlain: {
+  card: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.borderSoft,
+    alignItems: "stretch",
+    backgroundColor: colors.background,
     borderRadius: radius.s,
+    borderWidth: 1,
+    borderColor: colors.border,
     overflow: "hidden",
+  },
+  cardMuted: {
+    opacity: 0.55,
   },
   content: {
     flex: 1,
-    paddingLeft: spacing.l,
-    paddingRight: spacing.l,
-    paddingVertical: spacing.l,
-    justifyContent: "space-between",
-    minHeight: 68,
-  },
-
-  innerBorder: {
-    ...StyleSheet.absoluteFillObject,
     paddingLeft: spacing.m,
     paddingRight: spacing.m,
     paddingVertical: spacing.m,
     justifyContent: "space-between",
-    minHeight: 68,
+    minHeight: CARD_MIN_HEIGHT,
   },
   textGroupTop: {
     gap: spacing.xxs,
   },
-  dueRow: {
-    marginTop: spacing.xs,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xxs,
-  },
   assignmentName: {
-    color: colors.textSecondary,
-    fontSize: typography.size.m,
+    color: colors.textPrimary,
+    fontWeight: typography.weight.semibold,
+    fontSize: typography.size.sm,
   },
   courseName: {
     color: colors.textSecondary,
+    fontSize: typography.size.xs,
+  },
+  dueRow: {
+    marginTop: spacing.s,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexWrap: "nowrap",
   },
   dueLabel: {
     color: colors.textSecondary,
+    fontSize: typography.size.xs,
+    flex: 1,
   },
   statusSeparator: {
     color: colors.textSecondary,
+    fontSize: typography.size.xs,
   },
   statusText: {
     fontWeight: typography.weight.bold,
+    fontSize: typography.size.xs,
   },
   completedLabel: {
     marginTop: spacing.xs,
     color: colors.textSecondary,
-  },
-  doneButton: {
-    marginRight: spacing.s,
-    marginLeft: spacing.s,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    minHeight: 30,
-    paddingHorizontal: spacing.m,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkButton: {
-    marginRight: spacing.s,
-    marginLeft: spacing.s,
-    width: 34,
-    height: 30,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.borderSoft,
+    fontSize: typography.size.xs,
   },
   trashButton: {
-    marginRight: spacing.xs,
+    marginRight: spacing.s,
     marginLeft: spacing.xs,
-    padding: spacing.xs,
+    padding: spacing.s,
     borderRadius: radius.s,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  doneButtonText: {
-    fontWeight: typography.weight.bold,
-    color: colors.textSecondary,
+    alignSelf: "center",
   },
 });

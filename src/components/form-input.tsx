@@ -15,6 +15,14 @@ import { colors, layout, radius, spacing, typography } from "@/src/theme";
 
 import { AppText } from "./app-text";
 
+const EYE_ICON_SIZE = 20;
+const EYE_BUTTON_SIZE = 32;
+const EYE_BUTTON_RIGHT_OFFSET = 10;
+const EYE_BUTTON_VERTICAL_CENTER_OFFSET = -16;
+const PASSWORD_INPUT_PADDING_RIGHT = 50;
+const FEEDBACK_SLOT_MIN_HEIGHT = 22;
+const INVALID_INPUT_BORDER_WIDTH = 1.5;
+
 type FormInputProps = Omit<TextInputProps, "secureTextEntry"> & {
   isPassword?: boolean;
   compact?: boolean;
@@ -76,7 +84,7 @@ export function FormInput({
           >
             <Ionicons
               name={showPassword ? "eye-outline" : "eye-off-outline"}
-              size={20}
+              size={EYE_ICON_SIZE}
               color={colors.textSecondary}
             />
           </Pressable>
@@ -127,24 +135,24 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   passwordInput: {
-    paddingRight: 50,
+    paddingRight: PASSWORD_INPUT_PADDING_RIGHT,
   },
   eyeButton: {
     position: "absolute",
-    right: 10,
+    right: EYE_BUTTON_RIGHT_OFFSET,
     top: "50%",
-    marginTop: -16,
-    width: 32,
-    height: 32,
+    marginTop: EYE_BUTTON_VERTICAL_CENTER_OFFSET,
+    width: EYE_BUTTON_SIZE,
+    height: EYE_BUTTON_SIZE,
     alignItems: "center",
     justifyContent: "center",
   },
   inputInvalid: {
     borderColor: colors.danger,
-    borderWidth: 1.5,
+    borderWidth: INVALID_INPUT_BORDER_WIDTH,
   },
   feedbackSlot: {
-    minHeight: 22,
+    minHeight: FEEDBACK_SLOT_MIN_HEIGHT,
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
     paddingTop: spacing.xxs,

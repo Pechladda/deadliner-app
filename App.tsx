@@ -2,12 +2,12 @@ import "expo-dev-client";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    Platform,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -17,15 +17,22 @@ import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors } from "@/src/theme";
 
+const DEFAULT_FONT_FAMILY = "Roboto_400Regular";
+const BOLD_FONT_FAMILY = "Roboto_700Bold";
+
+const WEB_VIEWPORT_STYLE_ID = "deadliner-web-viewport-style";
+
+const LOADING_LOGO_SIZE = 120;
+const LOADING_LOGO_MARGIN_BOTTOM = 20;
+
 if (Platform.OS === "web") {
   const injectWebViewportStyles = () => {
-    const styleId = "deadliner-web-viewport-style";
-    if (document.getElementById(styleId)) {
+    if (document.getElementById(WEB_VIEWPORT_STYLE_ID)) {
       return;
     }
 
     const style = document.createElement("style");
-    style.id = styleId;
+    style.id = WEB_VIEWPORT_STYLE_ID;
     style.appendChild(
       document.createTextNode(`
         html, body, #root {
@@ -50,57 +57,37 @@ if (Platform.OS === "web") {
     document.head.appendChild(style);
   };
 
-  const injectWebFonts = () => {
-    const styleId = "deadliner-web-icon-fonts";
-    if (document.getElementById(styleId)) {
-      return;
-    }
-
-    const style = document.createElement("style");
-    style.id = styleId;
-    const fonts = [
-      {
-        name: "Ionicons",
-        font: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf"),
-      },
-      {
-        name: "MaterialIcons",
-        font: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialIcons.ttf"),
-      },
-      {
-        name: "Feather",
-        font: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Feather.ttf"),
-      },
-      {
-        name: "FontAwesome",
-        font: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf"),
-      },
-      {
-        name: "AntDesign",
-        font: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/AntDesign.ttf"),
-      },
-      {
-        name: "MaterialDesignIcons",
-        font: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf"),
-      },
-    ];
-
-    const cssRules = fonts
-      .map((f) => `@font-face { font-family: ${f.name}; src: url(${f.font}); }`)
-      .join("\n");
-
-    style.appendChild(document.createTextNode(cssRules));
-    document.head.appendChild(style);
-  };
-
   injectWebViewportStyles();
-  injectWebFonts();
+}
+
+function applyDefaultTextFont(fontFamily: string) {
+  const textWithDefaults = Text as typeof Text & {
+    defaultProps?: { style?: unknown };
+  };
+  const previousDefaults = textWithDefaults.defaultProps ?? {};
+  const previousStyle = previousDefaults.style;
+  const existingStyles = Array.isArray(previousStyle)
+    ? previousStyle
+    : previousStyle
+      ? [previousStyle]
+      : [];
+
+  textWithDefaults.defaultProps = {
+    ...previousDefaults,
+    style: [...existingStyles, { fontFamily }],
+  };
 }
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Roboto_400Regular: require("./assets/fonts/Roboto-Regular.ttf"),
-    Roboto_700Bold: require("./assets/fonts/Roboto-Bold.ttf"),
+    [DEFAULT_FONT_FAMILY]: require("./assets/fonts/Roboto-Regular.ttf"),
+    [BOLD_FONT_FAMILY]: require("./assets/fonts/Roboto-Bold.ttf"),
+    Ionicons: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf"),
+    MaterialIcons: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialIcons.ttf"),
+    Feather: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Feather.ttf"),
+    FontAwesome: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf"),
+    AntDesign: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/AntDesign.ttf"),
+    MaterialCommunityIcons: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf"),
   });
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const hydrateAuth = useAuthStore((state) => state.hydrateAuth);
@@ -112,22 +99,7 @@ export default function App() {
     if (!fontsLoaded) {
       return;
     }
-
-    const textWithDefaults = Text as typeof Text & {
-      defaultProps?: { style?: unknown };
-    };
-    const previousDefaults = textWithDefaults.defaultProps ?? {};
-    const previousStyle = previousDefaults.style;
-    const styleList = Array.isArray(previousStyle)
-      ? previousStyle
-      : previousStyle
-        ? [previousStyle]
-        : [];
-
-    textWithDefaults.defaultProps = {
-      ...previousDefaults,
-      style: [...styleList, { fontFamily: "Roboto_400Regular" }],
-    };
+    applyDefaultTextFont(DEFAULT_FONT_FAMILY);
   }, [fontsLoaded]);
 
   useEffect(() => {
@@ -174,8 +146,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   loadingLogo: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
+    width: LOADING_LOGO_SIZE,
+    height: LOADING_LOGO_SIZE,
+    marginBottom: LOADING_LOGO_MARGIN_BOTTOM,
   },
 });

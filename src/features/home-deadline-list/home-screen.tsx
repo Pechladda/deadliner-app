@@ -5,12 +5,13 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
   TextInput,
   useWindowDimensions,
-  View
+  View,
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,60 +33,105 @@ import {
   constants,
   layout,
   radius,
+  shadows,
   spacing,
-  typography
+  typography,
 } from "@/src/theme";
+
+const BRAND_PINK = "#EAB8C9";
+const BRAND_PINK_LIGHT = "#F5DDE6";
+const BRAND_PINK_MUTED = "#F0C9D6";
+const SEARCH_FOCUS_TINT = BRAND_PINK_LIGHT + "33";
+const FILTER_INACTIVE_TINT = BRAND_PINK_LIGHT + "55";
+const WHITE = "#fff";
+const SWIPE_DONE_COLOR = "#A8D5B5";
+const SWIPE_DELETE_COLOR = "#E8A0A0";
+
+const SUMMARY_BLUR_INTENSITY = 26;
+const EMPTY_STATE_BLUR_INTENSITY = 26;
+const EMPTY_STATE_ICON_SIZE = 32;
+const FILTER_CHIP_ICON_SIZE = 11;
+const SEARCH_ICON_SIZE = 15;
+const SEARCH_CLEAR_ICON_SIZE = 16;
+const SECTION_LABEL_ICON_SIZE = 13;
+const SEARCH_CLEAR_HIT_SLOP = 8;
 
 type HomeFilter = "all" | "overdue" | "urgent" | "soon" | "onTrack";
 type DeadlineListRow = { id: string; item: Deadline; isOverdue: boolean };
+type UrgencyColor = "red" | "orange" | "yellow" | "green";
 
-function isSameCalendarDay(iso: string): boolean {
-  const date = new Date(iso);
-  const now = new Date();
+const FILTER_STATUS_MAP: Partial<Record<HomeFilter, string>> = {
+  overdue: "overdue",
+  urgent: "urgent",
+  soon: "soon",
+  onTrack: "onTrack",
+};
 
+const FILTER_OPTIONS: {
+  key: HomeFilter;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { key: "all", label: "All", icon: "apps-outline" },
+  { key: "overdue", label: "Overdue", icon: "alert-circle-outline" },
+  { key: "urgent", label: "Urgent", icon: "flame-outline" },
+  { key: "soon", label: "Soon", icon: "time-outline" },
+  { key: "onTrack", label: "On Track", icon: "checkmark-circle-outline" },
+];
+
+function isSameCalendarDay(isoDate: string): boolean {
+  const date = new Date(isoDate);
+  const today = new Date();
   return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate()
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
   );
 }
 
-function statusLabelFromItem(item: Deadline, isOverdue: boolean): string {
-  const status = getDeadlineStatus(item.dueAt);
+function hasDueDate(deadline: Deadline): boolean {
+  return Boolean(deadline.dueAt);
+}
 
-  if (isOverdue) {
-    return "Overdue";
-  }
-
-  if (status === "urgent") {
-    return "Urgent";
-  }
-
-  if (status === "soon") {
-    return "Soon";
-  }
-
+function resolveStatusLabel(
+  deadline: Deadline,
+  isOverdue: boolean,
+): string | undefined {
+  if (!hasDueDate(deadline)) return undefined;
+  if (isOverdue) return "Overdue";
+  const status = getDeadlineStatus(deadline.dueAt);
+  if (status === "urgent") return "Urgent";
+  if (status === "soon") return "Soon";
   return "On Track";
 }
 
-function statusColorFromItem(
-  item: Deadline,
+function resolveUrgencyColor(
+  deadline: Deadline,
   isOverdue: boolean,
-): "red" | "orange" | "yellow" | "green" {
-  const status = getDeadlineStatus(item.dueAt);
+): UrgencyColor {
+  if (!hasDueDate(deadline)) return "green";
+  if (isOverdue) return getDeadlineStatusDisplayColor("overdue");
+  return getDeadlineStatusDisplayColor(getDeadlineStatus(deadline.dueAt));
+}
 
-  return isOverdue
-    ? getDeadlineStatusDisplayColor("overdue")
-    : getDeadlineStatusDisplayColor(status);
+function countDeadlinesWithStatus(
+  deadlines: Deadline[],
+  status: string,
+): number {
+  return deadlines.filter(
+    (deadline) =>
+      hasDueDate(deadline) && getDeadlineStatus(deadline.dueAt) === status,
+  ).length;
 }
 
 type FilterChipProps = {
   label: string;
+  icon: keyof typeof Ionicons.glyphMap;
   active: boolean;
   onPress: () => void;
 };
 
-function FilterChip({ label, active, onPress }: FilterChipProps) {
+function FilterChip({ label, icon, active, onPress }: FilterChipProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -93,6 +139,12 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
+      <Ionicons
+        name={icon}
+        size={FILTER_CHIP_ICON_SIZE}
+        color={active ? WHITE : BRAND_PINK}
+        style={styles.filterChipIcon}
+      />
       <AppText
         variant="caption"
         numberOfLines={1}
@@ -105,6 +157,20 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
   );
 }
 
+type SummaryStatProps = {
+  value: number;
+  label: string;
+};
+
+function SummaryStat({ value, label }: SummaryStatProps) {
+  return (
+    <View style={styles.summaryItem}>
+      <AppText style={styles.summaryValue}>{String(value)}</AppText>
+      <AppText style={styles.summaryLabel}>{label}</AppText>
+    </View>
+  );
+}
+
 type SwipeActionsProps = {
   onEdit: () => void;
   onDelete: () => void;
@@ -112,46 +178,41 @@ type SwipeActionsProps = {
 };
 
 function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
+  const iconSize = layout.components.home.swipeActionIconSize;
   return (
     <View style={styles.swipeActionsWrap}>
       <Pressable
         style={[styles.swipeActionBtn, styles.doneAction]}
         onPress={onDone}
       >
-        <Ionicons
-          name="checkmark"
-          size={layout.components.home.swipeActionIconSize}
-          color={colors.background}
-        />
-        <AppText variant="caption" style={styles.swipeActionText}>
-          {"Done"}
-        </AppText>
+        <View style={styles.swipeActionInner}>
+          <Ionicons name="checkmark-circle" size={iconSize} color={WHITE} />
+          <AppText variant="caption" style={styles.swipeActionText}>
+            {"Done"}
+          </AppText>
+        </View>
       </Pressable>
       <Pressable
         style={[styles.swipeActionBtn, styles.editAction]}
         onPress={onEdit}
       >
-        <Ionicons
-          name="create-outline"
-          size={layout.components.home.swipeActionIconSize}
-          color={colors.background}
-        />
-        <AppText variant="caption" style={styles.swipeActionText}>
-          {"Edit"}
-        </AppText>
+        <View style={styles.swipeActionInner}>
+          <Ionicons name="pencil" size={iconSize} color={WHITE} />
+          <AppText variant="caption" style={styles.swipeActionText}>
+            {"Edit"}
+          </AppText>
+        </View>
       </Pressable>
       <Pressable
         style={[styles.swipeActionBtn, styles.deleteAction]}
         onPress={onDelete}
       >
-        <Ionicons
-          name="trash-outline"
-          size={layout.components.home.swipeActionIconSize}
-          color={colors.background}
-        />
-        <AppText variant="caption" style={styles.swipeActionText}>
-          {"Delete"}
-        </AppText>
+        <View style={styles.swipeActionInner}>
+          <Ionicons name="trash" size={iconSize} color={WHITE} />
+          <AppText variant="caption" style={styles.swipeActionText}>
+            {"Delete"}
+          </AppText>
+        </View>
       </Pressable>
     </View>
   );
@@ -173,8 +234,33 @@ function DeadlineListItem({
   onPressCard,
 }: DeadlineListItemProps) {
   const swipeableRef = useRef<Swipeable>(null);
-  const item = row.item;
-  const isOverdue = row.isOverdue;
+  const { item: deadline, isOverdue } = row;
+
+  const dueLabel = deadline.dueAt
+    ? `Due: ${formatDueLabel(deadline.dueAt)}`
+    : "";
+
+  const closeAndRun = (callback: (id: string) => void) => {
+    swipeableRef.current?.close();
+    callback(deadline.id);
+  };
+
+  const card = (
+    <View style={styles.cardWrapper}>
+      <DeadlineCard
+        assignmentName={deadline.assignmentName}
+        courseName={deadline.courseName}
+        dueLabel={dueLabel}
+        statusLabel={resolveStatusLabel(deadline, isOverdue)}
+        urgencyColor={resolveUrgencyColor(deadline, isOverdue)}
+        onPressCard={() => onPressCard(deadline.id)}
+      />
+    </View>
+  );
+
+  if (Platform.OS === "web") {
+    return card;
+  }
 
   return (
     <Swipeable
@@ -184,38 +270,20 @@ function DeadlineListItem({
       overshootRight={false}
       renderRightActions={() => (
         <SwipeActions
-          onDone={() => {
-            swipeableRef.current?.close();
-            onDone(item.id);
-          }}
-          onEdit={() => {
-            swipeableRef.current?.close();
-            onEdit(item.id);
-          }}
-          onDelete={() => {
-            swipeableRef.current?.close();
-            onDelete(item.id);
-          }}
+          onDone={() => closeAndRun(onDone)}
+          onEdit={() => closeAndRun(onEdit)}
+          onDelete={() => closeAndRun(onDelete)}
         />
       )}
     >
-      <View style={styles.cardWrapper}>
-        <DeadlineCard
-          assignmentName={item.assignmentName}
-          courseName={item.courseName}
-          dueLabel={`${"Due:"} ${formatDueLabel(item.dueAt)}`}
-          statusLabel={statusLabelFromItem(item, isOverdue)}
-          urgencyColor={statusColorFromItem(item, isOverdue)}
-          onPressCard={() => onPressCard(item.id)}
-        />
-      </View>
+      {card}
     </Swipeable>
   );
 }
 
 export function HomeScreen() {
-  const { width } = useWindowDimensions();
-  const isCompact = width < layout.thresholds.compact;
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompactLayout = windowWidth < layout.thresholds.compact;
   const navigation = useHomeNavigation();
   const deadlines = useDeadlineStore((state) => state.deadlines);
   const loadDeadlines = useDeadlineStore((state) => state.loadDeadlines);
@@ -224,10 +292,11 @@ export function HomeScreen() {
   );
   const completeDeadline = useDeadlineStore((state) => state.completeDeadline);
   const deleteDeadline = useDeadlineStore((state) => state.deleteDeadline);
-  const [showToast, setShowToast] = useState(false);
+
+  const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [filter, setFilter] = useState<HomeFilter>("all");
-  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<HomeFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -243,21 +312,17 @@ export function HomeScreen() {
     };
   }, []);
 
-  const onDone = (id: string) => {
+  const handleMarkAsDone = (id: string) => {
     completeDeadline(id);
     setToastMessage("Moved to History");
-    setShowToast(true);
-
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
-
+    setIsToastVisible(true);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => {
-      setShowToast(false);
+      setIsToastVisible(false);
     }, constants.home.toastDurationMs);
   };
 
-  const onDelete = (id: string) => {
+  const handleDeleteWithConfirm = (id: string) => {
     Alert.alert(
       "Delete deadline",
       "Are you sure you want to delete this assignment?",
@@ -274,135 +339,128 @@ export function HomeScreen() {
     );
   };
 
-  const dueTodayCount = deadlines.filter((item) =>
-    isSameCalendarDay(item.dueAt),
+  const dueTodayCount = deadlines.filter(
+    (deadline) =>
+      hasDueDate(deadline) && isSameCalendarDay(deadline.dueAt),
   ).length;
-  const overdueCount = deadlines.filter(
-    (item) => getDeadlineStatus(item.dueAt) === "overdue",
-  ).length;
-  const urgentCount = deadlines.filter(
-    (item) => getDeadlineStatus(item.dueAt) === "urgent",
-  ).length;
+  const overdueCount = countDeadlinesWithStatus(deadlines, "overdue");
+  const urgentCount = countDeadlinesWithStatus(deadlines, "urgent");
 
-  const activeFilteredItems = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
-
-    return deadlines.filter((item) => {
-      if (!normalized) {
-        return true;
-      }
-
-      return (
-        item.assignmentName.toLowerCase().includes(normalized) ||
-        item.courseName.toLowerCase().includes(normalized)
-      );
+  const searchFilteredDeadlines = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) return deadlines;
+    return deadlines.filter((deadline) => {
+      const matchesAssignment = deadline.assignmentName
+        .toLowerCase()
+        .includes(normalizedQuery);
+      const matchesCourse = deadline.courseName
+        .toLowerCase()
+        .includes(normalizedQuery);
+      return matchesAssignment || matchesCourse;
     });
-  }, [deadlines, search]);
+  }, [deadlines, searchQuery]);
 
-  const filteredItems = useMemo<Deadline[]>(() => {
-    if (filter === "overdue") {
-      return activeFilteredItems.filter(
-        (item) => getDeadlineStatus(item.dueAt) === "overdue",
-      );
-    }
+  const visibleDeadlines = useMemo<Deadline[]>(() => {
+    const requiredStatus = FILTER_STATUS_MAP[activeFilter];
+    if (!requiredStatus) return searchFilteredDeadlines;
+    return searchFilteredDeadlines.filter(
+      (deadline) =>
+        hasDueDate(deadline) &&
+        getDeadlineStatus(deadline.dueAt) === requiredStatus,
+    );
+  }, [searchFilteredDeadlines, activeFilter]);
 
-    if (filter === "urgent") {
-      return activeFilteredItems.filter(
-        (item) => getDeadlineStatus(item.dueAt) === "urgent",
-      );
-    }
+  const listRows = useMemo<DeadlineListRow[]>(
+    () =>
+      visibleDeadlines.map((deadline) => ({
+        id: `item-${deadline.id}`,
+        item: deadline,
+        isOverdue:
+          hasDueDate(deadline) &&
+          getDeadlineStatus(deadline.dueAt) === "overdue",
+      })),
+    [visibleDeadlines],
+  );
 
-    if (filter === "soon") {
-      return activeFilteredItems.filter(
-        (item) => getDeadlineStatus(item.dueAt) === "soon",
-      );
-    }
+  const totalCount = deadlines.length;
+  const totalCountLabel =
+    totalCount === 0
+      ? "Nothing here yet ✨"
+      : `${totalCount} task${totalCount !== 1 ? "s" : ""} total`;
+  const visibleCountLabel =
+    listRows.length === 0
+      ? "No tasks found"
+      : `${listRows.length} task${listRows.length !== 1 ? "s" : ""}`;
 
-    if (filter === "onTrack") {
-      return activeFilteredItems.filter(
-        (item) => getDeadlineStatus(item.dueAt) === "onTrack",
-      );
-    }
+  const handleEditNavigate = (id: string) => {
+    navigation.navigate(StackRoutes.MainTabs, {
+      screen: TabRoutes.AddDeadline,
+      params: { mode: "edit", id },
+    });
+  };
 
-    return activeFilteredItems;
-  }, [activeFilteredItems, filter]);
-
-  const listRows = useMemo<DeadlineListRow[]>(() => {
-    return filteredItems.map((item) => ({
-      id: `item-${item.id}`,
-      item,
-      isOverdue: getDeadlineStatus(item.dueAt) === "overdue",
-    }));
-  }, [filteredItems]);
+  const handleDetailNavigate = (id: string) => {
+    navigation.navigate(StackRoutes.DeadlineDetail, { id });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <PastelBackground />
 
-      <View style={[styles.container, isCompact && styles.containerCompact]}>
+      <View
+        style={[styles.container, isCompactLayout && styles.containerCompact]}
+      >
         <View style={styles.headerRow}>
-          <AppText variant="section" style={styles.headerTitle}>
-            {"My Deadlines"}
-          </AppText>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerTextBlock}>
+              <AppText variant="section" style={styles.headerTitle}>
+                {"My Deadlines"}
+              </AppText>
+              <AppText style={styles.headerSubtitle}>{totalCountLabel}</AppText>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.summaryRow}>
-          <View style={[styles.summaryItem, styles.summaryItemCoral]}>
-            <AppText variant="caption" style={styles.summaryLabelCoral}>
-              {"Overdue"}
-            </AppText>
-            <AppText variant="section" style={styles.summaryValue}>
-              {String(overdueCount)}
-            </AppText>
+        <BlurView
+          intensity={SUMMARY_BLUR_INTENSITY}
+          tint="light"
+          style={styles.summaryCard}
+        >
+          <View style={styles.summaryRow}>
+            <SummaryStat value={overdueCount} label="Overdue" />
+            <View style={styles.summaryDivider} />
+            <SummaryStat value={dueTodayCount} label="Due today" />
+            <View style={styles.summaryDivider} />
+            <SummaryStat value={urgentCount} label="Urgent" />
           </View>
-          <View style={[styles.summaryItem, styles.summaryItemViolet]}>
-            <AppText variant="caption" style={styles.summaryLabelViolet}>
-              {"Due today"}
-            </AppText>
-            <AppText variant="section" style={styles.summaryValue}>
-              {String(dueTodayCount)}
-            </AppText>
-          </View>
-          <View style={[styles.summaryItem, styles.summaryItemAmber]}>
-            <AppText variant="caption" style={styles.summaryLabelAmber}>
-              {"Urgent"}
-            </AppText>
-            <AppText variant="section" style={styles.summaryValue}>
-              {String(urgentCount)}
-            </AppText>
-          </View>
-        </View>
+        </BlurView>
 
         <View style={styles.filterRow}>
-          {[
-            { key: "all", label: "All" },
-            { key: "overdue", label: "Overdue" },
-            { key: "urgent", label: "Urgent" },
-            { key: "soon", label: "Soon" },
-            { key: "onTrack", label: "On Track" },
-          ].map((item) => (
+          {FILTER_OPTIONS.map((option) => (
             <FilterChip
-              key={item.key}
-              label={item.label}
-              active={filter === item.key}
-              onPress={() => setFilter(item.key as HomeFilter)}
+              key={option.key}
+              label={option.label}
+              icon={option.icon}
+              active={activeFilter === option.key}
+              onPress={() => setActiveFilter(option.key)}
             />
           ))}
         </View>
 
-        <BlurView
-          intensity={constants.home.searchBlurIntensity}
-          tint="light"
-          style={styles.searchWrap}
+        <View
+          style={[
+            styles.searchWrap,
+            isSearchFocused && styles.searchWrapFocused,
+          ]}
         >
           <Ionicons
-            name="search-outline"
-            size={constants.home.searchIconSize}
-            color={colors.textSecondary}
+            name="search"
+            size={SEARCH_ICON_SIZE}
+            color={isSearchFocused ? BRAND_PINK : colors.textSecondary}
           />
           <TextInput
-            value={search}
-            onChangeText={setSearch}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
             placeholder={
@@ -410,14 +468,39 @@ export function HomeScreen() {
             }
             placeholderTextColor={colors.textSecondary}
             style={styles.searchInput}
-            accessibilityLabel={"Search by assignment or course"}
+            accessibilityLabel="Search by assignment or course"
           />
-        </BlurView>
+          {searchQuery.length > 0 && (
+            <Pressable
+              onPress={() => setSearchQuery("")}
+              hitSlop={SEARCH_CLEAR_HIT_SLOP}
+            >
+              <Ionicons
+                name="close-circle"
+                size={SEARCH_CLEAR_ICON_SIZE}
+                color={colors.textSecondary}
+              />
+            </Pressable>
+          )}
+        </View>
+
+        {!isLoadingDeadlines && (
+          <View style={styles.sectionLabelRow}>
+            <Ionicons
+              name="list"
+              size={SECTION_LABEL_ICON_SIZE}
+              color={colors.textSecondary}
+            />
+            <AppText style={styles.sectionLabel}>{visibleCountLabel}</AppText>
+          </View>
+        )}
 
         <View style={styles.listSection}>
           {isLoadingDeadlines ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator color={colors.borderSoft} />
+              <View style={styles.loadingIconWrap}>
+                <ActivityIndicator color={BRAND_PINK} size="small" />
+              </View>
               <AppText variant="caption" style={styles.loadingText}>
                 {"Loading your deadlines..."}
               </AppText>
@@ -431,46 +514,45 @@ export function HomeScreen() {
                 <RefreshControl
                   refreshing={isLoadingDeadlines}
                   onRefresh={() => {
-                    if (!auth.currentUser) {
-                      return;
-                    }
-
+                    if (!auth.currentUser) return;
                     void loadDeadlines();
                   }}
-                  tintColor={colors.borderSoft}
+                  tintColor={BRAND_PINK}
                 />
               }
               renderItem={({ item: row }) => (
                 <DeadlineListItem
                   row={row}
-                  onDone={onDone}
-                  onEdit={(id) => {
-                    navigation.navigate(StackRoutes.MainTabs, {
-                      screen: TabRoutes.AddDeadline,
-                      params: { mode: "edit", id },
-                    });
-                  }}
-                  onDelete={onDelete}
-                  onPressCard={(id) => {
-                    navigation.navigate(StackRoutes.DeadlineDetail, { id });
-                  }}
+                  onDone={handleMarkAsDone}
+                  onEdit={handleEditNavigate}
+                  onDelete={handleDeleteWithConfirm}
+                  onPressCard={handleDetailNavigate}
                 />
               )}
               ListEmptyComponent={
                 <BlurView
-                  intensity={constants.home.emptyStateBlurIntensity}
+                  intensity={EMPTY_STATE_BLUR_INTENSITY}
                   tint="light"
                   style={styles.emptyStateCard}
                 >
+                  <Ionicons
+                    name={
+                      activeFilter === "all"
+                        ? "sparkles-outline"
+                        : "filter-outline"
+                    }
+                    size={EMPTY_STATE_ICON_SIZE}
+                    color={BRAND_PINK}
+                  />
                   <AppText variant="section" style={styles.emptyStateTitle}>
-                    {filter === "all"
+                    {activeFilter === "all"
                       ? "You're all caught up."
                       : "No tasks in this category yet."}
                   </AppText>
                   <AppText variant="caption" style={styles.emptyStateHint}>
-                    {filter === "all"
+                    {activeFilter === "all"
                       ? "Create your first deadline and stay ahead."
-                      : "Search by assignment or course"}
+                      : "Try a different filter or add a new deadline."}
                   </AppText>
                 </BlurView>
               }
@@ -478,7 +560,7 @@ export function HomeScreen() {
           )}
         </View>
 
-        <Toast message={toastMessage} visible={showToast} type="success" />
+        <Toast message={toastMessage} visible={isToastVisible} type="success" />
       </View>
     </SafeAreaView>
   );
@@ -495,122 +577,141 @@ const styles = StyleSheet.create({
     paddingTop: spacing.l,
   },
   containerCompact: {
-    paddingHorizontal: spacing.l,
+    paddingHorizontal: spacing.s,
+    paddingTop: spacing.s,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
-    marginBottom: spacing.s,
+    justifyContent: "space-between",
+    marginBottom: spacing.m,
+    marginTop: spacing.s,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.s,
+  },
+  headerTextBlock: {
+    marginLeft: 8,
   },
   headerTitle: {
     color: colors.textPrimary,
     fontWeight: typography.weight.bold,
-    letterSpacing: constants.typography.letterSpacing.normal,
-    textAlign: "left",
     fontSize: typography.size.l,
     lineHeight: typography.lineHeight.m,
-    marginLeft: spacing.s,
-    marginTop: spacing.m,
+  },
+  headerSubtitle: {
+    color: colors.textSecondary,
+    fontSize: typography.size.xs,
+    marginTop: 1,
+  },
+  summaryCard: {
+    borderRadius: radius.m,
+    overflow: "hidden",
+    paddingVertical: spacing.m,
+    paddingHorizontal: spacing.s,
+    marginBottom: spacing.m,
+    ...shadows.shadowCard,
   },
   summaryRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.m,
-    paddingVertical: spacing.m,
   },
   summaryItem: {
     flex: 1,
-    borderRadius: radius.s,
-    paddingVertical: spacing.l,
     alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    elevation: 2,
+    gap: 4,
+    paddingVertical: spacing.xs,
   },
-  summaryItemCoral: {
-    backgroundColor: colors.borderSoft,
+  summaryDivider: {
+    width: 1,
+    height: 48,
+    backgroundColor: colors.border,
+    opacity: 0.4,
   },
-  summaryItemViolet: {
-    backgroundColor: colors.borderSoft,
-  },
-  summaryItemAmber: {
-    backgroundColor: colors.borderSoft,
-  },
-
   summaryValue: {
     color: colors.textPrimary,
-    textAlign: "center",
-    fontSize: typography.size.s,
+    fontSize: typography.size.l,
+    fontWeight: typography.weight.bold,
     lineHeight: typography.lineHeight.m,
   },
-  summaryLabelCoral: {
+  summaryLabel: {
     color: colors.textSecondary,
-    textAlign: "center",
-    fontWeight: typography.weight.semibold,
-  },
-  summaryLabelViolet: {
-    color: colors.textSecondary,
-    textAlign: "center",
-    fontWeight: typography.weight.semibold,
-  },
-  summaryLabelAmber: {
-    color: colors.textSecondary,
-    textAlign: "center",
-    fontWeight: typography.weight.semibold,
+    fontSize: typography.size.xs,
+    letterSpacing: constants.typography.letterSpacing.tight,
   },
   filterRow: {
     flexDirection: "row",
-    gap: 6,
+    gap: spacing.xs,
     marginBottom: spacing.m,
-    marginTop: spacing.s,
   },
   filterChip: {
     flex: 1,
-    minHeight: 30,
-    paddingHorizontal: 2 * 0.9,
-    paddingVertical: 4 * 0.9,
-    borderRadius: radius.s,
-    borderWidth: 0,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surface,
+    paddingVertical: 7,
+    paddingHorizontal: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: BRAND_PINK_MUTED,
+    backgroundColor: FILTER_INACTIVE_TINT,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 3,
   },
   filterChipActive: {
-    backgroundColor: colors.borderSoft,
-    borderColor: colors.buttonBg,
-    borderWidth: 1,
+    backgroundColor: BRAND_PINK,
+    borderColor: BRAND_PINK,
+  },
+  filterChipIcon: {
+    marginRight: 1,
+  },
+  filterChipText: {
+    color: BRAND_PINK,
+    fontWeight: typography.weight.semibold,
+    fontSize: typography.size.xs,
+    textAlign: "center",
   },
   filterChipTextActive: {
-    color: colors.textPrimary,
+    color: WHITE,
+    fontWeight: typography.weight.bold,
   },
   searchWrap: {
-    marginTop: spacing.xs,
-    marginBottom: spacing.l,
-    borderRadius: radius.s,
-    overflow: "hidden",
+    minHeight: 46,
+    borderRadius: radius.m,
     backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.m,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.m,
-    minHeight: 44,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
+    gap: spacing.s,
+    marginBottom: spacing.s,
+    overflow: "hidden",
+  },
+  searchWrapFocused: {
+    borderColor: BRAND_PINK,
+    backgroundColor: SEARCH_FOCUS_TINT,
   },
   searchInput: {
     flex: 1,
     color: colors.textPrimary,
-    marginLeft: spacing.m,
     fontFamily: typography.family.regular,
     fontSize: typography.size.sm,
     lineHeight: typography.lineHeight.sm,
+    paddingVertical: spacing.s,
   },
-  filterChipText: {
-    color: colors.textPrimary,
-    fontWeight: typography.weight.semibold,
-    textAlign: "center",
+  sectionLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginBottom: spacing.s,
+    paddingLeft: 2,
+  },
+  sectionLabel: {
+    color: colors.textSecondary,
     fontSize: typography.size.xs,
+    letterSpacing: constants.typography.letterSpacing.tight,
   },
   listSection: {
     flex: 1,
@@ -621,31 +722,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.s,
   },
+  loadingIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: BRAND_PINK_LIGHT,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   loadingText: {
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
   listContent: {
-    paddingBottom:
-      spacing.xxl,
-    gap: spacing.m,
+    paddingBottom: spacing.xxl,
+    gap: spacing.s,
   },
   cardWrapper: {
     borderRadius: radius.s,
-    padding: spacing.xs,
+    overflow: "hidden",
   },
   emptyStateCard: {
-    borderRadius: radius.s,
-    borderColor: colors.borderSoft,
-    backgroundColor: colors.surface,
+    borderRadius: radius.m,
+    overflow: "hidden",
     padding: spacing.xl,
     alignItems: "center",
     gap: spacing.m,
+    marginTop: spacing.l,
+    ...shadows.shadowCard,
   },
   emptyStateTitle: {
     textAlign: "center",
     color: colors.textPrimary,
     fontSize: typography.size.s,
     lineHeight: typography.lineHeight.sm,
+    fontWeight: typography.weight.semibold,
   },
   emptyStateHint: {
     textAlign: "center",
@@ -658,24 +768,30 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
     borderRadius: radius.s,
     overflow: "hidden",
+    marginLeft: spacing.s,
+    gap: 2,
   },
   swipeActionBtn: {
-    width: 70,
+    width: 68,
     justifyContent: "center",
     alignItems: "center",
-    gap: spacing.s,
+  },
+  swipeActionInner: {
+    alignItems: "center",
+    gap: 4,
   },
   swipeActionText: {
-    color: "#31241F",
+    color: WHITE,
     fontWeight: typography.weight.semibold,
+    fontSize: typography.size.xs,
   },
   doneAction: {
-    backgroundColor: colors.borderSoft,
+    backgroundColor: SWIPE_DONE_COLOR,
   },
   editAction: {
-    backgroundColor: colors.borderSoft,
+    backgroundColor: BRAND_PINK_MUTED,
   },
   deleteAction: {
-    backgroundColor: colors.borderSoft,
+    backgroundColor: SWIPE_DELETE_COLOR,
   },
 });

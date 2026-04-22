@@ -4,14 +4,27 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
-const reminderOffsets: Record<ReminderOption, number> = {
-  "5m": 5 * 60 * 1000,
-  "30m": 30 * 60 * 1000,
-  "1h": 60 * 60 * 1000,
-  "1d": 24 * 60 * 60 * 1000,
+const MS_PER_SECOND = 1000;
+const SECONDS_PER_MINUTE = 60;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+const MS_PER_MINUTE = SECONDS_PER_MINUTE * MS_PER_SECOND;
+const MS_PER_HOUR = MINUTES_PER_HOUR * MS_PER_MINUTE;
+const MS_PER_DAY = HOURS_PER_DAY * MS_PER_HOUR;
+
+const DEFAULT_CHANNEL_ID = "default";
+const DEFAULT_CHANNEL_NAME = "Default";
+const NOTIFICATION_TITLE = "Due soon";
+const ALLOWED_REMINDERS: readonly ReminderOption[] = ["5m", "30m", "1h", "1d"];
+
+const REMINDER_OFFSETS_MS: Record<ReminderOption, number> = {
+  "5m": 5 * MS_PER_MINUTE,
+  "30m": 30 * MS_PER_MINUTE,
+  "1h": MS_PER_HOUR,
+  "1d": MS_PER_DAY,
 };
 
-let channelReady = false;
+let isAndroidChannelReady = false;
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -25,45 +38,49 @@ Notifications.setNotificationHandler({
 function getEasProjectId(): string | null {
   const fromExpoConfig = Constants.expoConfig?.extra?.eas?.projectId;
   const fromEasConfig = Constants.easConfig?.projectId;
-  const projectId =
-    typeof fromExpoConfig === "string" && fromExpoConfig.trim().length > 0
-      ? fromExpoConfig.trim()
-      : typeof fromEasConfig === "string" && fromEasConfig.trim().length > 0
-        ? fromEasConfig.trim()
-        : null;
 
-  return projectId;
+  if (typeof fromExpoConfig === "string" && fromExpoConfig.trim().length > 0) {
+    return fromExpoConfig.trim();
+  }
+
+  if (typeof fromEasConfig === "string" && fromEasConfig.trim().length > 0) {
+    return fromEasConfig.trim();
+  }
+
+  return null;
+}
+
+function isPermissionGranted(
+  permission: Notifications.NotificationPermissionsStatus,
+): boolean {
+  return (
+    permission.granted ||
+    permission.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
+  );
 }
 
 export async function hasNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
-
-  return (
-    current.granted ||
-    current.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
-  );
+  return isPermissionGranted(current);
 }
 
 async function ensureAndroidChannel() {
-  if (Platform.OS !== "android" || channelReady) {
+  if (Platform.OS !== "android" || isAndroidChannelReady) {
     return;
   }
 
-  await Notifications.setNotificationChannelAsync("default", {
-    name: "Default",
+  await Notifications.setNotificationChannelAsync(DEFAULT_CHANNEL_ID, {
+    name: DEFAULT_CHANNEL_NAME,
     importance: Notifications.AndroidImportance.DEFAULT,
   });
 
-  channelReady = true;
+  isAndroidChannelReady = true;
 }
 
 export async function requestPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
 
-  if (
-    current.granted ||
-    current.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
-  ) {
+  if (isPermissionGranted(current)) {
     return true;
   }
 
@@ -76,11 +93,7 @@ export async function requestPermission(): Promise<boolean> {
   }
 
   const requested = await Notifications.requestPermissionsAsync();
-
-  return (
-    requested.granted ||
-    requested.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
-  );
+  return isPermissionGranted(requested);
 }
 
 export async function registerForPushNotificationsAsync(): Promise<
@@ -120,13 +133,18 @@ export async function registerForPushNotificationsAsync(): Promise<
 export async function scheduleDeadlineNotification(
   deadline: Pick<Deadline, "assignmentName" | "dueAt" | "reminder">,
 ): Promise<string | null> {
-  // Only allow ReminderOption values
-  const allowedReminders = ["5m", "30m", "1h", "1d"];
-  if (!deadline.reminder || !allowedReminders.includes(deadline.reminder)) {
+  if (
+    !deadline.reminder ||
+    !ALLOWED_REMINDERS.includes(deadline.reminder as ReminderOption)
+  ) {
     return null;
   }
 
   await ensureAndroidChannel();
+
+  if (!deadline.dueAt) {
+    return null;
+  }
 
   const dueMs = new Date(deadline.dueAt).getTime();
   if (Number.isNaN(dueMs)) {
@@ -134,14 +152,14 @@ export async function scheduleDeadlineNotification(
   }
 
   const reminderKey = deadline.reminder as ReminderOption;
-  const triggerMs = dueMs - reminderOffsets[reminderKey];
+  const triggerMs = dueMs - REMINDER_OFFSETS_MS[reminderKey];
   if (triggerMs <= Date.now()) {
     return null;
   }
 
   let trigger;
   if (Platform.OS === "android") {
-    const secondsFromNow = Math.floor((triggerMs - Date.now()) / 1000);
+    const secondsFromNow = Math.floor((triggerMs - Date.now()) / MS_PER_SECOND);
     if (secondsFromNow <= 0) {
       return null;
     }
@@ -149,10 +167,9 @@ export async function scheduleDeadlineNotification(
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: secondsFromNow,
       repeats: false,
-      channelId: "default",
+      channelId: DEFAULT_CHANNEL_ID,
     };
   } else {
-    // iOS: use absolute date trigger (type: 'date')
     trigger = {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: new Date(triggerMs),
@@ -161,7 +178,7 @@ export async function scheduleDeadlineNotification(
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Due soon",
+      title: NOTIFICATION_TITLE,
       body: `${deadline.assignmentName} is due soon. Tap to review.`,
       sound: true,
     },

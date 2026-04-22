@@ -1,15 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRef } from "react";
-import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { Animated, Platform, Pressable, StyleSheet, View } from "react-native";
 
 import {
-    colors,
-    constants,
-    layout,
-    motion,
-    radius,
-    spacing,
-    typography
+  colors,
+  constants,
+  layout,
+  motion,
+  radius,
+  spacing,
+  typography,
 } from "@/src/theme";
 
 import { AppText } from "./app-text";
@@ -74,7 +74,7 @@ export function AppButton({
     Animated.timing(scale, {
       toValue: value,
       duration,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   };
 
@@ -125,7 +125,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.xl,
     borderWidth: 0,
-    // shadow removed
   },
   baseCompact: {
     minHeight: layout.components.button.compactMinHeight,

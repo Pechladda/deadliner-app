@@ -10,7 +10,6 @@ import {
   PastelBackground,
   Toast,
 } from "@/src/components";
-
 import {
   formatCompletedLabel,
   formatDueLabel,
@@ -18,13 +17,14 @@ import {
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
-import {
-  colors,
-  constants,
-  radius,
-  spacing,
-  typography,
-} from "@/src/theme";
+import { colors, constants, radius, spacing, typography } from "@/src/theme";
+
+const TOAST_DURATION_MS = 1800;
+const CARD_WRAPPER_PADDING = 3;
+
+const DELETE_SUCCESS_MESSAGE = "Deadline deleted";
+const DELETE_FAILURE_MESSAGE =
+  "Could not delete this deadline. Please try again.";
 
 export function HistoryScreen() {
   const navigation = useSettingsNavigation();
@@ -32,7 +32,8 @@ export function HistoryScreen() {
     (state) => state.completedDeadlines,
   );
   const deleteDeadline = useDeadlineStore((state) => state.deleteDeadline);
-  const [showToast, setShowToast] = useState(false);
+
+  const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -44,26 +45,24 @@ export function HistoryScreen() {
     };
   }, []);
 
-  const onDelete = (id: string) => {
-    void deleteDeadline(id).then((isSuccess) => {
+  const handleDelete = (deadlineId: string) => {
+    void deleteDeadline(deadlineId).then((isSuccess) => {
       setToastMessage(
-        isSuccess
-          ? "Deadline deleted"
-          : "Could not delete this deadline. Please try again.",
+        isSuccess ? DELETE_SUCCESS_MESSAGE : DELETE_FAILURE_MESSAGE,
       );
-      setShowToast(true);
+      setIsToastVisible(true);
 
       if (toastTimerRef.current) {
         clearTimeout(toastTimerRef.current);
       }
 
       toastTimerRef.current = setTimeout(() => {
-        setShowToast(false);
-      }, 1800);
+        setIsToastVisible(false);
+      }, TOAST_DURATION_MS);
     });
   };
 
-  const onGoBack = () => {
+  const handleGoBack = () => {
     navigation.goBack();
   };
 
@@ -74,7 +73,7 @@ export function HistoryScreen() {
         <View style={styles.headerRow}>
           <IconButton
             icon="chevron-back"
-            onPress={() => navigation.goBack()}
+            onPress={handleGoBack}
             accessibilityLabel={"Go back"}
           />
           <AppText variant="section" style={styles.screenTitle}>
@@ -96,7 +95,7 @@ export function HistoryScreen() {
                 urgencyColor="green"
                 actionLabel={"Delete"}
                 actionStyle="trash"
-                onPressAction={() => onDelete(item.id)}
+                onPressAction={() => handleDelete(item.id)}
                 muted
               />
             </View>
@@ -109,7 +108,7 @@ export function HistoryScreen() {
               <View style={styles.emptyActionWrap}>
                 <AppButton
                   label={"Go back"}
-                  onPress={onGoBack}
+                  onPress={handleGoBack}
                   variant="outline"
                   iconName="arrow-back-outline"
                 />
@@ -118,7 +117,7 @@ export function HistoryScreen() {
           }
         />
 
-        <Toast message={toastMessage} visible={showToast} />
+        <Toast message={toastMessage} visible={isToastVisible} />
       </View>
     </SafeAreaView>
   );
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.s,
     backgroundColor: colors.surface,
-    padding: 3,
+    padding: CARD_WRAPPER_PADDING,
     overflow: "hidden",
   },
   emptyCard: {

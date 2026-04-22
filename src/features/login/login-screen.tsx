@@ -1,15 +1,3 @@
-import {
-  AppButton,
-  AppText,
-  FormInput,
-  PastelBackground,
-} from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation/route-names";
-
-import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
-import { auth } from "@/src/firebase";
-import { useAuthStore } from "@/src/store/auth-store";
-import { colors, constants, layout, radius, spacing, typography } from "@/src/theme";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import {
@@ -25,22 +13,44 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Line } from "react-native-svg";
 
+import {
+  AppButton,
+  AppText,
+  FormInput,
+  PastelBackground,
+} from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation/route-names";
+import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
+import { auth } from "@/src/firebase";
+import { useAuthStore } from "@/src/store/auth-store";
+import {
+  colors,
+  constants,
+  layout,
+  radius,
+  spacing,
+  typography,
+} from "@/src/theme";
+
 const BRAND_PRIMARY = colors.textPrimary;
-const BG_WARM = colors.background;
+const SCREEN_BACKGROUND = colors.background;
+const MODAL_MAX_WIDTH = 340;
+const CREATE_ACCOUNT_BUTTON_MIN_HEIGHT = 47;
+const DEGREES_TO_RADIANS = Math.PI / 180;
 
 function ClockLogo() {
   const stroke = BRAND_PRIMARY;
   const accent = stroke;
   const logo = constants.clockLogo;
 
-  const ticks = Array.from({ length: logo.tickCount }, (_, i) => {
-    const deg = i * logo.tickStepDegrees;
-    const rad = (Math.PI * deg) / 180;
-    const isMain = i % logo.majorTickEvery === 0;
-    const inner = isMain
+  const ticks = Array.from({ length: logo.tickCount }, (_, index) => {
+    const degrees = index * logo.tickStepDegrees;
+    const radians = degrees * DEGREES_TO_RADIANS;
+    const isMajorTick = index % logo.majorTickEvery === 0;
+    const innerRadius = isMajorTick
       ? logo.majorTickInnerRadius
       : logo.minorTickInnerRadius;
-    return { rad, isMain, inner };
+    return { radians, isMajorTick, innerRadius };
   });
 
   return (
@@ -57,19 +67,19 @@ function ClockLogo() {
         strokeWidth={logo.outlineStrokeWidth}
         fill="none"
       />
-      {ticks.map(({ rad, isMain, inner }, i) => (
+      {ticks.map(({ radians, isMajorTick, innerRadius }, index) => (
         <Line
-          key={i}
-          x1={logo.center + inner * Math.sin(rad)}
-          y1={logo.center - inner * Math.cos(rad)}
-          x2={logo.center + logo.outerRadius * Math.sin(rad)}
-          y2={logo.center - logo.outerRadius * Math.cos(rad)}
+          key={index}
+          x1={logo.center + innerRadius * Math.sin(radians)}
+          y1={logo.center - innerRadius * Math.cos(radians)}
+          x2={logo.center + logo.outerRadius * Math.sin(radians)}
+          y2={logo.center - logo.outerRadius * Math.cos(radians)}
           stroke={stroke}
           strokeWidth={
-            isMain ? logo.majorTickStrokeWidth : logo.minorTickStrokeWidth
+            isMajorTick ? logo.majorTickStrokeWidth : logo.minorTickStrokeWidth
           }
           strokeLinecap="round"
-          opacity={isMain ? 1 : logo.minorTickOpacity}
+          opacity={isMajorTick ? 1 : logo.minorTickOpacity}
         />
       ))}
       <Line
@@ -109,52 +119,51 @@ function ClockLogo() {
   );
 }
 
+type LoginField = "email" | "password";
+
 export function LoginScreen() {
-  const { width } = useWindowDimensions();
-  const isCompact = width < layout.thresholds.compact;
-  const isWide = width >= layout.thresholds.wide;
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompactLayout = windowWidth < layout.thresholds.compact;
+  const isWideLayout = windowWidth >= layout.thresholds.wide;
   const navigation = useLoginNavigation();
   const login = useAuthStore((state) => state.login);
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
-  // State สำหรับควบคุมการโชว์ Modal
-  const [showErrorModal, setShowErrorModal] = useState(false);
-
-  const handleChange = (field: "email" | "password", value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleFieldChange = (field: LoginField, value: string) => {
+    setFormData((previous) => ({ ...previous, [field]: value }));
   };
 
-  const onSubmit = async () => {
+  const handleSubmit = async () => {
     if (isSubmitting) return;
 
-    const normalizedEmail = formData.email.trim();
-    const normalizedPassword = formData.password;
+    const emailAddress = formData.email.trim();
+    const password = formData.password;
 
-    // ถ้าไม่ได้กรอกอะไรเลย ให้เด้ง Modal เลย (ไม่โชว์ Error ใต้ช่องแล้ว)
-    if (!normalizedEmail || !normalizedPassword) {
-      setShowErrorModal(true);
+    if (!emailAddress || !password) {
+      setIsErrorModalVisible(true);
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const userCredential = await signInWithEmailAndPassword(
+      const credential = await signInWithEmailAndPassword(
         auth,
-        normalizedEmail,
-        normalizedPassword,
+        emailAddress,
+        password,
       );
-      await login(userCredential.user);
+      await login(credential.user);
     } catch {
-      setShowErrorModal(true);
+      setIsErrorModalVisible(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const onGoToRegister = () => {
-    setShowErrorModal(false);
+  const handleGoToRegister = () => {
+    setIsErrorModalVisible(false);
     navigation.navigate(StackRoutes.Register);
   };
 
@@ -174,15 +183,15 @@ export function LoginScreen() {
             <View
               style={[
                 styles.container,
-                isCompact && styles.containerCompact,
-                isWide && styles.containerWide,
+                isCompactLayout && styles.containerCompact,
+                isWideLayout && styles.containerWide,
               ]}
             >
               <View
                 style={[
                   styles.logoBlock,
-                  isCompact && styles.logoBlockCompact,
-                  isWide && styles.logoBlockWide,
+                  isCompactLayout && styles.logoBlockCompact,
+                  isWideLayout && styles.logoBlockWide,
                 ]}
               >
                 <ClockLogo />
@@ -190,8 +199,8 @@ export function LoginScreen() {
                   variant="section"
                   style={[
                     styles.title,
-                    isCompact && styles.titleCompact,
-                    isWide && styles.titleWide,
+                    isCompactLayout && styles.titleCompact,
+                    isWideLayout && styles.titleWide,
                   ]}
                 >
                   DEADLINER
@@ -201,15 +210,14 @@ export function LoginScreen() {
               <View
                 style={[
                   styles.formArea,
-                  isCompact && styles.formAreaCompact,
-                  isWide && styles.formAreaWide,
+                  isCompactLayout && styles.formAreaCompact,
+                  isWideLayout && styles.formAreaWide,
                 ]}
               >
                 <View style={styles.formFieldsGroup}>
-                  {/* ถอด props `error` ออกทั้งหมด */}
                   <FormInput
                     value={formData.email}
-                    onChangeText={(value) => handleChange("email", value)}
+                    onChangeText={(value) => handleFieldChange("email", value)}
                     placeholder={"Email"}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -220,12 +228,14 @@ export function LoginScreen() {
                     selectionColor={colors.textPrimary}
                     accessibilityLabel={"Email"}
                     editable={!isSubmitting}
-                    compact={isCompact}
+                    compact={isCompactLayout}
                   />
 
                   <FormInput
                     value={formData.password}
-                    onChangeText={(value) => handleChange("password", value)}
+                    onChangeText={(value) =>
+                      handleFieldChange("password", value)
+                    }
                     placeholder={"Password"}
                     isPassword
                     autoCapitalize="none"
@@ -236,7 +246,7 @@ export function LoginScreen() {
                     selectionColor={colors.textPrimary}
                     accessibilityLabel={"Password input"}
                     editable={!isSubmitting}
-                    compact={isCompact}
+                    compact={isCompactLayout}
                     showPasswordLabel={"Show password"}
                     hidePasswordLabel={"Hide password"}
                   />
@@ -245,7 +255,7 @@ export function LoginScreen() {
                 <View style={styles.actionArea}>
                   <AppButton
                     title={"Sign In"}
-                    onPress={onSubmit}
+                    onPress={handleSubmit}
                     isLoading={isSubmitting}
                     loadingLabel={"SIGNING IN..."}
                     size="compact"
@@ -290,10 +300,10 @@ export function LoginScreen() {
         </View>
       </View>
       <Modal
-        visible={showErrorModal}
+        visible={isErrorModalVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setShowErrorModal(false)}
+        onRequestClose={() => setIsErrorModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -309,7 +319,7 @@ export function LoginScreen() {
             <View style={styles.modalActions}>
               <Pressable
                 style={styles.modalSecondaryBtn}
-                onPress={onGoToRegister}
+                onPress={handleGoToRegister}
               >
                 <AppText variant="caption" style={styles.modalSecondaryBtnText}>
                   {"Sign Up"}
@@ -318,7 +328,7 @@ export function LoginScreen() {
 
               <Pressable
                 style={styles.modalPrimaryBtn}
-                onPress={() => setShowErrorModal(false)}
+                onPress={() => setIsErrorModalVisible(false)}
               >
                 <AppText variant="caption" style={styles.modalPrimaryBtnText}>
                   {"Retry"}
@@ -333,8 +343,7 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  // ... Styles เดิมทั้งหมด (safeArea จนถึง bottomLinkText)
-  safeArea: { flex: 1, backgroundColor: BG_WARM },
+  safeArea: { flex: 1, backgroundColor: SCREEN_BACKGROUND },
   keyboardWrap: { flex: 1 },
   screenBody: { flex: 1, position: "relative" },
   scrollContent: { flexGrow: 1, justifyContent: "flex-start" },
@@ -394,7 +403,7 @@ const styles = StyleSheet.create({
   createAccountButton: {
     width: "100%",
     maxWidth: layout.maxWidths.default,
-    minHeight: 47,
+    minHeight: CREATE_ACCOUNT_BUTTON_MIN_HEIGHT,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
@@ -424,7 +433,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "100%",
-    maxWidth: 340,
+    maxWidth: MODAL_MAX_WIDTH,
     backgroundColor: colors.surface,
     borderRadius: radius.s,
     padding: spacing.xl,

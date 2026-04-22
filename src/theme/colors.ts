@@ -1,24 +1,26 @@
-export const colors = {
+const STATUS_GREEN = "#05e317";
+const STATUS_RED = "#f80834";
+const BRAND_PINK = "#E9B8C9";
 
-  //Deadliner originales
+export const colors = {
+  // Base palette
   background: "#FFFFFF",
   surface: "#ffffff",
   textPrimary: "#333333",
   textSecondary: "#6C757D",
-  border: "#E9B8C9",
+  border: BRAND_PINK,
   borderSoft: "#F8EBEF",
-  buttonBg: "#E9B8C9",
+  buttonBg: BRAND_PINK,
   shadow: "#31241F",
 
-  //Status color 
-  overdue: "#f80834",
-  urgent: "#ff4a02ff",
-  soon: "#fce514ff",
-  onTrack: "#05e317ff",
+  // Deadline status colors
+  overdue: "#6C757D",
+  urgent: STATUS_RED,
+  soon: "#fce514",
+  onTrack: STATUS_GREEN,
 
-  // Compatibility tokens (mapped to available colors)
-  success: "#05e317ff",
-  danger: "#f80834",
-  warning: "#ff4a02ff",
-
+  // Semantic aliases mapped to status colors
+  success: STATUS_GREEN,
+  danger: STATUS_RED,
+  warning: STATUS_RED,
 } as const;

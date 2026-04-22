@@ -1,26 +1,35 @@
 import {
-    addDoc,
-    collection,
-    CollectionReference,
-    deleteDoc,
-    doc,
-    getDocs,
-    orderBy,
-    query,
-    updateDoc,
-    writeBatch,
+  addDoc,
+  collection,
+  CollectionReference,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 
 import { auth, db } from "@/src/firebase";
 import { Deadline } from "@/src/models/deadline";
 
-const deadlinesCollection = "deadlines";
-const usersCollection = "users";
+const DEADLINES_COLLECTION = "deadlines";
+const USERS_COLLECTION = "users";
+const DUE_AT_FIELD = "dueAt";
+const LOG_PREFIX = "[Firestore][deadlines]";
 
 type FirebaseLikeError = Error & { code?: string };
 
+type DeadlineSnapshot = {
+  id: string;
+  data: () => Record<string, unknown>;
+};
+
 function buildAuthRequiredError(): FirebaseLikeError {
-  const error = new Error("Session expired. Please sign in again.") as FirebaseLikeError;
+  const error = new Error(
+    "Session expired. Please sign in again.",
+  ) as FirebaseLikeError;
   error.code = "permission-denied";
   return error;
 }
@@ -32,13 +41,15 @@ function getUserDeadlinesCollection(): CollectionReference {
     throw buildAuthRequiredError();
   }
 
-  return collection(db, usersCollection, currentUser.uid, deadlinesCollection);
+  return collection(
+    db,
+    USERS_COLLECTION,
+    currentUser.uid,
+    DEADLINES_COLLECTION,
+  );
 }
 
-function parseDeadline(snapshotDoc: {
-  id: string;
-  data: () => Record<string, unknown>;
-}): Deadline {
+function parseDeadline(snapshotDoc: DeadlineSnapshot): Deadline {
   const data = snapshotDoc.data();
   const dueAt = String(data.dueAt ?? "");
   const completedAt =
@@ -84,12 +95,12 @@ function parseDeadline(snapshotDoc: {
 export async function fetchDeadlines(): Promise<Deadline[]> {
   try {
     const deadlinesRef = getUserDeadlinesCollection();
-    const deadlinesQuery = query(deadlinesRef, orderBy("dueAt", "asc"));
+    const deadlinesQuery = query(deadlinesRef, orderBy(DUE_AT_FIELD, "asc"));
     const snapshot = await getDocs(deadlinesQuery);
 
     return snapshot.docs.map(parseDeadline);
   } catch (error) {
-    console.error("[Firestore] fetchDeadlines failed:", error);
+    console.error(`${LOG_PREFIX} fetchDeadlines failed`, error);
     throw error;
   }
 }
@@ -100,7 +111,7 @@ export async function createDeadline(
   try {
     await addDoc(getUserDeadlinesCollection(), payload);
   } catch (error) {
-    console.error("[Firestore][deadlines] createDeadline failed", error);
+    console.error(`${LOG_PREFIX} createDeadline failed`, error);
     throw error;
   }
 }
@@ -113,7 +124,7 @@ export async function updateDeadlineDoc(
     const deadlinesRef = getUserDeadlinesCollection();
     await updateDoc(doc(deadlinesRef, id), payload);
   } catch (error) {
-    console.error("[Firestore][deadlines] updateDeadlineDoc failed", error);
+    console.error(`${LOG_PREFIX} updateDeadlineDoc failed`, error);
     throw error;
   }
 }
@@ -123,7 +134,7 @@ export async function deleteDeadlineDoc(id: string): Promise<void> {
     const deadlinesRef = getUserDeadlinesCollection();
     await deleteDoc(doc(deadlinesRef, id));
   } catch (error) {
-    console.error("[Firestore][deadlines] deleteDeadlineDoc failed", error);
+    console.error(`${LOG_PREFIX} deleteDeadlineDoc failed`, error);
     throw error;
   }
 }
@@ -144,7 +155,7 @@ export async function deleteAllDeadlines(): Promise<void> {
 
     await batch.commit();
   } catch (error) {
-    console.error("[Firestore][deadlines] deleteAllDeadlines failed", error);
+    console.error(`${LOG_PREFIX} deleteAllDeadlines failed`, error);
     throw error;
   }
 }

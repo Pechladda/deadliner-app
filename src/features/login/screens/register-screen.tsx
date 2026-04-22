@@ -1,16 +1,3 @@
-import {
-  AppButton,
-  AppText,
-  FormInput,
-  IconButton,
-  PastelBackground,
-} from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation/route-names";
-import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
-import { auth, db } from "@/src/firebase";
-
-import { useAuthStore } from "@/src/store/auth-store";
-import { colors, constants, layout, spacing, typography } from "@/src/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
@@ -27,16 +14,46 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+  AppButton,
+  AppText,
+  FormInput,
+  IconButton,
+  PastelBackground,
+} from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation/route-names";
+import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
+import { auth, db } from "@/src/firebase";
+import { useAuthStore } from "@/src/store/auth-store";
+import { colors, constants, layout, spacing, typography } from "@/src/theme";
+
 const BRAND_PRIMARY = colors.textPrimary;
-const BG_WARM = colors.background;
+const SCREEN_BACKGROUND = colors.background;
+
+const MAX_USERNAME_LENGTH = 20;
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 30;
+const HEADER_SPACER_SIZE = 38;
+const CONSENT_CHECKBOX_SIZE = 22;
+const CONSENT_CHECKBOX_RADIUS = 6;
+const CHECKMARK_ICON_SIZE = 16;
+const ERROR_SLOT_MIN_HEIGHT = 22;
+const FEEDBACK_ROW_MIN_HEIGHT = 22;
+const USERS_COLLECTION = "users";
 
 const USERNAME_PATTERN = /^[A-Za-z0-9]+$/;
 const THAI_CHAR_PATTERN = /[\u0E00-\u0E7F]/;
+const WHITESPACE_PATTERN = /\s/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UPPERCASE_PATTERN = /[A-Z]/;
+const LOWERCASE_PATTERN = /[a-z]/;
+const DIGIT_PATTERN = /\d/;
+const ALLOWED_SYMBOL_PATTERN = /[@_.]/;
+
 const PASSWORD_DEFAULT_HELPER =
   "8–30 characters, including uppercase, lowercase, numbers, and at least one symbol (@, _ or .).";
-
 const SUCCESS_MESSAGE = "Account created successfully.";
+const USERNAME_FORMAT_ERROR = `Use English letters and numbers (maximum ${MAX_USERNAME_LENGTH} characters).`;
 
 type FieldErrors = {
   username: string;
@@ -53,25 +70,20 @@ type FieldTouched = {
 };
 
 function validateUsername(username: string): string {
-  const normalized = username;
-
-  if (!normalized.trim()) {
+  if (!username.trim()) {
     return "Username is required.";
   }
 
-  if (/\s/.test(normalized)) {
+  if (WHITESPACE_PATTERN.test(username)) {
     return "Username cannot contain spaces.";
   }
 
-  if (normalized.length > 20) {
-    return "Use English letters and numbers (maximum 20 characters).";
+  if (username.length > MAX_USERNAME_LENGTH) {
+    return USERNAME_FORMAT_ERROR;
   }
 
-  if (
-    THAI_CHAR_PATTERN.test(normalized) ||
-    !USERNAME_PATTERN.test(normalized)
-  ) {
-    return "Use English letters and numbers (maximum 20 characters).";
+  if (THAI_CHAR_PATTERN.test(username) || !USERNAME_PATTERN.test(username)) {
+    return USERNAME_FORMAT_ERROR;
   }
 
   return "";
@@ -92,33 +104,31 @@ function validateEmail(email: string): string {
 }
 
 function validatePassword(password: string): string {
-  const normalized = password;
-
-  if (!normalized) {
+  if (!password) {
     return "Password is required.";
   }
 
-  if (normalized.length < 8) {
-    return "Password must be at least 8 characters.";
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
   }
 
-  if (normalized.length > 30) {
-    return "Password must not exceed 30 characters.";
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return `Password must not exceed ${MAX_PASSWORD_LENGTH} characters.`;
   }
 
-  if (!/[A-Z]/.test(normalized)) {
+  if (!UPPERCASE_PATTERN.test(password)) {
     return "Include at least 1 uppercase letter";
   }
 
-  if (!/[a-z]/.test(normalized)) {
+  if (!LOWERCASE_PATTERN.test(password)) {
     return "Include at least 1 lowercase letter";
   }
 
-  if (!/\d/.test(normalized)) {
+  if (!DIGIT_PATTERN.test(password)) {
     return "Include at least 1 number";
   }
 
-  if (!/[@_.]/.test(normalized)) {
+  if (!ALLOWED_SYMBOL_PATTERN.test(password)) {
     return "Include at least 1 of these: @ _ .";
   }
 
@@ -187,22 +197,28 @@ export function RegisterScreen() {
     };
   };
 
-  const onBlurField = (field: keyof FieldTouched) => {
+  const validateSingleField = (field: keyof FieldTouched): string => {
+    switch (field) {
+      case "username":
+        return validateUsername(username);
+      case "email":
+        return validateEmail(email);
+      case "password":
+        return validatePassword(password);
+      case "confirmPassword":
+        return validateConfirmPassword(password, confirmPassword);
+    }
+  };
+
+  const handleFieldBlur = (field: keyof FieldTouched) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     setErrors((prev) => ({
       ...prev,
-      [field]:
-        field === "username"
-          ? validateUsername(username)
-          : field === "email"
-            ? validateEmail(email)
-            : field === "password"
-              ? validatePassword(password)
-              : validateConfirmPassword(password, confirmPassword),
+      [field]: validateSingleField(field),
     }));
   };
 
-  const onChangeUsername = (value: string) => {
+  const handleUsernameChange = (value: string) => {
     setUsername(value);
 
     if (submitAttempted || touched.username) {
@@ -213,7 +229,7 @@ export function RegisterScreen() {
     }
   };
 
-  const onChangeEmail = (value: string) => {
+  const handleEmailChange = (value: string) => {
     setEmail(value);
 
     if (submitAttempted || touched.email) {
@@ -224,7 +240,7 @@ export function RegisterScreen() {
     }
   };
 
-  const onChangePassword = (value: string) => {
+  const handlePasswordChange = (value: string) => {
     setPassword(value);
 
     if (submitAttempted || touched.password || touched.confirmPassword) {
@@ -236,7 +252,7 @@ export function RegisterScreen() {
     }
   };
 
-  const onChangeConfirmPassword = (value: string) => {
+  const handleConfirmPasswordChange = (value: string) => {
     setConfirmPassword(value);
 
     if (submitAttempted || touched.confirmPassword) {
@@ -257,7 +273,7 @@ export function RegisterScreen() {
 
   const isSignUpDisabled = isSubmitting;
 
-  const onSubmit = () => {
+  const handleSubmit = () => {
     setSubmitAttempted(true);
     setSubmitError("");
     setSuccessMessage("");
@@ -305,7 +321,7 @@ export function RegisterScreen() {
         const nowIso = new Date().toISOString();
 
         await setDoc(
-          doc(db, "users", credential.user.uid),
+          doc(db, USERS_COLLECTION, credential.user.uid),
           {
             uid: credential.user.uid,
             name: username.trim(),
@@ -390,8 +406,8 @@ export function RegisterScreen() {
             >
               <FormInput
                 value={username}
-                onChangeText={onChangeUsername}
-                onBlur={() => onBlurField("username")}
+                onChangeText={handleUsernameChange}
+                onBlur={() => handleFieldBlur("username")}
                 placeholder={"Username"}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -408,8 +424,8 @@ export function RegisterScreen() {
 
               <FormInput
                 value={email}
-                onChangeText={onChangeEmail}
-                onBlur={() => onBlurField("email")}
+                onChangeText={handleEmailChange}
+                onBlur={() => handleFieldBlur("email")}
                 placeholder={"Email"}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -427,8 +443,8 @@ export function RegisterScreen() {
 
               <FormInput
                 value={password}
-                onChangeText={onChangePassword}
-                onBlur={() => onBlurField("password")}
+                onChangeText={handlePasswordChange}
+                onBlur={() => handleFieldBlur("password")}
                 placeholder={"Password"}
                 isPassword
                 autoCapitalize="none"
@@ -453,8 +469,8 @@ export function RegisterScreen() {
 
               <FormInput
                 value={confirmPassword}
-                onChangeText={onChangeConfirmPassword}
-                onBlur={() => onBlurField("confirmPassword")}
+                onChangeText={handleConfirmPasswordChange}
+                onBlur={() => handleFieldBlur("confirmPassword")}
                 placeholder={"Confirm Password"}
                 isPassword
                 autoCapitalize="none"
@@ -489,7 +505,7 @@ export function RegisterScreen() {
                     {consentChecked ? (
                       <Ionicons
                         name="checkmark"
-                        size={16}
+                        size={CHECKMARK_ICON_SIZE}
                         color={colors.textPrimary}
                       />
                     ) : null}
@@ -531,7 +547,7 @@ export function RegisterScreen() {
 
               <AppButton
                 title={isSubmitting ? "SIGNING UP..." : "Sign Up"}
-                onPress={onSubmit}
+                onPress={handleSubmit}
                 isLoading={isSubmitting}
                 loadingLabel={"SIGNING UP..."}
                 size="compact"
@@ -578,7 +594,7 @@ export function RegisterScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: BG_WARM,
+    backgroundColor: SCREEN_BACKGROUND,
   },
   keyboardWrap: {
     flex: 1,
@@ -609,8 +625,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.s,
   },
   headerSpacer: {
-    width: 38,
-    height: 38,
+    width: HEADER_SPACER_SIZE,
+    height: HEADER_SPACER_SIZE,
   },
   copyBlock: {
     width: "100%",
@@ -644,7 +660,7 @@ const styles = StyleSheet.create({
     maxWidth: layout.components.login.formAreaWideMaxWidth,
   },
   errorSlot: {
-    minHeight: 22,
+    minHeight: ERROR_SLOT_MIN_HEIGHT,
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
     paddingTop: spacing.xxs,
@@ -664,11 +680,11 @@ const styles = StyleSheet.create({
     gap: spacing.s,
   },
   consentCheckbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 0,
-    borderColor: colors.textPrimary,
+    width: CONSENT_CHECKBOX_SIZE,
+    height: CONSENT_CHECKBOX_SIZE,
+    borderRadius: CONSENT_CHECKBOX_RADIUS,
+    borderWidth: 2,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
@@ -701,7 +717,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   feedbackRow: {
-    minHeight: 22,
+    minHeight: FEEDBACK_ROW_MIN_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -1,40 +1,48 @@
-import {
-    AppButton,
-    AppText,
-    FormInput,
-    IconButton,
-    PastelBackground,
-} from "@/src/components";
-import { StackRoutes } from "@/src/core/navigation/route-names";
-
-import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
-import { auth } from "@/src/firebase";
-import { colors, constants, layout, spacing, typography } from "@/src/theme";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    useWindowDimensions,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+  AppButton,
+  AppText,
+  FormInput,
+  IconButton,
+  PastelBackground,
+} from "@/src/components";
+import { StackRoutes } from "@/src/core/navigation/route-names";
+import { useLoginNavigation } from "@/src/features/login/hooks/use-login-navigation";
+import { auth } from "@/src/firebase";
+import { colors, constants, layout, spacing, typography } from "@/src/theme";
+
 const BRAND_PRIMARY = colors.textPrimary;
-const BG_WARM = colors.background;
+const SCREEN_BACKGROUND = colors.background;
+
+const HEADER_SPACER_SIZE = 38;
+const FEEDBACK_ROW_MIN_HEIGHT = 22;
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function validateEmail(email: string): string {
-  const normalized = email.trim();
+const RESET_SUCCESS_MESSAGE =
+  "Password reset link has been sent to your email.";
+const RESET_FAILURE_MESSAGE = "Unable to send reset link. Please try again.";
 
-  if (!normalized) {
+function validateEmail(email: string): string {
+  const trimmedEmail = email.trim();
+
+  if (!trimmedEmail) {
     return "Email is required.";
   }
 
-  if (!EMAIL_PATTERN.test(normalized)) {
+  if (!EMAIL_PATTERN.test(trimmedEmail)) {
     return "Please enter a valid email address.";
   }
 
@@ -42,52 +50,61 @@ function validateEmail(email: string): string {
 }
 
 export function ForgotPasswordScreen() {
-  const { width } = useWindowDimensions();
-  const isCompact = width < layout.thresholds.compact;
-  const isWide = width >= layout.thresholds.wide;
+  const { width: windowWidth } = useWindowDimensions();
+  const isCompactLayout = windowWidth < layout.thresholds.compact;
+  const isWideLayout = windowWidth >= layout.thresholds.wide;
   const navigation = useLoginNavigation();
 
   const [email, setEmail] = useState("");
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [touched, setTouched] = useState(false);
+  const [isEmailFieldTouched, setIsEmailFieldTouched] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onChangeEmail = (value: string) => {
-    setEmail(value);
-    if (submitError) setSubmitError("");
+  const shouldShowEmailError = submitAttempted || isEmailFieldTouched;
 
-    if (submitAttempted || touched) {
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+
+    if (submitError) {
+      setSubmitError("");
+    }
+
+    if (submitAttempted || isEmailFieldTouched) {
       setEmailError(validateEmail(value));
     }
   };
 
-  const onBlurEmail = () => {
-    setTouched(true);
+  const handleEmailBlur = () => {
+    setIsEmailFieldTouched(true);
     setEmailError(validateEmail(email));
   };
 
-  const onSubmit = async () => {
-    if (isSubmitting) return;
+  const handleSubmit = async () => {
+    if (isSubmitting) {
+      return;
+    }
 
     setSubmitAttempted(true);
     setSubmitError("");
     setSuccessMessage("");
 
-    const nextError = validateEmail(email);
-    setEmailError(nextError);
-    setTouched(true);
+    const validationError = validateEmail(email);
+    setEmailError(validationError);
+    setIsEmailFieldTouched(true);
 
-    if (nextError) return;
+    if (validationError) {
+      return;
+    }
 
     try {
       setIsSubmitting(true);
       await sendPasswordResetEmail(auth, email.trim());
-      setSuccessMessage("Password reset link has been sent to your email.");
+      setSuccessMessage(RESET_SUCCESS_MESSAGE);
     } catch {
-      setSubmitError("Unable to send reset link. Please try again.");
+      setSubmitError(RESET_FAILURE_MESSAGE);
     } finally {
       setIsSubmitting(false);
     }
@@ -108,8 +125,8 @@ export function ForgotPasswordScreen() {
           <View
             style={[
               styles.container,
-              isCompact && styles.containerCompact,
-              isWide && styles.containerWide,
+              isCompactLayout && styles.containerCompact,
+              isWideLayout && styles.containerWide,
             ]}
           >
             <View style={styles.headerRow}>
@@ -135,15 +152,15 @@ export function ForgotPasswordScreen() {
             <View
               style={[
                 styles.formArea,
-                isCompact && styles.formAreaCompact,
-                isWide && styles.formAreaWide,
+                isCompactLayout && styles.formAreaCompact,
+                isWideLayout && styles.formAreaWide,
               ]}
             >
               <View style={styles.fieldWrap}>
                 <FormInput
                   value={email}
-                  onChangeText={onChangeEmail}
-                  onBlur={onBlurEmail}
+                  onChangeText={handleEmailChange}
+                  onBlur={handleEmailBlur}
                   placeholder={"Email address"}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -154,15 +171,15 @@ export function ForgotPasswordScreen() {
                   selectionColor={colors.textPrimary}
                   accessibilityLabel={"Email"}
                   editable={!isSubmitting}
-                  compact={isCompact}
-                  error={submitAttempted || touched ? emailError : ""}
+                  compact={isCompactLayout}
+                  error={shouldShowEmailError ? emailError : ""}
                   showFeedbackSlot
                 />
               </View>
 
               <AppButton
                 title={"Send Reset Link"}
-                onPress={onSubmit}
+                onPress={handleSubmit}
                 isLoading={isSubmitting}
                 loadingLabel={"SENDING..."}
                 size="compact"
@@ -208,7 +225,7 @@ export function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: BG_WARM,
+    backgroundColor: SCREEN_BACKGROUND,
   },
   keyboardWrap: {
     flex: 1,
@@ -239,8 +256,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.s,
   },
   headerSpacer: {
-    width: 38,
-    height: 38,
+    width: HEADER_SPACER_SIZE,
+    height: HEADER_SPACER_SIZE,
   },
   copyBlock: {
     width: "100%",
@@ -293,7 +310,7 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   feedbackRow: {
-    minHeight: 22,
+    minHeight: FEEDBACK_ROW_MIN_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
   },

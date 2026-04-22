@@ -19,7 +19,6 @@ import {
 
 import { AppButton, AppText, PastelBackground, Toast } from "@/src/components";
 import { StackRoutes } from "@/src/core/navigation/route-names";
-
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { useAuthStore } from "@/src/store/auth-store";
 import { useDeadlineStore } from "@/src/store/deadline-store";
@@ -31,6 +30,16 @@ import {
   spacing,
   typography,
 } from "@/src/theme";
+
+const ROW_ICON_SIZE = 20;
+const CHEVRON_ICON_SIZE = 18;
+const ROW_MIN_HEIGHT = 50;
+const TOAST_DURATION_MS = 2000;
+const SCROLL_BOTTOM_PADDING = 12;
+
+const TOAST_SUCCESS = "success" as const;
+const TOAST_ERROR = "error" as const;
+type ToastType = typeof TOAST_SUCCESS | typeof TOAST_ERROR;
 
 type SettingsRowProps = {
   label: string;
@@ -47,19 +56,28 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
       accessibilityLabel={label}
     >
       <View style={styles.rowLeft}>
-        <Ionicons name={icon} size={20} color={colors.textSecondary} />
+        <Ionicons
+          name={icon}
+          size={ROW_ICON_SIZE}
+          color={colors.textSecondary}
+        />
         <AppText variant="caption">{label}</AppText>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+      <Ionicons
+        name="chevron-forward"
+        size={CHEVRON_ICON_SIZE}
+        color={colors.textSecondary}
+      />
     </Pressable>
   );
 }
 
 export function SettingsScreen() {
-  const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const isCompact = width < layout.thresholds.compact;
-  const isWide = width >= layout.thresholds.wide;
+  const { width: windowWidth } = useWindowDimensions();
+  const safeAreaInsets = useSafeAreaInsets();
+  const isCompactLayout = windowWidth < layout.thresholds.compact;
+  const isWideLayout = windowWidth >= layout.thresholds.wide;
+  const isTabletLayout = windowWidth >= layout.thresholds.tablet;
   const navigation = useSettingsNavigation();
   const logout = useAuthStore((state) => state.logout);
   const notificationsEnabled = useDeadlineStore(
@@ -75,22 +93,36 @@ export function SettingsScreen() {
     (state) => state.refreshNotificationPermission,
   );
   const clearAllData = useDeadlineStore((state) => state.clearAllData);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastType, setToastType] = useState<"success" | "error">("success");
 
-  const onLogout = () => {
+  const [toastMessage, setToastMessage] = useState("");
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [toastType, setToastType] = useState<ToastType>(TOAST_SUCCESS);
+
+  const showToast = (message: string, type: ToastType) => {
+    setToastMessage(message);
+    setToastType(type);
+    setIsToastVisible(true);
+
+    setTimeout(() => {
+      setIsToastVisible(false);
+    }, TOAST_DURATION_MS);
+  };
+
+  const handleLogout = () => {
     void (async () => {
       try {
         await logout();
-        showToast("Logged out successfully", "success");
+        showToast("Logged out successfully", TOAST_SUCCESS);
       } catch {
-        showToast("Unable to log out right now. Please try again.", "error");
+        showToast(
+          "Unable to log out right now. Please try again.",
+          TOAST_ERROR,
+        );
       }
     })();
   };
 
-  const onToggleNotifications = (enabled: boolean) => {
+  const handleToggleNotifications = (enabled: boolean) => {
     if (!hasNotificationPermission) {
       return;
     }
@@ -114,21 +146,11 @@ export function SettingsScreen() {
     return () => subscription.remove();
   }, [refreshNotificationPermission]);
 
-  const onOpenSystemSettings = () => {
+  const handleOpenSystemSettings = () => {
     void Linking.openSettings();
   };
 
-  const showToast = (message: string, type: "success" | "error") => {
-    setToastMessage(message);
-    setToastType(type);
-    setToastVisible(true);
-
-    setTimeout(() => {
-      setToastVisible(false);
-    }, 2000);
-  };
-
-  const onDeleteAllData = () => {
+  const handleDeleteAllData = () => {
     Alert.alert(
       "Delete all app data",
       "This will permanently remove all deadlines and history. Continue?",
@@ -143,7 +165,7 @@ export function SettingsScreen() {
                 isSuccess
                   ? "All app data deleted"
                   : "Could not delete this deadline. Please try again.",
-                isSuccess ? "success" : "error",
+                isSuccess ? TOAST_SUCCESS : TOAST_ERROR,
               );
             });
           },
@@ -152,30 +174,42 @@ export function SettingsScreen() {
     );
   };
 
+  const notificationTrackColor = {
+    false: hasNotificationPermission ? colors.border : colors.borderSoft,
+    true: hasNotificationPermission ? colors.textSecondary : colors.borderSoft,
+  };
+  const notificationThumbColor = hasNotificationPermission
+    ? colors.surface
+    : colors.textSecondary;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <PastelBackground />
       <ScrollView
         style={[
           styles.container,
-          isCompact && styles.containerCompact,
-          isWide && styles.containerWide,
+          isCompactLayout && styles.containerCompact,
+          isWideLayout && styles.containerWide,
         ]}
         contentContainerStyle={[
           styles.contentContainer,
-          { paddingBottom: insets.bottom + 12 },
+          { paddingBottom: safeAreaInsets.bottom + SCROLL_BOTTOM_PADDING },
         ]}
         showsVerticalScrollIndicator={false}
       >
         <View
           style={[
             styles.contentInner,
-            isCompact && styles.contentInnerCompact,
-            isWide && styles.contentInnerWide,
+            isCompactLayout && styles.contentInnerCompact,
+            isWideLayout && styles.contentInnerWide,
+            isTabletLayout && styles.contentInnerTablet,
           ]}
         >
           <View
-            style={[styles.headerRow, isCompact && styles.headerRowCompact]}
+            style={[
+              styles.headerRow,
+              isCompactLayout && styles.headerRowCompact,
+            ]}
           >
             <AppText variant="section" style={styles.screenTitle}>
               {"Settings"}
@@ -204,28 +238,17 @@ export function SettingsScreen() {
                 <View style={[styles.rowLeft, styles.toggleRowLeft]}>
                   <Ionicons
                     name="notifications-outline"
-                    size={20}
+                    size={ROW_ICON_SIZE}
                     color={colors.textSecondary}
                   />
                   <AppText variant="caption">{"Enable Notifications"}</AppText>
                 </View>
                 <Switch
                   value={notificationsEnabled}
-                  onValueChange={onToggleNotifications}
+                  onValueChange={handleToggleNotifications}
                   disabled={!hasNotificationPermission}
-                  trackColor={{
-                    false: hasNotificationPermission
-                      ? colors.border
-                      : colors.borderSoft,
-                    true: hasNotificationPermission
-                      ? colors.textSecondary
-                      : colors.borderSoft,
-                  }}
-                  thumbColor={
-                    hasNotificationPermission
-                      ? colors.surface
-                      : colors.textSecondary
-                  }
+                  trackColor={notificationTrackColor}
+                  thumbColor={notificationThumbColor}
                   ios_backgroundColor={colors.borderSoft}
                   accessibilityLabel={"Enable Notifications"}
                 />
@@ -242,7 +265,7 @@ export function SettingsScreen() {
                   <View style={styles.settingsButtonWrap}>
                     <AppButton
                       label={"Open Settings"}
-                      onPress={onOpenSystemSettings}
+                      onPress={handleOpenSystemSettings}
                       variant="solid"
                       size="compact"
                       labelVariant="body"
@@ -281,7 +304,7 @@ export function SettingsScreen() {
           <View style={styles.accountActionWrap}>
             <AppButton
               label={"Delete All Data"}
-              onPress={onDeleteAllData}
+              onPress={handleDeleteAllData}
               variant="solid"
               iconName="trash-outline"
               size="compact"
@@ -292,7 +315,7 @@ export function SettingsScreen() {
           <View style={styles.accountActionWrap}>
             <AppButton
               label={"Sign Out"}
-              onPress={onLogout}
+              onPress={handleLogout}
               variant="solid"
               iconName="log-out-outline"
               size="compact"
@@ -302,7 +325,7 @@ export function SettingsScreen() {
         </View>
       </ScrollView>
 
-      <Toast message={toastMessage} visible={toastVisible} type={toastType} />
+      <Toast message={toastMessage} visible={isToastVisible} type={toastType} />
     </SafeAreaView>
   );
 }
@@ -328,15 +351,10 @@ const styles = StyleSheet.create({
   },
   contentInner: {
     width: "100%",
-    maxWidth: layout.maxWidths.default,
-    alignSelf: "center",
   },
-  contentInnerCompact: {
-    maxWidth: layout.maxWidths.compact,
-  },
-  contentInnerWide: {
-    maxWidth: layout.maxWidths.wide,
-  },
+  contentInnerCompact: {},
+  contentInnerWide: {},
+  contentInnerTablet: {},
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -377,7 +395,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   row: {
-    minHeight: 50,
+    minHeight: ROW_MIN_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -395,7 +413,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   toggleRow: {
-    minHeight: 50,
+    minHeight: ROW_MIN_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -413,27 +431,10 @@ const styles = StyleSheet.create({
     gap: spacing.s,
     backgroundColor: colors.surface,
   },
-  dataSummaryWrap: {
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.m,
-    gap: spacing.xs,
-  },
-  dataDetailText: {
-    color: colors.textSecondary,
-  },
-  privacyActionsWrap: {
-    paddingHorizontal: spacing.s,
-    paddingBottom: spacing.s,
-  },
   settingsButtonWrap: {
     marginTop: spacing.s,
   },
   accountActionWrap: {
     marginTop: spacing.l,
-  },
-  deleteActionWrap: {
-    paddingHorizontal: spacing.l,
-    paddingBottom: spacing.l,
-    borderRadius: radius.s,
   },
 });

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { Animated, Platform, StyleSheet, View } from "react-native";
 
 import { colors, motion, radius, shadows, spacing } from "@/src/theme";
 
@@ -18,7 +18,7 @@ export function Toast({ message, visible, type = "info" }: ToastProps) {
     Animated.timing(opacity, {
       toValue: visible ? 1 : 0,
       duration: motion.normal,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [opacity, visible]);
 

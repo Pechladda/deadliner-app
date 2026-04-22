@@ -1,17 +1,22 @@
 import {
-    COMPLETED_LABEL_OPTIONS,
-    DATE_DISPLAY_LOCALE,
-    DUE_LABEL_OPTIONS,
+  COMPLETED_LABEL_OPTIONS,
+  DATE_DISPLAY_LOCALE,
+  DUE_LABEL_OPTIONS,
 } from "@/src/core/config";
 
-const msPerMinute = 60 * 1000;
-const msPerHour = 60 * msPerMinute;
-const msPerDay = 24 * msPerHour;
-const dueLabelFallbackOptions: Intl.DateTimeFormatOptions = {
+const MS_PER_MINUTE = 60 * 1000;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+const URGENT_THRESHOLD_MS = MS_PER_DAY;
+const SOON_THRESHOLD_MS = 3 * MS_PER_DAY;
+
+const DUE_LABEL_FALLBACK_OPTIONS: Intl.DateTimeFormatOptions = {
   month: "short",
   day: "numeric",
 };
-const completedLabelFallbackOptions: Intl.DateTimeFormatOptions = {
+const COMPLETED_LABEL_FALLBACK_OPTIONS: Intl.DateTimeFormatOptions = {
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -29,7 +34,7 @@ function parseOffsetMs(timeZoneName: string): number {
   const hours = Number(match[2]);
   const minutes = Number(match[3] ?? "0");
 
-  return sign * (hours * 60 + minutes) * msPerMinute;
+  return sign * (hours * MINUTES_PER_HOUR + minutes) * MS_PER_MINUTE;
 }
 
 function getTimezoneOffsetMs(atUtcMs: number, timezone: string): number {
@@ -109,11 +114,11 @@ export function getDeadlineStatus(
     return "overdue";
   }
 
-  if (remainingMs <= msPerDay) {
+  if (remainingMs <= URGENT_THRESHOLD_MS) {
     return "urgent";
   }
 
-  if (remainingMs <= 3 * msPerDay) {
+  if (remainingMs <= SOON_THRESHOLD_MS) {
     return "soon";
   }
 
@@ -170,11 +175,12 @@ export function formatCreatedLabel(iso: string): string {
     return iso;
   }
 
-  const locale = DATE_DISPLAY_LOCALE;
   const formatOptions =
-    COMPLETED_LABEL_OPTIONS ?? completedLabelFallbackOptions;
+    COMPLETED_LABEL_OPTIONS ?? COMPLETED_LABEL_FALLBACK_OPTIONS;
 
-  return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+  return new Intl.DateTimeFormat(DATE_DISPLAY_LOCALE, formatOptions).format(
+    date,
+  );
 }
 
 export function getUrgencyPriority(
@@ -183,24 +189,28 @@ export function getUrgencyPriority(
 ): "high" | "medium" | "low" {
   const remainingMs = getRemainingMs(iso, now);
 
-  if (remainingMs <= msPerDay) {
+  if (remainingMs <= URGENT_THRESHOLD_MS) {
     return "high";
   }
 
-  if (remainingMs <= 3 * msPerDay) {
+  if (remainingMs <= SOON_THRESHOLD_MS) {
     return "medium";
   }
 
   return "low";
 }
 
-export function formatDueLabel(iso: string): string {
+export function formatDueLabel(iso: string | null | undefined): string {
+  if (!iso) {
+    return "";
+  }
+
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
     return iso;
   }
 
-  const formatOptions = DUE_LABEL_OPTIONS ?? dueLabelFallbackOptions;
+  const formatOptions = DUE_LABEL_OPTIONS ?? DUE_LABEL_FALLBACK_OPTIONS;
 
   return new Intl.DateTimeFormat(DATE_DISPLAY_LOCALE, formatOptions).format(
     date,
@@ -218,10 +228,12 @@ export function formatRemaining(dueAtISO: string, now = new Date()): string {
     return "Overdue";
   }
 
-  const totalMinutes = Math.floor(diffMs / msPerMinute);
-  const days = Math.floor(totalMinutes / (24 * 60));
-  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const minutes = totalMinutes % 60;
+  const totalMinutes = Math.floor(diffMs / MS_PER_MINUTE);
+  const days = Math.floor(totalMinutes / (HOURS_PER_DAY * MINUTES_PER_HOUR));
+  const hours = Math.floor(
+    (totalMinutes % (HOURS_PER_DAY * MINUTES_PER_HOUR)) / MINUTES_PER_HOUR,
+  );
+  const minutes = totalMinutes % MINUTES_PER_HOUR;
 
   if (days > 0) {
     return `${days} ${days === 1 ? "day" : "days"}, ${hours} ${hours === 1 ? "hour" : "hours"} left`;
@@ -241,11 +253,11 @@ export function computeColorStatus(
     return "red";
   }
 
-  if (remainingMs <= msPerDay) {
+  if (remainingMs <= URGENT_THRESHOLD_MS) {
     return "red";
   }
 
-  if (remainingMs <= 3 * msPerDay) {
+  if (remainingMs <= SOON_THRESHOLD_MS) {
     return "yellow";
   }
 
@@ -259,11 +271,11 @@ export function getUrgencyMessage(
     return "overdue";
   }
 
-  if (remainingMs <= msPerDay) {
+  if (remainingMs <= URGENT_THRESHOLD_MS) {
     return "needsToday";
   }
 
-  if (remainingMs <= 3 * msPerDay) {
+  if (remainingMs <= SOON_THRESHOLD_MS) {
     return "dueSoon";
   }
 
@@ -290,20 +302,22 @@ export function formatCountdownShort(iso: string, now = new Date()): string {
     return "Overdue";
   }
 
-  const totalMinutes = Math.floor(diffMs / msPerMinute);
-  const days = Math.floor(totalMinutes / (24 * 60));
-  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const minutes = totalMinutes % 60;
+  const totalMinutes = Math.floor(diffMs / MS_PER_MINUTE);
+  const days = Math.floor(totalMinutes / (HOURS_PER_DAY * MINUTES_PER_HOUR));
+  const hours = Math.floor(
+    (totalMinutes % (HOURS_PER_DAY * MINUTES_PER_HOUR)) / MINUTES_PER_HOUR,
+  );
+  const minutes = totalMinutes % MINUTES_PER_HOUR;
 
   if (days > 0) {
-    return `${days}d ${hours}h ${"left"}`;
+    return `${days}d ${hours}h left`;
   }
 
   if (hours > 0) {
-    return `${hours}h ${minutes}m ${"left"}`;
+    return `${hours}h ${minutes}m left`;
   }
 
-  return `${minutes}m ${"left"}`;
+  return `${minutes}m left`;
 }
 
 export function formatCompletedLabel(iso?: string | null): string {
@@ -316,9 +330,10 @@ export function formatCompletedLabel(iso?: string | null): string {
     return "";
   }
 
-  const locale = DATE_DISPLAY_LOCALE;
   const formatOptions =
-    COMPLETED_LABEL_OPTIONS ?? completedLabelFallbackOptions;
+    COMPLETED_LABEL_OPTIONS ?? COMPLETED_LABEL_FALLBACK_OPTIONS;
 
-  return new Intl.DateTimeFormat(locale, formatOptions).format(date);
+  return new Intl.DateTimeFormat(DATE_DISPLAY_LOCALE, formatOptions).format(
+    date,
+  );
 }

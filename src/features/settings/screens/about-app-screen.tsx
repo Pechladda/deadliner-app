@@ -3,9 +3,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, Card, IconButton, PastelBackground } from "@/src/components";
 import { APP_VERSION } from "@/src/core/config";
-
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
 import { colors, constants, layout, spacing, typography } from "@/src/theme";
+
+const APP_NAME = "Deadliner";
+const APP_DESCRIPTION =
+  "Deadliner helps students visualize urgency and never miss important deadlines.";
+const APP_CREDIT = "Developed by Maymae";
 
 export function AboutAppScreen() {
   const navigation = useSettingsNavigation();
@@ -27,7 +31,7 @@ export function AboutAppScreen() {
 
         <Card style={styles.card}>
           <AppText variant="body" style={styles.centerText}>
-            {"Deadliner"}
+            {APP_NAME}
           </AppText>
           <AppText
             variant="caption"
@@ -37,12 +41,10 @@ export function AboutAppScreen() {
             {`Version ${APP_VERSION}`}
           </AppText>
           <AppText variant="caption" style={styles.description}>
-            {
-              "Deadliner helps students visualize urgency and never miss important deadlines."
-            }
+            {APP_DESCRIPTION}
           </AppText>
           <AppText variant="caption" style={styles.credit}>
-            {"Developed by Maymae"}
+            {APP_CREDIT}
           </AppText>
         </Card>
       </View>

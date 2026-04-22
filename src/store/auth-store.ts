@@ -6,6 +6,7 @@ import { auth } from "@/src/firebase";
 
 const LOGIN_KEY = "isLoggedIn";
 const USER_ID_KEY = "userId";
+const LOGGED_IN_VALUE = "true";
 
 type AuthState = {
   currentUser: User | null;
@@ -21,7 +22,7 @@ async function persistAuthState(user: User | null) {
   try {
     if (user) {
       await AsyncStorage.multiSet([
-        [LOGIN_KEY, "true"],
+        [LOGIN_KEY, LOGGED_IN_VALUE],
         [USER_ID_KEY, user.uid],
       ]);
       return;
@@ -56,7 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       ]);
 
       // Firebase remains the source of truth. If local flag is stale, clear it.
-      if (storedAuth === "true" && !auth.currentUser) {
+      if (storedAuth === LOGGED_IN_VALUE && !auth.currentUser) {
         await AsyncStorage.multiRemove([LOGIN_KEY, USER_ID_KEY]);
         set({
           currentUser: null,
@@ -70,7 +71,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         currentUser: auth.currentUser,
         isAuthenticated:
           Boolean(auth.currentUser) ||
-          (storedAuth === "true" && Boolean(storedUserId)),
+          (storedAuth === LOGGED_IN_VALUE && Boolean(storedUserId)),
         isHydrated: true,
       });
     } catch {
