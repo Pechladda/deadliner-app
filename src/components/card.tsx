@@ -3,7 +3,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ReactNode } from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 
-import { colors, constants, layout, radius, spacing } from "@/src/theme";
+import { colors, constants, radius, spacing } from "@/src/theme";
+
+const BLUR_INTENSITY = 30;
+const GRADIENT_START = { x: 0, y: 0 };
+const GRADIENT_END = { x: 1, y: 1 };
 
 type CardProps = {
   children: ReactNode;
@@ -21,17 +25,21 @@ export function Card({
   const defaultColors: readonly [string, string] = highlighted
     ? constants.card.highlightedGradient
     : constants.card.defaultGradient;
-  const finalColors = gradientColors ?? defaultColors;
+  const resolvedColors = gradientColors ?? defaultColors;
 
   return (
     <View style={[styles.cardWrap, style]}>
       <LinearGradient
-        colors={finalColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={resolvedColors}
+        start={GRADIENT_START}
+        end={GRADIENT_END}
         style={[styles.card, highlighted && styles.highlighted]}
       >
-        <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+        <BlurView
+          intensity={BLUR_INTENSITY}
+          tint="light"
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.innerBorder} />
         <View style={styles.contentGap}>{children}</View>
       </LinearGradient>
@@ -43,7 +51,6 @@ const styles = StyleSheet.create({
   cardWrap: {
     borderRadius: radius.xl,
     overflow: "visible",
-    // shadow removed
   },
   card: {
     backgroundColor: "transparent",
