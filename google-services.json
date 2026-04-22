@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "723371844872",
+    "project_id": "deadliner-90803",
+    "storage_bucket": "deadliner-90803.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:723371844872:android:e795fad554fdcdf91c38bd",
+        "android_client_info": {
+          "package_name": "com.mimi.deadliner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-m7wmhyz9P6-6kFEkqKNkA-RMIOfSFdM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
