@@ -26,16 +26,16 @@ Deadliner is a student deadline tracking app that helps you visualize urgency an
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [Expo](https://expo.dev) ~54 / React Native 0.81 |
-| Language | TypeScript |
-| State Management | [Zustand](https://github.com/pmndrs/zustand) v5 |
-| Backend | Firebase (Firestore + Auth) |
-| Notifications | expo-notifications (iOS & Android only) |
-| Navigation | React Navigation v7 |
-| UI | Custom component system + Ionicons |
-| Web Hosting | Firebase Hosting |
+| Layer            | Technology                                       |
+| ---------------- | ------------------------------------------------ |
+| Framework        | [Expo](https://expo.dev) ~54 / React Native 0.81 |
+| Language         | TypeScript                                       |
+| State Management | [Zustand](https://github.com/pmndrs/zustand) v5  |
+| Backend          | Firebase (Firestore + Auth)                      |
+| Notifications    | expo-notifications (iOS & Android only)          |
+| Navigation       | React Navigation v7                              |
+| UI               | Custom component system + Ionicons               |
+| Web Hosting      | Firebase Hosting                                 |
 
 ---
 
@@ -143,12 +143,12 @@ deadliner-app/
 
 ## Deadline Status Colors
 
-| Status | Color | Condition |
-|---|---|---|
-| On Track | 🟢 Green `#05e317` | More than 3 days remaining |
-| Soon | 🟡 Yellow `#fce514` | 1–3 days remaining |
-| Urgent | 🔴 Red `#f80834` | Less than 24 hours remaining |
-| Overdue | ⚫ Grey `#6C757D` | Past due date |
+| Status   | Color               | Condition                    |
+| -------- | ------------------- | ---------------------------- |
+| On Track | 🟢 Green `#05e317`  | More than 3 days remaining   |
+| Soon     | 🟡 Yellow `#fce514` | 1–3 days remaining           |
+| Urgent   | 🔴 Red `#f80834`    | Less than 24 hours remaining |
+| Overdue  | ⚫ Grey `#6C757D`   | Past due date                |
 
 ---
 
@@ -188,7 +188,7 @@ Firestore security rules ensure users can only read and write their own data.
 
 ## Author
 
-**Maymae (Phetlada Duangkaew)**
+**Maymae (Pechladda Duangkaew)**
 
 ---
 
