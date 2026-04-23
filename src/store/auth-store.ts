@@ -12,7 +12,7 @@ type AuthState = {
   currentUser: User | null;
   isAuthenticated: boolean;
   isHydrated: boolean;
-  hydrateAuth: () => Promise<void>;
+  hydrateAuth: () => Promise<void> | void;
   syncAuthFromFirebase: () => () => void;
   login: (user?: User | null) => Promise<void>;
   logout: () => Promise<void>;
@@ -38,49 +38,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   currentUser: null,
   isAuthenticated: false,
   isHydrated: false,
-  hydrateAuth: async () => {
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      set({
-        currentUser,
-        isAuthenticated: true,
-        isHydrated: true,
-      });
-      await persistAuthState(currentUser);
-      return;
-    }
-
-    try {
-      const [[, storedAuth], [, storedUserId]] = await AsyncStorage.multiGet([
-        LOGIN_KEY,
-        USER_ID_KEY,
-      ]);
-
-      // Firebase remains the source of truth. If local flag is stale, clear it.
-      if (storedAuth === LOGGED_IN_VALUE && !auth.currentUser) {
-        await AsyncStorage.multiRemove([LOGIN_KEY, USER_ID_KEY]);
+  hydrateAuth: () => {
+    // Firebase Auth restores sessions asynchronously from AsyncStorage.
+    // We must wait for onAuthStateChanged to fire before marking as hydrated,
+    // otherwise auth.currentUser is always null at startup (production builds).
+    return new Promise<void>((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
         set({
-          currentUser: null,
-          isAuthenticated: false,
+          currentUser: user,
+          isAuthenticated: Boolean(user),
           isHydrated: true,
         });
-        return;
-      }
-
-      set({
-        currentUser: auth.currentUser,
-        isAuthenticated:
-          Boolean(auth.currentUser) ||
-          (storedAuth === LOGGED_IN_VALUE && Boolean(storedUserId)),
-        isHydrated: true,
+        void persistAuthState(user);
+        resolve();
       });
-    } catch {
-      set({
-        currentUser: null,
-        isAuthenticated: false,
-        isHydrated: true,
-      });
-    }
+    });
   },
   syncAuthFromFirebase: () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
