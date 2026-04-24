@@ -458,6 +458,172 @@ const calStyles = StyleSheet.create({
 });
 
 // ─────────────────────────────────────────────
+// WebTimePicker — inline H:MM stepper for web.
+// Pure React Native UI, works on every platform.
+// ─────────────────────────────────────────────
+type WebTimePickerProps = {
+  value: Date;
+  onSelect: (date: Date) => void;
+  onDismiss: () => void;
+};
+
+function WebTimePicker({ value, onSelect, onDismiss }: WebTimePickerProps) {
+  const [hour, setHour] = useState(value.getHours());
+  const [minute, setMinute] = useState(value.getMinutes());
+
+  const adjustHour = (delta: number) =>
+    setHour((current) => (current + delta + 24) % 24);
+  const adjustMinute = (delta: number) =>
+    setMinute((current) => (current + delta + 60) % 60);
+
+  const handleApply = () => {
+    const next = new Date(value);
+    next.setHours(hour, minute, 0, 0);
+    onSelect(next);
+  };
+
+  return (
+    <View style={timeStyles.root}>
+      <View style={timeStyles.row}>
+        <View style={timeStyles.col}>
+          <Pressable
+            onPress={() => adjustHour(1)}
+            style={timeStyles.arrowBtn}
+            hitSlop={8}
+            accessibilityLabel="Increase hour"
+          >
+            <AppIcon
+              name="chevron-up"
+              size={14}
+              color={BRAND_ACCENT_DARK}
+            />
+          </Pressable>
+          <AppText style={timeStyles.numText}>
+            {String(hour).padStart(2, "0")}
+          </AppText>
+          <Pressable
+            onPress={() => adjustHour(-1)}
+            style={timeStyles.arrowBtn}
+            hitSlop={8}
+            accessibilityLabel="Decrease hour"
+          >
+            <AppIcon
+              name="chevron-down"
+              size={14}
+              color={BRAND_ACCENT_DARK}
+            />
+          </Pressable>
+        </View>
+        <AppText style={timeStyles.colon}>{":"}</AppText>
+        <View style={timeStyles.col}>
+          <Pressable
+            onPress={() => adjustMinute(1)}
+            style={timeStyles.arrowBtn}
+            hitSlop={8}
+            accessibilityLabel="Increase minute"
+          >
+            <AppIcon
+              name="chevron-up"
+              size={14}
+              color={BRAND_ACCENT_DARK}
+            />
+          </Pressable>
+          <AppText style={timeStyles.numText}>
+            {String(minute).padStart(2, "0")}
+          </AppText>
+          <Pressable
+            onPress={() => adjustMinute(-1)}
+            style={timeStyles.arrowBtn}
+            hitSlop={8}
+            accessibilityLabel="Decrease minute"
+          >
+            <AppIcon
+              name="chevron-down"
+              size={14}
+              color={BRAND_ACCENT_DARK}
+            />
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={timeStyles.actions}>
+        <Pressable onPress={onDismiss} style={timeStyles.cancelBtn}>
+          <AppText style={timeStyles.cancelTextAction}>{"Cancel"}</AppText>
+        </Pressable>
+        <Pressable onPress={handleApply} style={timeStyles.doneBtn}>
+          <AppText style={timeStyles.doneBtnText}>{"Done"}</AppText>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const timeStyles = StyleSheet.create({
+  root: {
+    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: BRAND_ACCENT_BORDER,
+    paddingTop: spacing.m,
+    gap: spacing.m,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.l,
+  },
+  col: {
+    alignItems: "center",
+    gap: 4,
+  },
+  arrowBtn: {
+    width: 32,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.s,
+    backgroundColor: BRAND_ACCENT_LIGHT,
+  },
+  numText: {
+    color: colors.textPrimary,
+    fontSize: typography.size.l,
+    fontWeight: typography.weight.bold,
+    minWidth: 36,
+    textAlign: "center",
+  },
+  colon: {
+    color: colors.textPrimary,
+    fontSize: typography.size.l,
+    fontWeight: typography.weight.bold,
+  },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: spacing.s,
+  },
+  cancelBtn: {
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.xs,
+  },
+  cancelTextAction: {
+    color: colors.textSecondary,
+    fontSize: typography.size.xs,
+  },
+  doneBtn: {
+    paddingHorizontal: spacing.l,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.pill,
+    backgroundColor: BRAND_ACCENT,
+  },
+  doneBtnText: {
+    color: WHITE,
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.bold,
+  },
+});
+
+// ─────────────────────────────────────────────
 // ReminderSelection — reminder pill selector.
 // ─────────────────────────────────────────────
 function ReminderSelection({
@@ -554,6 +720,7 @@ export function AddDeadlineScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [webCalendarOpen, setWebCalendarOpen] = useState(false);
+  const [webTimeOpen, setWebTimeOpen] = useState(false);
 
   const params = route.params;
   const editId =
@@ -569,6 +736,8 @@ export function AddDeadlineScreen() {
     setPickerMode(null);
     setReminder(null);
     setErrorMessage(null);
+    setWebCalendarOpen(false);
+    setWebTimeOpen(false);
   };
 
   useEffect(() => {
@@ -753,15 +922,11 @@ export function AddDeadlineScreen() {
                 label="Time"
                 icon="time-outline"
                 value={timeValue}
-                onPress={() => openPicker("time")}
-                pickerType="time"
-                onWebApply={(raw) => {
-                  if (!/^\d{2}:\d{2}$/.test(raw)) return;
-                  const [h, min] = raw.split(":").map(Number);
-                  const next = new Date(selectedDate ?? new Date());
-                  next.setHours(h, min, 0, 0);
-                  if (!isNaN(next.getTime())) applyTime(next);
-                }}
+                onPress={
+                  Platform.OS === "web"
+                    ? () => setWebTimeOpen((o) => !o)
+                    : () => openPicker("time")
+                }
               />
             </View>
 
@@ -774,6 +939,18 @@ export function AddDeadlineScreen() {
                   setWebCalendarOpen(false);
                 }}
                 onDismiss={() => setWebCalendarOpen(false)}
+              />
+            )}
+
+            {/* Web-only: custom inline time picker — works on every browser */}
+            {Platform.OS === "web" && webTimeOpen && (
+              <WebTimePicker
+                value={selectedDate ?? new Date()}
+                onSelect={(d) => {
+                  applyTime(d);
+                  setWebTimeOpen(false);
+                }}
+                onDismiss={() => setWebTimeOpen(false)}
               />
             )}
           </View>
