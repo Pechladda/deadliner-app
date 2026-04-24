@@ -1,10 +1,10 @@
 export const typography = {
   family: {
     regular: "Roboto_400Regular",
-    medium: "Roboto_500Medium",
-    semibold: "Roboto_600SemiBold",
+    medium: "Roboto_400Regular",
+    semibold: "Roboto_700Bold",
     bold: "Roboto_700Bold",
-    heavy: "Roboto_900Black",
+    heavy: "Roboto_700Bold",
   },
 
   weight: {
