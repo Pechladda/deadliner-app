@@ -179,15 +179,18 @@ function DateTimeField({
   onWebApply,
 }: DateTimeFieldProps) {
   const hasPicked = value !== label;
+  // On web, suppress onPress only when pickerType is set (overlay <input> handles it).
+  // When pickerType is absent (Date field uses custom WebCalendar), onPress fires normally.
+  const effectiveOnPress =
+    Platform.OS === "web" && pickerType ? undefined : onPress;
   return (
     <Pressable
-      // On web the overlay <input> captures the click directly — no onPress needed.
-      onPress={Platform.OS === "web" ? undefined : onPress}
+      onPress={effectiveOnPress}
       style={[
         styles.dateTimeField,
         hasPicked && styles.dateTimeFieldActive,
-        // Ensure the overlay input can be positioned absolutely inside.
-        Platform.OS === "web" && ({ position: "relative", overflow: "hidden" } as object),
+        Platform.OS === "web" && pickerType &&
+          ({ position: "relative", overflow: "hidden" } as object),
       ]}
       accessibilityRole="button"
       accessibilityLabel={
@@ -257,6 +260,202 @@ function formatTimeDisplay(date: Date): string {
     TIME_DISPLAY_OPTIONS,
   ).format(date);
 }
+
+// ─────────────────────────────────────────────
+// WebCalendar — custom inline calendar for web.
+// Renders full-width inside the form card so it matches
+// the form content width exactly. No browser popup needed.
+// ─────────────────────────────────────────────
+const WEEK_DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
+const CAL_CELL_SIZE = 36;
+
+type WebCalendarProps = {
+  value: Date;
+  onSelect: (date: Date) => void;
+  onDismiss: () => void;
+};
+
+function WebCalendar({ value, onSelect, onDismiss }: WebCalendarProps) {
+  const [view, setView] = useState(
+    () => new Date(value.getFullYear(), value.getMonth(), 1),
+  );
+
+  const year = view.getFullYear();
+  const month = view.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells: (number | null)[] = [
+    ...Array<null>(firstWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const rows = Array.from({ length: cells.length / 7 }, (_, r) =>
+    cells.slice(r * 7, r * 7 + 7),
+  );
+
+  const today = new Date();
+  const isToday = (d: number) =>
+    year === today.getFullYear() &&
+    month === today.getMonth() &&
+    d === today.getDate();
+  const isSelected = (d: number) =>
+    year === value.getFullYear() &&
+    month === value.getMonth() &&
+    d === value.getDate();
+
+  const monthLabel = new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    year: "numeric",
+  }).format(view);
+
+  return (
+    <View style={calStyles.root}>
+      {/* Month navigation */}
+      <View style={calStyles.header}>
+        <Pressable
+          onPress={() => setView(new Date(year, month - 1, 1))}
+          style={calStyles.navBtn}
+          hitSlop={8}
+        >
+          <AppIcon name="chevron-back" size={13} color={BRAND_ACCENT_DARK} />
+        </Pressable>
+        <AppText style={calStyles.monthLabel}>{monthLabel}</AppText>
+        <Pressable
+          onPress={() => setView(new Date(year, month + 1, 1))}
+          style={calStyles.navBtn}
+          hitSlop={8}
+        >
+          <AppIcon name="chevron-forward" size={13} color={BRAND_ACCENT_DARK} />
+        </Pressable>
+      </View>
+
+      {/* Day-of-week headers */}
+      <View style={calStyles.weekRow}>
+        {WEEK_DAYS.map((d) => (
+          <AppText key={d} style={calStyles.weekLabel}>
+            {d}
+          </AppText>
+        ))}
+      </View>
+
+      {/* Day grid */}
+      {rows.map((row, ri) => (
+        <View key={ri} style={calStyles.weekRow}>
+          {row.map((day, ci) => {
+            if (!day) return <View key={ci} style={calStyles.dayCell} />;
+            const sel = isSelected(day);
+            const tod = isToday(day);
+            return (
+              <Pressable
+                key={ci}
+                style={[
+                  calStyles.dayCell,
+                  sel && calStyles.dayCellSelected,
+                  !sel && tod && calStyles.dayCellToday,
+                ]}
+                onPress={() => {
+                  const next = new Date(value);
+                  next.setFullYear(year, month, day);
+                  onSelect(next);
+                }}
+                hitSlop={2}
+              >
+                <AppText
+                  style={[
+                    calStyles.dayText,
+                    sel && calStyles.dayTextSelected,
+                    !sel && tod && calStyles.dayTextToday,
+                  ]}
+                >
+                  {String(day)}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
+
+      {/* Cancel */}
+      <Pressable onPress={onDismiss} style={calStyles.cancelRow}>
+        <AppText style={calStyles.cancelText}>{"Cancel"}</AppText>
+      </Pressable>
+    </View>
+  );
+}
+
+const calStyles = StyleSheet.create({
+  root: {
+    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: BRAND_ACCENT_BORDER,
+    paddingTop: spacing.s,
+    gap: 2,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs,
+  },
+  monthLabel: {
+    color: colors.textPrimary,
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.semibold,
+  },
+  navBtn: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.s,
+    backgroundColor: BRAND_ACCENT_LIGHT,
+  },
+  weekRow: {
+    flexDirection: "row",
+  },
+  weekLabel: {
+    flex: 1,
+    textAlign: "center",
+    color: colors.textSecondary,
+    fontSize: typography.size.xs,
+    paddingVertical: 4,
+  },
+  dayCell: {
+    flex: 1,
+    height: CAL_CELL_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.s,
+  },
+  dayCellSelected: {
+    backgroundColor: BRAND_ACCENT,
+  },
+  dayCellToday: {
+    borderWidth: 1.5,
+    borderColor: BRAND_ACCENT,
+  },
+  dayText: {
+    fontSize: typography.size.xs,
+    color: colors.textPrimary,
+  },
+  dayTextSelected: {
+    color: WHITE,
+    fontWeight: typography.weight.bold,
+  },
+  dayTextToday: {
+    color: BRAND_ACCENT_DARK,
+    fontWeight: typography.weight.semibold,
+  },
+  cancelRow: {
+    alignItems: "center",
+    paddingVertical: spacing.s,
+  },
+  cancelText: {
+    color: colors.textSecondary,
+    fontSize: typography.size.xs,
+  },
+});
 
 // ─────────────────────────────────────────────
 // ReminderSelection — reminder pill selector.
@@ -354,6 +553,7 @@ export function AddDeadlineScreen() {
   const [reminder, setReminder] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [webCalendarOpen, setWebCalendarOpen] = useState(false);
 
   const params = route.params;
   const editId =
@@ -543,15 +743,11 @@ export function AddDeadlineScreen() {
                 label="Date"
                 icon="calendar-outline"
                 value={dateValue}
-                onPress={() => openPicker("date")}
-                pickerType="date"
-                onWebApply={(raw) => {
-                  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
-                  const [y, m, d] = raw.split("-").map(Number);
-                  const next = new Date(selectedDate ?? new Date());
-                  next.setFullYear(y, m - 1, d);
-                  if (!isNaN(next.getTime())) applyDate(next);
-                }}
+                onPress={
+                  Platform.OS === "web"
+                    ? () => setWebCalendarOpen((o) => !o)
+                    : () => openPicker("date")
+                }
               />
               <DateTimeField
                 label="Time"
@@ -568,6 +764,18 @@ export function AddDeadlineScreen() {
                 }}
               />
             </View>
+
+            {/* Web-only: custom inline calendar — full-width, no browser popup */}
+            {Platform.OS === "web" && webCalendarOpen && (
+              <WebCalendar
+                value={selectedDate ?? new Date()}
+                onSelect={(d) => {
+                  applyDate(d);
+                  setWebCalendarOpen(false);
+                }}
+                onDismiss={() => setWebCalendarOpen(false)}
+              />
+            )}
           </View>
 
           <View style={styles.divider} />
