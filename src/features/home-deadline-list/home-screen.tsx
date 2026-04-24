@@ -235,6 +235,12 @@ function DeadlineListItem({
   onPressCard,
 }: DeadlineListItemProps) {
   const swipeableRef = useRef<SwipeableMethods>(null);
+  // Tracks whether a swipe drag is in progress so we can block
+  // the card's onPress from firing when the user lifts their finger
+  // at the end of a swipe gesture.
+  const isSwipingRef = useRef(false);
+  const swipeResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { item: deadline, isOverdue } = row;
 
   const dueLabel = deadline.dueAt
@@ -246,12 +252,34 @@ function DeadlineListItem({
     callback(deadline.id);
   };
 
+  // Clear the swiping flag after a short delay so the press event
+  // that fires on pointer-up is suppressed before we reset the guard.
+  const clearSwipingFlag = () => {
+    if (swipeResetTimer.current) clearTimeout(swipeResetTimer.current);
+    swipeResetTimer.current = setTimeout(() => {
+      isSwipingRef.current = false;
+    }, 150);
+  };
+
+  const handlePressCard = () => {
+    if (isSwipingRef.current) return;
+    onPressCard(deadline.id);
+  };
+
   return (
     <ReanimatedSwipeable
       ref={swipeableRef}
       friction={constants.home.swipeableFriction}
       rightThreshold={constants.home.swipeableRightThreshold}
       overshootRight={false}
+      onSwipeableOpenStartDrag={() => {
+        isSwipingRef.current = true;
+      }}
+      onSwipeableCloseStartDrag={() => {
+        isSwipingRef.current = true;
+      }}
+      onSwipeableOpen={clearSwipingFlag}
+      onSwipeableClose={clearSwipingFlag}
       renderRightActions={() => (
         <SwipeActions
           onDone={() => closeAndRun(onDone)}
@@ -267,7 +295,7 @@ function DeadlineListItem({
           dueLabel={dueLabel}
           statusLabel={resolveStatusLabel(deadline, isOverdue)}
           urgencyColor={resolveUrgencyColor(deadline, isOverdue)}
-          onPressCard={() => onPressCard(deadline.id)}
+          onPressCard={handlePressCard}
         />
       </View>
     </ReanimatedSwipeable>
