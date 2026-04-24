@@ -45,6 +45,7 @@ const FILTER_INACTIVE_TINT = BRAND_PINK_LIGHT + "55";
 const WHITE = "#fff";
 const SWIPE_DONE_COLOR = "#A8D5B5";
 const SWIPE_DELETE_COLOR = "#E8A0A0";
+const WEB_EDIT_COLOR = "#B8CDE8";
 
 const SUMMARY_BLUR_INTENSITY = 26;
 const EMPTY_STATE_BLUR_INTENSITY = 26;
@@ -258,7 +259,37 @@ function DeadlineListItem({
   );
 
   if (Platform.OS === "web") {
-    return card;
+    return (
+      <View>
+        {card}
+        <View style={styles.webActionsRow}>
+          <Pressable
+            style={[styles.webActionBtn, styles.webDoneBtn]}
+            onPress={() => onDone(deadline.id)}
+            accessibilityLabel="Mark as done"
+          >
+            <AppIcon name="checkmark-circle" size={12} color={WHITE} />
+            <AppText style={styles.webActionLabel}>{"Done"}</AppText>
+          </Pressable>
+          <Pressable
+            style={[styles.webActionBtn, styles.webEditBtn]}
+            onPress={() => onEdit(deadline.id)}
+            accessibilityLabel="Edit deadline"
+          >
+            <AppIcon name="pencil" size={12} color={WHITE} />
+            <AppText style={styles.webActionLabel}>{"Edit"}</AppText>
+          </Pressable>
+          <Pressable
+            style={[styles.webActionBtn, styles.webDeleteBtn]}
+            onPress={() => onDelete(deadline.id)}
+            accessibilityLabel="Delete deadline"
+          >
+            <AppIcon name="trash" size={12} color={WHITE} />
+            <AppText style={styles.webActionLabel}>{"Delete"}</AppText>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   return (
@@ -322,6 +353,15 @@ export function HomeScreen() {
   };
 
   const handleDeleteWithConfirm = (id: string) => {
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this assignment?",
+      );
+      if (confirmed) {
+        void deleteDeadline(id);
+      }
+      return;
+    }
     Alert.alert(
       "Delete deadline",
       "Are you sure you want to delete this assignment?",
@@ -790,5 +830,35 @@ const styles = StyleSheet.create({
   },
   deleteAction: {
     backgroundColor: SWIPE_DELETE_COLOR,
+  },
+
+  webActionsRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
+  webActionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+  },
+  webDoneBtn: {
+    backgroundColor: SWIPE_DONE_COLOR,
+  },
+  webEditBtn: {
+    backgroundColor: WEB_EDIT_COLOR,
+  },
+  webDeleteBtn: {
+    backgroundColor: SWIPE_DELETE_COLOR,
+  },
+  webActionLabel: {
+    color: WHITE,
+    fontSize: typography.size.xs,
+    fontWeight: typography.weight.semibold,
   },
 });

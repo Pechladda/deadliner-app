@@ -1,11 +1,11 @@
+import { BlurView } from "expo-blur";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-  AppButton,
+  AppIcon,
   AppText,
-  Card,
   IconButton,
   PastelBackground,
   Toast,
@@ -18,6 +18,10 @@ import { useSettingsNavigation } from "@/src/features/settings/hooks/use-setting
 import { DeadlineCard } from "@/src/features/shared/components";
 import { useDeadlineStore } from "@/src/store/deadline-store";
 import { colors, constants, radius, spacing, typography } from "@/src/theme";
+
+const BRAND_PINK = "#EAB8C9";
+const EMPTY_STATE_BLUR_INTENSITY = 26;
+const EMPTY_STATE_ICON_SIZE = 32;
 
 const TOAST_DURATION_MS = 1800;
 const CARD_WRAPPER_PADDING = 3;
@@ -101,19 +105,23 @@ export function HistoryScreen() {
             </View>
           )}
           ListEmptyComponent={
-            <Card style={styles.emptyCard}>
-              <AppText variant="section" style={styles.emptyText}>
+            <BlurView
+              intensity={EMPTY_STATE_BLUR_INTENSITY}
+              tint="light"
+              style={styles.emptyStateCard}
+            >
+              <AppIcon
+                name="time-outline"
+                size={EMPTY_STATE_ICON_SIZE}
+                color={BRAND_PINK}
+              />
+              <AppText variant="section" style={styles.emptyStateTitle}>
                 {"No completed deadlines yet."}
               </AppText>
-              <View style={styles.emptyActionWrap}>
-                <AppButton
-                  label={"Go back"}
-                  onPress={handleGoBack}
-                  variant="outline"
-                  iconName="arrow-back-outline"
-                />
-              </View>
-            </Card>
+              <AppText variant="caption" style={styles.emptyStateHint}>
+                {"Deadlines you mark as done will appear here."}
+              </AppText>
+            </BlurView>
           }
         />
 
@@ -124,7 +132,7 @@ export function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.surface },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   container: {
     flex: 1,
     paddingHorizontal: spacing.l,
@@ -159,17 +167,25 @@ const styles = StyleSheet.create({
     padding: CARD_WRAPPER_PADDING,
     overflow: "hidden",
   },
-  emptyCard: {
-    marginTop: spacing.xxl,
+  emptyStateCard: {
+    borderRadius: radius.m,
+    overflow: "hidden",
+    padding: spacing.xl,
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.borderSoft,
-  },
-  emptyText: {
-    textAlign: "center",
-  },
-  emptyActionWrap: {
+    gap: spacing.m,
     marginTop: spacing.l,
-    width: "100%",
+  },
+  emptyStateTitle: {
+    textAlign: "center",
+    color: colors.textPrimary,
+    fontSize: typography.size.s,
+    lineHeight: typography.lineHeight.sm,
+    fontWeight: typography.weight.semibold,
+  },
+  emptyStateHint: {
+    textAlign: "center",
+    color: colors.textSecondary,
+    fontSize: typography.size.xs,
+    lineHeight: typography.lineHeight.xs,
   },
 });

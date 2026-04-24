@@ -5,6 +5,7 @@ import {
   Alert,
   AppState,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -151,6 +152,22 @@ export function SettingsScreen() {
   };
 
   const handleDeleteAllData = () => {
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm(
+        "This will permanently remove all deadlines and history. Continue?",
+      );
+      if (confirmed) {
+        void clearAllData().then((isSuccess) => {
+          showToast(
+            isSuccess
+              ? "All app data deleted"
+              : "Could not delete this deadline. Please try again.",
+            isSuccess ? TOAST_SUCCESS : TOAST_ERROR,
+          );
+        });
+      }
+      return;
+    }
     Alert.alert(
       "Delete all app data",
       "This will permanently remove all deadlines and history. Continue?",
