@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
   NavigationContainer,
@@ -64,14 +64,14 @@ const DEFAULT_TAB_ICON_SIZE_DELTA = 2;
 const ADD_TAB_ICON_SIZE_DELTA = 6;
 
 type TabIconProps = {
-  name: keyof typeof Ionicons.glyphMap;
+  name: string;
   focused: boolean;
   color: string;
   size: number;
 };
 
 function AnimatedTabIcon({ name, color, size }: TabIconProps) {
-  return <Ionicons name={name} size={size} color={color} />;
+  return <AppIcon name={name} size={size} color={color} />;
 }
 
 function MainTabs() {

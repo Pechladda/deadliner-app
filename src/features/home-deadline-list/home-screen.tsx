@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { BlurView } from "expo-blur";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -70,7 +70,7 @@ const FILTER_STATUS_MAP: Partial<Record<HomeFilter, string>> = {
 const FILTER_OPTIONS: {
   key: HomeFilter;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
 }[] = [
   { key: "all", label: "All", icon: "apps-outline" },
   { key: "overdue", label: "Overdue", icon: "alert-circle-outline" },
@@ -126,7 +126,7 @@ function countDeadlinesWithStatus(
 
 type FilterChipProps = {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   active: boolean;
   onPress: () => void;
 };
@@ -139,7 +139,7 @@ function FilterChip({ label, icon, active, onPress }: FilterChipProps) {
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      <Ionicons
+      <AppIcon
         name={icon}
         size={FILTER_CHIP_ICON_SIZE}
         color={active ? WHITE : BRAND_PINK}
@@ -186,7 +186,7 @@ function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
         onPress={onDone}
       >
         <View style={styles.swipeActionInner}>
-          <Ionicons name="checkmark-circle" size={iconSize} color={WHITE} />
+          <AppIcon name="checkmark-circle" size={iconSize} color={WHITE} />
           <AppText variant="caption" style={styles.swipeActionText}>
             {"Done"}
           </AppText>
@@ -197,7 +197,7 @@ function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
         onPress={onEdit}
       >
         <View style={styles.swipeActionInner}>
-          <Ionicons name="pencil" size={iconSize} color={WHITE} />
+          <AppIcon name="pencil" size={iconSize} color={WHITE} />
           <AppText variant="caption" style={styles.swipeActionText}>
             {"Edit"}
           </AppText>
@@ -208,7 +208,7 @@ function SwipeActions({ onEdit, onDelete, onDone }: SwipeActionsProps) {
         onPress={onDelete}
       >
         <View style={styles.swipeActionInner}>
-          <Ionicons name="trash" size={iconSize} color={WHITE} />
+          <AppIcon name="trash" size={iconSize} color={WHITE} />
           <AppText variant="caption" style={styles.swipeActionText}>
             {"Delete"}
           </AppText>
@@ -453,7 +453,7 @@ export function HomeScreen() {
             isSearchFocused && styles.searchWrapFocused,
           ]}
         >
-          <Ionicons
+          <AppIcon
             name="search"
             size={SEARCH_ICON_SIZE}
             color={isSearchFocused ? BRAND_PINK : colors.textSecondary}
@@ -475,7 +475,7 @@ export function HomeScreen() {
               onPress={() => setSearchQuery("")}
               hitSlop={SEARCH_CLEAR_HIT_SLOP}
             >
-              <Ionicons
+              <AppIcon
                 name="close-circle"
                 size={SEARCH_CLEAR_ICON_SIZE}
                 color={colors.textSecondary}
@@ -486,7 +486,7 @@ export function HomeScreen() {
 
         {!isLoadingDeadlines && (
           <View style={styles.sectionLabelRow}>
-            <Ionicons
+            <AppIcon
               name="list"
               size={SECTION_LABEL_ICON_SIZE}
               color={colors.textSecondary}
@@ -535,7 +535,7 @@ export function HomeScreen() {
                   tint="light"
                   style={styles.emptyStateCard}
                 >
-                  <Ionicons
+                  <AppIcon
                     name={
                       activeFilter === "all"
                         ? "sparkles-outline"

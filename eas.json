@@ -6,10 +6,12 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
@@ -24,7 +26,8 @@
         "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "723371844872",
         "EXPO_PUBLIC_FIREBASE_APP_ID": "1:723371844872:web:adab9ba55695ce741c38bd",
         "EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID": "G-TP99VSQZWM"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { BlurView } from "expo-blur";
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, useWindowDimensions, View } from "react-native";
@@ -47,7 +47,7 @@ const COUNTDOWN_ICON_SIZE = 12;
 const TIP_ICON_SIZE = 16;
 const MISSING_DASH = "—";
 
-type IoniconName = keyof typeof Ionicons.glyphMap;
+type IoniconName = string;
 type DeadlineStatus = ReturnType<typeof getDeadlineStatus>;
 
 type StatusBadge = {
@@ -155,7 +155,7 @@ function MissingState({ onPressBack }: MissingStateProps) {
   return (
     <View style={styles.center}>
       <View style={styles.missingIconWrap}>
-        <Ionicons
+        <AppIcon
           name="search-outline"
           size={MISSING_STATE_ICON_SIZE}
           color={BRAND_PINK}
@@ -196,7 +196,7 @@ function DetailRow({
       <View
         style={[styles.detailIconBadge, { backgroundColor: iconColor + "18" }]}
       >
-        <Ionicons name={icon} size={DETAIL_ROW_ICON_SIZE} color={iconColor} />
+        <AppIcon name={icon} size={DETAIL_ROW_ICON_SIZE} color={iconColor} />
       </View>
       <View style={styles.detailTextCol}>
         <AppText style={styles.detailLabel}>{label}</AppText>
@@ -295,7 +295,7 @@ export function DeadlineDetailScreen() {
         >
           <View style={styles.cardHeaderRow}>
             <View style={styles.courseChip}>
-              <Ionicons
+              <AppIcon
                 name="book-outline"
                 size={COURSE_CHIP_ICON_SIZE}
                 color={BRAND_PINK_DEEP}
@@ -310,7 +310,7 @@ export function DeadlineDetailScreen() {
                 { backgroundColor: statusBadge.color + "20" },
               ]}
             >
-              <Ionicons
+              <AppIcon
                 name={statusBadge.icon}
                 size={STATUS_TAG_ICON_SIZE}
                 color={statusBadge.color}
@@ -338,7 +338,7 @@ export function DeadlineDetailScreen() {
                   },
                 ]}
               >
-                <Ionicons
+                <AppIcon
                   name="hourglass-outline"
                   size={COUNTDOWN_ICON_SIZE}
                   color={isOverdue ? colors.overdue : BRAND_PINK_DEEP}
@@ -407,7 +407,7 @@ export function DeadlineDetailScreen() {
             tint="light"
             style={styles.tipCard}
           >
-            <Ionicons
+            <AppIcon
               name={tipMessage.icon}
               size={TIP_ICON_SIZE}
               color={tipMessage.iconColor}

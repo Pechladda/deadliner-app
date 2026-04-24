@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { useRef } from "react";
 import { Animated, Platform, Pressable, StyleSheet, View } from "react-native";
 
@@ -28,7 +28,7 @@ type AppButtonProps = {
     | "bodyMedium"
     | "body"
     | "caption";
-  iconName?: keyof typeof Ionicons.glyphMap;
+  iconName?: string;
   iconColorToken?: keyof typeof colors;
   labelColorToken?: keyof typeof colors;
   disabled?: boolean;
@@ -96,7 +96,7 @@ export function AppButton({
       >
         <View style={styles.inner}>
           {iconName ? (
-            <Ionicons
+            <AppIcon
               name={iconName}
               size={layout.components.button.iconSize}
               color={iconColor}

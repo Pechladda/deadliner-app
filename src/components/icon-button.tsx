@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { Pressable, StyleSheet } from "react-native";
 
 import {
@@ -12,7 +12,7 @@ import {
 } from "@/src/theme";
 
 type IconButtonProps = {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   onPress: () => void;
   accessibilityLabel: string;
   colorToken?: keyof typeof colors;
@@ -33,7 +33,7 @@ export function IconButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <Ionicons name={icon} size={size} color={colors[colorToken]} />
+      <AppIcon name={icon} size={size} color={colors[colorToken]} />
     </Pressable>
   );
 }

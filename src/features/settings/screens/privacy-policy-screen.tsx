@@ -1,6 +1,6 @@
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 
 import { AppText, IconButton, PastelBackground } from "@/src/components";
 import { useSettingsNavigation } from "@/src/features/settings/hooks/use-settings-navigation";
@@ -39,7 +39,7 @@ function PolicyLinkCard({ item }: { item: PolicyLink }) {
       accessibilityLabel={item.title}
     >
       <View style={styles.cardIcon}>
-        <Ionicons name="document-text" size={22} color={colors.border} />
+        <AppIcon name="document-text" size={22} color={colors.border} />
       </View>
       <View style={styles.cardBody}>
         <AppText variant="caption" style={styles.cardTitle}>
@@ -50,7 +50,7 @@ function PolicyLinkCard({ item }: { item: PolicyLink }) {
         </AppText>
       </View>
       <View style={styles.cardArrow}>
-        <Ionicons name="open-outline" size={18} color={colors.textSecondary} />
+        <AppIcon name="open-outline" size={18} color={colors.textSecondary} />
       </View>
     </Pressable>
   );

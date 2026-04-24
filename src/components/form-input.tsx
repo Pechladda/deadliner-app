@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { useState } from "react";
 import {
   Pressable,
@@ -82,7 +82,7 @@ export function FormInput({
             }
             disabled={editable === false}
           >
-            <Ionicons
+            <AppIcon
               name={showPassword ? "eye-outline" : "eye-off-outline"}
               size={EYE_ICON_SIZE}
               color={colors.textSecondary}

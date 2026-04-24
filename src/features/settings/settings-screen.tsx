@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -43,7 +43,7 @@ type ToastType = typeof TOAST_SUCCESS | typeof TOAST_ERROR;
 
 type SettingsRowProps = {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   onPress: () => void;
 };
 
@@ -56,14 +56,14 @@ function SettingsRow({ label, icon, onPress }: SettingsRowProps) {
       accessibilityLabel={label}
     >
       <View style={styles.rowLeft}>
-        <Ionicons
+        <AppIcon
           name={icon}
           size={ROW_ICON_SIZE}
           color={colors.textSecondary}
         />
         <AppText variant="caption">{label}</AppText>
       </View>
-      <Ionicons
+      <AppIcon
         name="chevron-forward"
         size={CHEVRON_ICON_SIZE}
         color={colors.textSecondary}
@@ -236,7 +236,7 @@ export function SettingsScreen() {
             <View style={styles.section}>
               <View style={styles.toggleRow}>
                 <View style={[styles.rowLeft, styles.toggleRowLeft]}>
-                  <Ionicons
+                  <AppIcon
                     name="notifications-outline"
                     size={ROW_ICON_SIZE}
                     color={colors.textSecondary}

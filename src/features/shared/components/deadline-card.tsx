@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/src/components";
@@ -82,7 +82,7 @@ export function DeadlineCard(props: DeadlineCardProps) {
         </View>
 
         <View style={styles.dueRow}>
-          <Ionicons
+          <AppIcon
             name="time-outline"
             size={ROW_ICON_SIZE}
             color={colors.textSecondary}
@@ -123,7 +123,7 @@ export function DeadlineCard(props: DeadlineCardProps) {
           accessibilityRole="button"
           accessibilityLabel={actionLabel || "Delete"}
         >
-          <Ionicons
+          <AppIcon
             name="trash-outline"
             size={TRASH_ICON_SIZE}
             color={colors.overdue}

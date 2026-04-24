@@ -1,12 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
+import { AppIcon } from "@/src/components";
 import { useFocusEffect } from "@react-navigation/native";
 import { BlurView } from "expo-blur";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -19,10 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton, AppText, PastelBackground } from "@/src/components";
 import {
-  ANDROID_DATE_PICKER_LOCALE,
   DATE_DISPLAY_LOCALE,
   DATE_DISPLAY_OPTIONS,
-  IOS_DATE_PICKER_LOCALE,
   TIME_DISPLAY_LOCALE,
   TIME_DISPLAY_OPTIONS,
 } from "@/src/core/config";
@@ -32,6 +26,7 @@ import {
   useAddDeadlineNavigation,
   useAddDeadlineRoute,
 } from "@/src/features/add-deadline/hooks/use-add-deadline-screen";
+import { DeadlinePicker } from "@/src/features/add-deadline/components/deadline-picker";
 import { PickerMode } from "@/src/features/add-deadline/types";
 import { validateDeadlineForm } from "@/src/features/add-deadline/utils/validate-deadline-form";
 import { useDeadlineStore } from "@/src/store/deadline-store";
@@ -53,25 +48,16 @@ const BRAND_ACCENT_BORDER = "#F0D0DC";
 
 const WHITE = "#fff";
 const ERROR_BG = "#FFF0F0";
-const MODAL_BACKDROP_COLOR = "rgba(0,0,0,0.18)";
-
-const PICKER_LOCALE =
-  Platform.OS === "ios" ? IOS_DATE_PICKER_LOCALE : ANDROID_DATE_PICKER_LOCALE;
 
 // Icon sizes
 const ICON_SIZE_XS = 11;
 const ICON_SIZE_SM = 13;
 const ICON_SIZE_MD = 15;
 const ICON_SIZE_LG = 16;
-const ICON_SIZE_XL = 18;
 
 // Field/control dimensions
 const FIELD_MIN_HEIGHT = 45;
-const SHEET_HANDLE_WIDTH = 36;
-const SHEET_HANDLE_HEIGHT = 4;
-const CLOSE_BTN_SIZE = 30;
 const BLUR_INTENSITY = 26;
-const MODAL_BACKDROP_PRESS_HIT_SLOP = 8;
 
 // Reminder label map — user-facing Thai strings for confirmation indicator.
 const REMINDER_LABEL_MAP: Record<string, string> = {
@@ -83,7 +69,7 @@ const REMINDER_LABEL_MAP: Record<string, string> = {
 
 const REMINDER_OPTIONS: {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   value: string | null;
 }[] = [
   { label: "5 min", icon: "alarm-outline", value: "5m" },
@@ -120,7 +106,7 @@ type FloatingInputProps = {
   value: string;
   onChangeText: (text: string) => void;
   accessibilityLabel: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
 };
 
 function FloatingInput({
@@ -142,7 +128,7 @@ function FloatingInput({
         },
       ]}
     >
-      <Ionicons
+      <AppIcon
         name={icon}
         size={ICON_SIZE_LG}
         color={isFocused ? BRAND_ACCENT_DARK : colors.textSecondary}
@@ -160,7 +146,7 @@ function FloatingInput({
       />
       {value.length > 0 && (
         <Pressable onPress={() => onChangeText("")} hitSlop={8}>
-          <Ionicons
+          <AppIcon
             name="close-circle"
             size={ICON_SIZE_MD}
             color={colors.textSecondary}
@@ -175,7 +161,7 @@ function FloatingInput({
 // DateTimeField — date or time picker trigger.
 // ─────────────────────────────────────────────
 type DateTimeFieldProps = {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   label: string;
   value: string;
   onPress: () => void;
@@ -192,7 +178,7 @@ function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
         label === "Date" ? "Open date picker" : "Open time picker"
       }
     >
-      <Ionicons
+      <AppIcon
         name={icon}
         size={ICON_SIZE_MD}
         color={hasPicked ? BRAND_ACCENT_DARK : colors.textSecondary}
@@ -230,13 +216,6 @@ function formatTimeDisplay(date: Date): string {
   ).format(date);
 }
 
-function getDateDisplayForOS(
-  pickerMode: PickerMode,
-): "default" | "spinner" | "calendar" | "clock" | "inline" {
-  if (Platform.OS === "ios") return "spinner";
-  return pickerMode === "date" ? "calendar" : "clock";
-}
-
 // ─────────────────────────────────────────────
 // ReminderSelection — reminder pill selector.
 // ─────────────────────────────────────────────
@@ -250,7 +229,7 @@ function ReminderSelection({
   return (
     <View style={styles.reminderWrap}>
       <View style={styles.reminderLabelRow}>
-        <Ionicons
+        <AppIcon
           name="notifications-outline"
           size={ICON_SIZE_SM}
           color={BRAND_ACCENT_DARK}
@@ -269,7 +248,7 @@ function ReminderSelection({
               ]}
               onPress={() => onChange(option.value)}
             >
-              <Ionicons
+              <AppIcon
                 name={option.icon}
                 size={ICON_SIZE_XS}
                 color={isActive ? WHITE : BRAND_ACCENT_DARK}
@@ -297,7 +276,7 @@ function ReminderIndicator({ value }: { value: string | null }) {
   if (!value) return null;
   return (
     <View style={styles.reminderIndicator}>
-      <Ionicons
+      <AppIcon
         name="notifications"
         size={ICON_SIZE_SM}
         color={BRAND_ACCENT_DARK}
@@ -329,10 +308,7 @@ export function AddDeadlineScreen() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [hasPickedDate, setHasPickedDate] = useState(false);
   const [hasPickedTime, setHasPickedTime] = useState(false);
-  const [iosPickerMode, setIosPickerMode] = useState<PickerMode | null>(null);
-  const [androidPickerMode, setAndroidPickerMode] = useState<PickerMode | null>(
-    null,
-  );
+  const [pickerMode, setPickerMode] = useState<PickerMode | null>(null);
   const [reminder, setReminder] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -348,8 +324,7 @@ export function AddDeadlineScreen() {
     setSelectedDate(null);
     setHasPickedDate(false);
     setHasPickedTime(false);
-    setIosPickerMode(null);
-    setAndroidPickerMode(null);
+    setPickerMode(null);
     setReminder(null);
     setErrorMessage(null);
   };
@@ -387,13 +362,9 @@ export function AddDeadlineScreen() {
     return unsubscribe;
   }, [navigation]);
 
-  const openPicker = (pickerMode: PickerMode) => {
+  const openPicker = (mode: PickerMode) => {
     if (!selectedDate) setSelectedDate(new Date());
-    if (Platform.OS === "ios") {
-      setIosPickerMode(pickerMode);
-    } else {
-      setAndroidPickerMode(pickerMode);
-    }
+    setPickerMode(mode);
   };
 
   const applyDate = (nextDate: Date) => {
@@ -416,21 +387,6 @@ export function AddDeadlineScreen() {
       return merged;
     });
     setHasPickedTime(true);
-  };
-
-  const handlePickerChange = (event: DateTimePickerEvent, value?: Date) => {
-    const pickerMode =
-      Platform.OS === "ios" ? iosPickerMode : androidPickerMode;
-    if (!pickerMode) return;
-    if (Platform.OS === "ios") {
-      if (!value) return;
-      pickerMode === "date" ? applyDate(value) : applyTime(value);
-      return;
-    }
-    if (event.type === "dismissed" || event.type === "set")
-      setAndroidPickerMode(null);
-    if (!value) return;
-    pickerMode === "date" ? applyDate(value) : applyTime(value);
   };
 
   const handleSave = async () => {
@@ -563,7 +519,7 @@ export function AddDeadlineScreen() {
           {/* Error */}
           {errorMessage ? (
             <View style={styles.errorRow}>
-              <Ionicons
+              <AppIcon
                 name="alert-circle-outline"
                 size={ICON_SIZE_SM}
                 color={colors.overdue}
@@ -600,86 +556,15 @@ export function AddDeadlineScreen() {
         <View style={{ height: spacing.xxl }} />
       </ScrollView>
 
-      {/* iOS Date/Time picker */}
-      {Platform.OS === "ios" && iosPickerMode ? (
-        <Modal
-          transparent
-          animationType="slide"
-          visible={Boolean(iosPickerMode)}
-          onRequestClose={() => {
-            if (iosPickerMode === "date") applyDate(pickerValue);
-            else applyTime(pickerValue);
-            setIosPickerMode(null);
-          }}
-        >
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => {
-              if (iosPickerMode === "date") applyDate(pickerValue);
-              else applyTime(pickerValue);
-              setIosPickerMode(null);
-            }}
-          />
-          <View style={styles.pickerSheet}>
-            <View style={styles.sheetHandle} />
-
-            {/* Header: live preview + Done button */}
-            <View style={styles.pickerSheetHeader}>
-              <View style={styles.sheetTitleBlock}>
-                <AppText style={styles.sheetModeLabel}>
-                  {iosPickerMode === "date" ? "SELECT DATE" : "SELECT TIME"}
-                </AppText>
-                <AppText style={styles.sheetPreviewText}>
-                  {iosPickerMode === "date"
-                    ? formatDateDisplay(pickerValue)
-                    : formatTimeDisplay(pickerValue)}
-                </AppText>
-              </View>
-              <Pressable
-                onPress={() => {
-                  if (iosPickerMode === "date") applyDate(pickerValue);
-                  else applyTime(pickerValue);
-                  setIosPickerMode(null);
-                }}
-                style={styles.doneBtn}
-                hitSlop={MODAL_BACKDROP_PRESS_HIT_SLOP}
-              >
-                <Ionicons
-                  name="checkmark"
-                  size={ICON_SIZE_SM}
-                  color={WHITE}
-                />
-                <AppText style={styles.doneBtnText}>{"Done"}</AppText>
-              </Pressable>
-            </View>
-
-            <View style={styles.pickerDivider} />
-
-            <DateTimePicker
-              value={pickerValue}
-              mode={iosPickerMode}
-              display="spinner"
-              onChange={handlePickerChange}
-              locale={PICKER_LOCALE}
-              is24Hour
-              themeVariant="light"
-            />
-          </View>
-        </Modal>
-      ) : null}
-
-      {/* Android Date/Time picker */}
-      {Platform.OS === "android" && androidPickerMode ? (
-        <DateTimePicker
-          value={pickerValue}
-          mode={androidPickerMode}
-          display={getDateDisplayForOS(androidPickerMode)}
-          onChange={handlePickerChange}
-          locale={PICKER_LOCALE}
-          is24Hour
-          themeVariant="light"
-        />
-      ) : null}
+      <DeadlinePicker
+        mode={pickerMode}
+        value={pickerValue}
+        onApplyDate={(d: Date) => { applyDate(d); }}
+        onApplyTime={(d: Date) => { applyTime(d); }}
+        onDismiss={() => setPickerMode(null)}
+        formatDate={formatDateDisplay}
+        formatTime={formatTimeDisplay}
+      />
     </SafeAreaView>
   );
 }
@@ -839,65 +724,4 @@ const styles = StyleSheet.create({
 
   saveButtonWrap: { marginTop: spacing.l, width: "100%", gap: spacing.s },
 
-  // Modals
-  modalBackdrop: { flex: 1, backgroundColor: MODAL_BACKDROP_COLOR },
-  sheetHandle: {
-    width: SHEET_HANDLE_WIDTH,
-    height: SHEET_HANDLE_HEIGHT,
-    borderRadius: SHEET_HANDLE_HEIGHT / 2,
-    backgroundColor: colors.border,
-    alignSelf: "center",
-    marginBottom: spacing.l,
-  },
-
-  pickerSheet: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingTop: spacing.m,
-    paddingHorizontal: spacing.l,
-    paddingBottom: spacing.xxl,
-  },
-  pickerSheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.m,
-  },
-  sheetTitleBlock: {
-    gap: 3,
-  },
-  sheetModeLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.size.xs,
-    fontWeight: typography.weight.bold,
-    letterSpacing: 1.4,
-  },
-  sheetPreviewText: {
-    color: colors.textPrimary,
-    fontSize: typography.size.lg,
-    fontWeight: typography.weight.bold,
-    lineHeight: typography.lineHeight.lg,
-  },
-  doneBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: BRAND_ACCENT,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.l,
-    paddingVertical: spacing.s,
-  },
-  doneBtnText: {
-    color: WHITE,
-    fontSize: typography.size.sm,
-    fontWeight: typography.weight.bold,
-  },
-  pickerDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    opacity: 0.3,
-    marginHorizontal: -spacing.l,
-    marginBottom: spacing.s,
-  },
 });

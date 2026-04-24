@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { BlurView } from "expo-blur";
 import { doc, getDoc } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -182,7 +182,7 @@ export function ProfileScreen() {
                 ) : initials ? (
                   <AppText style={styles.avatarInitials}>{initials}</AppText>
                 ) : (
-                  <Ionicons
+                  <AppIcon
                     name="person"
                     size={AVATAR_PLACEHOLDER_ICON_SIZE}
                     color={PINK_DEEP}
@@ -206,7 +206,7 @@ export function ProfileScreen() {
           >
             <View style={styles.infoRow}>
               <View style={styles.infoIconWrap}>
-                <Ionicons
+                <AppIcon
                   name="person-outline"
                   size={INFO_ICON_SIZE}
                   color={PINK_DEEP}
@@ -226,7 +226,7 @@ export function ProfileScreen() {
 
             <View style={styles.infoRow}>
               <View style={styles.infoIconWrap}>
-                <Ionicons
+                <AppIcon
                   name="mail-outline"
                   size={INFO_ICON_SIZE}
                   color={PINK_DEEP}
@@ -243,7 +243,7 @@ export function ProfileScreen() {
 
           {hasLoadError ? (
             <View style={styles.errorWrap}>
-              <Ionicons
+              <AppIcon
                 name="alert-circle-outline"
                 size={ERROR_ICON_SIZE}
                 color={colors.overdue}

@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { AppIcon } from "@/src/components";
 import { FirebaseError } from "firebase/app";
 import { createUserWithEmailAndPassword, deleteUser } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -503,7 +503,7 @@ export function RegisterScreen() {
                     }
                   >
                     {consentChecked ? (
-                      <Ionicons
+                      <AppIcon
                         name="checkmark"
                         size={CHECKMARK_ICON_SIZE}
                         color={colors.textPrimary}
