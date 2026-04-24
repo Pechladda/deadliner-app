@@ -133,11 +133,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.m,
     paddingHorizontal: spacing.l,
     gap: spacing.m,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
   },
   cardPressed: {
     opacity: 0.7,

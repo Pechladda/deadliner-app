@@ -20,7 +20,6 @@ import {
   constants,
   layout,
   radius,
-  shadows,
   spacing,
   typography,
 } from "@/src/theme";
@@ -353,7 +352,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.m,
-    ...shadows.shadowCard,
   },
   infoRow: {
     flexDirection: "row",

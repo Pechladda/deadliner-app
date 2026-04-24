@@ -1,4 +1,15 @@
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+/**
+ * DeadlinePicker — Web implementation.
+ *
+ * Uses a native HTML <input type="date|time"> rendered via React.createElement
+ * so the browser's built-in date/time picker opens on all desktop and mobile
+ * web browsers (Chrome, Safari, Firefox, Edge, mobile Chrome, mobile Safari).
+ *
+ * The overlay uses position:fixed so it always covers the full viewport
+ * regardless of where the component sits in the React tree.
+ */
+import React from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/src/components";
 import { colors, radius, spacing, typography } from "@/src/theme";
@@ -18,6 +29,38 @@ const BRAND_ACCENT_DARK = "#C9849A";
 const BRAND_ACCENT_LIGHT = "#FAF0F4";
 const WHITE = "#fff";
 
+// Native HTML input rendered via React.createElement to bypass RN Web type
+// restrictions — ensures browser date/time picker actually fires.
+function NativeInput({
+  type,
+  value,
+  onChange,
+}: {
+  type: "date" | "time";
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  return React.createElement("input", {
+    type,
+    value,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value),
+    style: {
+      width: "100%",
+      padding: "10px 14px",
+      borderRadius: 8,
+      border: `1.5px solid ${BRAND_ACCENT}`,
+      backgroundColor: BRAND_ACCENT_LIGHT,
+      color: colors.textPrimary,
+      fontSize: 16,
+      fontFamily: "inherit",
+      textAlign: "center",
+      boxSizing: "border-box",
+      cursor: "pointer",
+      outline: "none",
+    } as React.CSSProperties,
+  });
+}
+
 export function DeadlinePicker({
   mode,
   value,
@@ -29,24 +72,25 @@ export function DeadlinePicker({
 }: DeadlinePickerProps) {
   if (!mode) return null;
 
-  // Format values for HTML inputs
   const dateStr = value.toISOString().slice(0, 10); // YYYY-MM-DD
-  const timeStr = `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+  const hours = String(value.getHours()).padStart(2, "0");
+  const mins = String(value.getMinutes()).padStart(2, "0");
+  const timeStr = `${hours}:${mins}`;
 
-  const handleDateChange = (text: string) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return;
-    const [y, m, d] = text.split("-").map(Number);
-    const merged = new Date(value);
-    merged.setFullYear(y, m - 1, d);
-    if (!isNaN(merged.getTime())) onApplyDate(merged);
-  };
-
-  const handleTimeChange = (text: string) => {
-    if (!/^\d{2}:\d{2}$/.test(text)) return;
-    const [h, min] = text.split(":").map(Number);
-    const merged = new Date(value);
-    merged.setHours(h, min, 0, 0);
-    if (!isNaN(merged.getTime())) onApplyTime(merged);
+  const handleChange = (raw: string) => {
+    if (mode === "date") {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
+      const [y, m, d] = raw.split("-").map(Number);
+      const next = new Date(value);
+      next.setFullYear(y, m - 1, d);
+      if (!isNaN(next.getTime())) onApplyDate(next);
+    } else {
+      if (!/^\d{2}:\d{2}$/.test(raw)) return;
+      const [h, min] = raw.split(":").map(Number);
+      const next = new Date(value);
+      next.setHours(h, min, 0, 0);
+      if (!isNaN(next.getTime())) onApplyTime(next);
+    }
   };
 
   return (
@@ -60,15 +104,13 @@ export function DeadlinePicker({
           {mode === "date" ? formatDate(value) : formatTime(value)}
         </AppText>
 
-        {/* React Native Web passes unknown props (like type) through to the DOM <input> */}
-        <TextInput
-          {...({ type: mode === "date" ? "date" : "time" } as object)}
-          value={mode === "date" ? dateStr : timeStr}
-          onChangeText={
-            mode === "date" ? handleDateChange : handleTimeChange
-          }
-          style={styles.input}
-        />
+        <View style={styles.inputWrap}>
+          <NativeInput
+            type={mode}
+            value={mode === "date" ? dateStr : timeStr}
+            onChange={handleChange}
+          />
+        </View>
 
         <Pressable onPress={onDismiss} style={styles.doneBtn}>
           <AppText style={styles.doneBtnText}>{"Done"}</AppText>
@@ -80,14 +122,24 @@ export function DeadlinePicker({
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    // position: fixed ensures the overlay covers the full viewport on web
+    // regardless of scroll position or parent positioning context.
+    position: "fixed" as "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 100,
+    zIndex: 9999,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    position: "absolute" as "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.28)",
   },
   card: {
     backgroundColor: colors.surface,
@@ -95,14 +147,13 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.m,
     alignItems: "center",
-    width: 300,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
+    width: 320,
+    zIndex: 1,
+    borderWidth: 1,
+    borderColor: BRAND_ACCENT,
   },
   label: {
-    color: colors.textSecondary,
+    color: BRAND_ACCENT_DARK,
     fontSize: typography.size.xs,
     fontWeight: typography.weight.bold,
     letterSpacing: 1.4,
@@ -112,18 +163,9 @@ const styles = StyleSheet.create({
     fontSize: typography.size.lg,
     fontWeight: typography.weight.bold,
   },
-  input: {
+  inputWrap: {
     width: "100%",
-    paddingVertical: spacing.s,
-    paddingHorizontal: spacing.m,
-    borderRadius: radius.s,
-    borderWidth: 1,
-    borderColor: BRAND_ACCENT,
-    backgroundColor: BRAND_ACCENT_LIGHT,
-    color: colors.textPrimary,
-    fontSize: typography.size.sm,
-    textAlign: "center",
-  } as object,
+  },
   doneBtn: {
     marginTop: spacing.xs,
     backgroundColor: BRAND_ACCENT,

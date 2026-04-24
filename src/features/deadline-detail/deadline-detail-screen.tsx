@@ -22,7 +22,6 @@ import {
   colors,
   layout,
   radius,
-  shadows,
   spacing,
   typography,
 } from "@/src/theme";
@@ -479,7 +478,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     padding: spacing.l,
     gap: spacing.m,
-    ...shadows.shadowCard,
   },
   cardHeaderRow: {
     flexDirection: "row",
@@ -590,7 +588,6 @@ const styles = StyleSheet.create({
     gap: spacing.s,
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.m,
-    ...shadows.shadowCard,
   },
   tipText: {
     flex: 1,

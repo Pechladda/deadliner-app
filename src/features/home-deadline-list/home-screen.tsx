@@ -33,7 +33,6 @@ import {
   constants,
   layout,
   radius,
-  shadows,
   spacing,
   typography,
 } from "@/src/theme";
@@ -612,7 +611,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.m,
     paddingHorizontal: spacing.s,
     marginBottom: spacing.m,
-    ...shadows.shadowCard,
   },
   summaryRow: {
     flexDirection: "row",
@@ -748,7 +746,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.m,
     marginTop: spacing.l,
-    ...shadows.shadowCard,
   },
   emptyStateTitle: {
     textAlign: "center",

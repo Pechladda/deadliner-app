@@ -35,7 +35,6 @@ import {
   constants,
   layout,
   radius,
-  shadows,
   spacing,
   typography,
 } from "@/src/theme";
@@ -604,7 +603,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.m,
     paddingHorizontal: spacing.m,
     gap: spacing.m,
-    ...shadows.shadowCard,
   },
   fieldGroup: { gap: spacing.xs },
   divider: {
