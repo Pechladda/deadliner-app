@@ -1,7 +1,7 @@
 import { AppIcon } from "@/src/components";
 import { useFocusEffect } from "@react-navigation/native";
 import { BlurView } from "expo-blur";
-import { useCallback, useEffect, useState } from "react";
+import { createElement, useCallback, useEffect, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -71,8 +71,8 @@ const REMINDER_OPTIONS: {
   icon: string;
   value: string | null;
 }[] = [
-  { label: "5 min", icon: "alarm-outline", value: "5m" },
-  { label: "30 min", icon: "alarm-outline", value: "30m" },
+  { label: "5 min", icon: "notifications-outline", value: "5m" },
+  { label: "30 min", icon: "notifications-outline", value: "30m" },
   { label: "1 hr", icon: "notifications-outline", value: "1h" },
   { label: "1 day", icon: "notifications-outline", value: "1d" },
   { label: "None", icon: "notifications-off-outline", value: null },
@@ -164,14 +164,31 @@ type DateTimeFieldProps = {
   label: string;
   value: string;
   onPress: () => void;
+  /** Web only: type of the overlaid native input */
+  pickerType?: "date" | "time";
+  /** Web only: called with raw "YYYY-MM-DD" or "HH:MM" string on change */
+  onWebApply?: (raw: string) => void;
 };
 
-function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
+function DateTimeField({
+  icon,
+  label,
+  value,
+  onPress,
+  pickerType,
+  onWebApply,
+}: DateTimeFieldProps) {
   const hasPicked = value !== label;
   return (
     <Pressable
-      onPress={onPress}
-      style={[styles.dateTimeField, hasPicked && styles.dateTimeFieldActive]}
+      // On web the overlay <input> captures the click directly — no onPress needed.
+      onPress={Platform.OS === "web" ? undefined : onPress}
+      style={[
+        styles.dateTimeField,
+        hasPicked && styles.dateTimeFieldActive,
+        // Ensure the overlay input can be positioned absolutely inside.
+        Platform.OS === "web" && ({ position: "relative", overflow: "hidden" } as object),
+      ]}
       accessibilityRole="button"
       accessibilityLabel={
         label === "Date" ? "Open date picker" : "Open time picker"
@@ -194,6 +211,32 @@ function DateTimeField({ icon, label, value, onPress }: DateTimeFieldProps) {
       >
         {value}
       </AppText>
+
+      {/* Web overlay — a transparent native <input> fills the button area.
+          Because the user physically clicks this input, the browser considers
+          it a direct user gesture and opens the native date/time picker
+          immediately on all browsers (Safari, Chrome, Firefox, mobile). */}
+      {Platform.OS === "web" && pickerType && onWebApply &&
+        createElement("input", {
+          type: pickerType,
+          "aria-label": label === "Date" ? "Open date picker" : "Open time picker",
+          onChange: (e: { target: { value: string } }) => onWebApply(e.target.value),
+          style: {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: "100%",
+            height: "100%",
+            opacity: 0,
+            cursor: "pointer",
+            padding: 0,
+            border: "none",
+            boxSizing: "border-box",
+          },
+        })
+      }
     </Pressable>
   );
 }
@@ -501,12 +544,28 @@ export function AddDeadlineScreen() {
                 icon="calendar-outline"
                 value={dateValue}
                 onPress={() => openPicker("date")}
+                pickerType="date"
+                onWebApply={(raw) => {
+                  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
+                  const [y, m, d] = raw.split("-").map(Number);
+                  const next = new Date(selectedDate ?? new Date());
+                  next.setFullYear(y, m - 1, d);
+                  if (!isNaN(next.getTime())) applyDate(next);
+                }}
               />
               <DateTimeField
                 label="Time"
                 icon="time-outline"
                 value={timeValue}
                 onPress={() => openPicker("time")}
+                pickerType="time"
+                onWebApply={(raw) => {
+                  if (!/^\d{2}:\d{2}$/.test(raw)) return;
+                  const [h, min] = raw.split(":").map(Number);
+                  const next = new Date(selectedDate ?? new Date());
+                  next.setHours(h, min, 0, 0);
+                  if (!isNaN(next.getTime())) applyTime(next);
+                }}
               />
             </View>
           </View>
