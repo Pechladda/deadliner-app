@@ -138,16 +138,35 @@ export function SettingsScreen() {
   );
 
   useEffect(() => {
+    if (Platform.OS === "web") {
+      // On web, use the visibilitychange event to refresh permission
+      // when the user returns to the tab after changing browser settings.
+      const handleVisibility = () => {
+        if (document.visibilityState === "visible") {
+          void refreshNotificationPermission();
+        }
+      };
+      document.addEventListener("visibilitychange", handleVisibility);
+      return () => document.removeEventListener("visibilitychange", handleVisibility);
+    }
+
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {
         void refreshNotificationPermission();
       }
     });
-
     return () => subscription.remove();
   }, [refreshNotificationPermission]);
 
   const handleOpenSystemSettings = () => {
+    if (Platform.OS === "web") {
+      // Browser doesn't expose a direct API to open notification settings.
+      // Show a brief alert guiding the user to do it manually.
+      window.alert(
+        "To enable notifications, click the lock/info icon in your browser's address bar and allow notifications for this site.",
+      );
+      return;
+    }
     void Linking.openSettings();
   };
 
