@@ -259,7 +259,7 @@ export function DeadlineDetailScreen() {
 
   if (!deadline || !statusBadge) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right", "bottom"]}>
         <MissingState onPressBack={handleBack} />
       </SafeAreaView>
     );
@@ -269,7 +269,7 @@ export function DeadlineDetailScreen() {
   const isOverdue = deadlineStatus === "overdue";
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right", "bottom"]}>
       <PastelBackground />
       <View
         style={[styles.container, isCompactLayout && styles.containerCompact]}

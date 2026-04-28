@@ -361,7 +361,7 @@ export function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right", "bottom"]}>
       <PastelBackground />
       <KeyboardAvoidingView
         style={styles.keyboardWrap}

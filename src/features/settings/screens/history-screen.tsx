@@ -71,7 +71,7 @@ export function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right", "bottom"]}>
       <PastelBackground />
       <View style={styles.container}>
         <View style={styles.headerRow}>

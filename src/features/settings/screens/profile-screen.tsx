@@ -145,7 +145,7 @@ export function ProfileScreen() {
   const hasLoadError = !isLoading && Boolean(loadError);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right", "bottom"]}>
       <PastelBackground />
 
       <View

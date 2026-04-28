@@ -8,6 +8,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { BlurView } from "expo-blur";
 import { useEffect } from "react";
 import { StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AddDeadlineScreen } from "@/src/features/add-deadline";
 import { DeadlineDetailScreen } from "@/src/features/deadline-detail";
@@ -75,6 +76,7 @@ function AnimatedTabIcon({ name, color, size }: TabIconProps) {
 }
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <BottomTab.Navigator
       screenOptions={{
@@ -91,8 +93,8 @@ function MainTabs() {
           />
         ),
         tabBarStyle: {
-          height: TAB_BAR_HEIGHT,
-          paddingBottom: TAB_BAR_PADDING_BOTTOM,
+          height: TAB_BAR_HEIGHT + insets.bottom,
+          paddingBottom: TAB_BAR_PADDING_BOTTOM + insets.bottom,
           paddingTop: TAB_BAR_PADDING_TOP,
           borderTopWidth: 0,
           borderColor: colors.background,
